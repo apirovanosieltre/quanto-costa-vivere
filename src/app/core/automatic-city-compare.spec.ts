@@ -55,8 +55,8 @@ describe('Assisted Italian city comparison: honest coverage and reproducible sam
     expect(results['utilities'].kind).toBe('scenario');
     expect(byKey('F205',null)['housing'].amount).toBeNull();
   });
-  it('does not hallucinate a house rent in Arezzo, Napoli or Florence without valid options',()=>{
-    for(const code of ['A390','F839','H501']){
+  it('does not hallucinate rents for Napoli, Roma or Carrara (not a listed provincial capital)',()=>{
+    for(const code of ['F839','H501','B832']){
       const items=suggestSinglePersonCosts(code,rentalData);
       expect(items.find(x=>x.key==='housing')?.amount).toBeNull();
       expect(items.find(x=>x.key==='groceries')?.geography).toContain('Italia');
@@ -66,6 +66,26 @@ describe('Assisted Italian city comparison: honest coverage and reproducible sam
     expect(()=>suggestSinglePersonCosts('D612',rentalData,{...DEFAULT_SINGLE_PERSON_OPTIONS,areaSqm:0})).toThrow();
     expect(()=>suggestSinglePersonCosts('D612',rentalData,{...DEFAULT_SINGLE_PERSON_OPTIONS,florenceContract:'wrong' as 'long'})).toThrow();
   });
+  it('auto-fills the ten Tuscan capital rents from one comparable 2024 methodology',()=>{
+    const expected=[
+      ['A390',302.5],['D612',733.33],['E202',316.25],
+      ['E625',398.75],['E715',375.83],['F023',339.17],
+      ['G702',481.25],['G713',288.75],['G999',462.92],['I726',449.17]
+    ] as const;
+    for(const [code,rent] of expected){
+      const items=suggestSinglePersonCosts(code,rentalData);
+      const housing=items.find(x=>x.key==='housing')!;
+      expect(housing.amount).toBe(rent);
+      expect(housing.kind).toBe('observed');
+      expect(housing.date).toContain('2024');
+      expect(housing.geography).toContain('Comune capoluogo');
+      expect(cityDataCoverage(items).available).toBe(5);
+    }
+    const different=suggestSinglePersonCosts('A390',rentalData,
+      {...DEFAULT_SINGLE_PERSON_OPTIONS,areaSqm:70,florenceContract:'agreed'});
+    expect(different[0].amount).toBe(402.5);
+    expect(different[0].sourceUrl).toContain('regione.toscana.it');
+  });
   it('updates rent according to shared surface and Florence contract',()=>{
     const options={...DEFAULT_SINGLE_PERSON_OPTIONS,areaSqm:70,florenceContract:'agreed' as const};
     const flo=suggestSinglePersonCosts('D612',rentalData,options);
@@ -74,7 +94,8 @@ describe('Assisted Italian city comparison: honest coverage and reproducible sam
     expect(mil[0].amount).toBe(957.25);
   });
   it('warns when mixing two different types of rent source',()=>{
-    expect(compareMethodWarning('D612','F205')).toContain('NON è un confronto');
+    expect(compareMethodWarning('D612','F205')).toContain('metodi immobiliari non sono omogenei');
     expect(compareMethodWarning('D612','F839')).toContain('voci senza dati');
+    expect(compareMethodWarning('A390','D612')).toContain('stessa rilevazione');
   });
 });
