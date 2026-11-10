@@ -14,6 +14,12 @@ const manifestIndex=args.indexOf('--manifest');
 const manifestFile=manifestIndex>=0 ? args[manifestIndex+1] : null;
 const official='https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/nuova_addcomirpef/download/download.php?anno=2026';
 const isSame=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+// Exit 2 distinguishes an unreachable official website from a real CSV/schema error.
+function temporarySourceError(error){
+  const message=String(error?.message??error);
+  return error?.name==='AbortError'||error?.name==='TimeoutError'||
+    message==='fetch failed'||/^MEF HTTP (403|408|429|5\d\d)$/.test(message);
+}
 try {
   let buffer;
   if(csvPath){
@@ -90,5 +96,5 @@ try {
   }
 }catch(error){
   console.error('Importazione MEF bloccata:',error.message);
-  process.exitCode=1;
+  process.exitCode=temporarySourceError(error)?2:1;
 }
