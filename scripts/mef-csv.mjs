@@ -55,7 +55,9 @@ export function normalizeMunicipalRow(row) {
   if(row[8].includes('0*'))return {...base,status:'pending',reason:'Nessuna delibera 2026 pubblicata alla data del file MEF (0*), non equivale a 0%'};
   if(flag!=='1'&&flag!=='2')return {...base,reason:'Flag MEF '+(flag||'assente')+': regime a scaglioni/speciale o non validato'};
   // Le note e altre coppie di aliquote richiedono un esame della delibera.
-  if(row[6].trim())return {...base,reason:'Note della delibera da esaminare'};
+  const administrativeNote=row[6].trim().toUpperCase();
+  if(!['','CONFERMA','MODIFICA','ISTITUISCE'].includes(administrativeNote))
+    return {...base,reason:'Nota amministrativa speciale da esaminare: '+administrativeNote};
   const expectedHeader=flag==='1' ? 'NO' : 'SI';
   if(row[7].trim().toUpperCase()!==expectedHeader)return {...base,reason:'Indicatore di multi-aliquota non coerente'};
   const threshold=numberItalian(row[33]);
