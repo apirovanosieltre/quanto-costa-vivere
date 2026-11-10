@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { estimateSalary2026 } from '../../core/salary-2026';
 import { estimateLocalTaxes2026 } from '../../core/local-tax-2026';
+import { taxRegionFromProvince, isValidMunicipalRegion } from '../../core/italian-territories';
 import { validateMunicipalDataset, type MunicipalDataset } from '../../core/municipal-data';
 import type { RegionalMefDataset } from '../../core/mef-regional';
 
@@ -10,8 +11,8 @@ import type { RegionalMefDataset } from '../../core/mef-regional';
 <section class="page-hero container">
   <a class="back-link" routerLink="/">← Torna al budget</a>
   <span class="eyebrow eyebrow-subtle">RETRIBUZIONE · ANNO D'IMPOSTA 2026</span>
-  <h1>Dalla RAL <span>al netto nazionale.</span></h1>
-  <p>Stima per lavoratori dipendenti privati a tempo pieno, con 365 giorni lavorativi fiscali, senza altri redditi e senza familiari a carico. <strong>Non comprende le addizionali locali.</strong></p>
+  <h1>Dalla RAL <span>al netto con le addizionali.</span></h1>
+  <p>Stima per lavoratori dipendenti privati a tempo pieno, con 365 giorni fiscali, senza altri redditi e senza familiari a carico. Le addizionali comunali e regionali sono incluse soltanto quando le regole MEF 2026 sono verificabili.</p>
 </section>
 <section class="container tax-layout" aria-label="Simulatore di stipendio" style="padding-bottom:2rem">
   <div class="form-panel">
@@ -60,7 +61,7 @@ import type { RegionalMefDataset } from '../../core/mef-regional';
       <div class="municipal-results" role="group" aria-label="Comuni">
         @for (m of municipalityMatches(); track m.code) {
           <button type="button" class="municipality-button" [class.is-selected]="m.code===selectedMunicipalityCode()"
-            (click)="selectedMunicipalityCode.set(m.code)" [attr.aria-pressed]="m.code===selectedMunicipalityCode()">
+            (click)="selectMunicipality(m.code, m.province)" [attr.aria-pressed]="m.code===selectedMunicipalityCode()">
             {{m.municipality}} ({{m.province}})
           </button>
         } @empty { <p>Nessun comune nella ricerca.</p> }
@@ -68,20 +69,29 @@ import type { RegionalMefDataset } from '../../core/mef-regional';
       @if (selectedMunicipality(); as m) {
         <p><strong>Comune selezionato:</strong> {{m.municipality}} ({{m.province}})</p>
         <p class="field-hint">{{m.status === 'simple' ? 'Aliquota semplice presente nel CSV verificato.' : m.reason}}</p>
+        @if(!isCoherentLocation()){
+          <p class="data-error" role="alert">Comune e regione non coincidono. Correggi la scelta per calcolare le addizionali.</p>
+        }
       }
     } @else {
       <p class="data-error" role="status">Il dataset comunale revisionato non è pubblicato. La stima nazionale resta disponibile.</p>
     }
     <label class="field-label" for="tax-region">Regione di domicilio fiscale</label>
     <div class="select-wrap">
-      <select id="tax-region" [ngModel]="selectedRegion()" (ngModelChange)="selectedRegion.set($event)">
+      <select id="tax-region" [ngModel]="selectedRegion()" (ngModelChange)="changeRegion($event)">
         <option value="">Seleziona regione</option>
         @for (name of regions(); track name) {
           <option [value]="name">{{name}}</option>
         }
       </select>
     </div>
-    <p class="field-hint">Per il momento il calcolo regionale automatico è disponibile solo per le regole riconosciute in modo esplicito; negli altri casi si mostrano le fasce su <a routerLink="/addizionali-regionali">MEF regionali</a>.</p>
+    <p class="field-hint">Calcolo progressivo revisionato per Lombardia, Toscana, Emilia-Romagna, Liguria e Piemonte, oltre al regime di Valle d'Aosta. Gli altri enti rimangono consultabili su <a routerLink="/addizionali-regionali">MEF regionali</a>.</p>
+    @if(selectedRegion()==='REGIONE PIEMONTE'){
+      <label style="display:flex;align-items:flex-start;gap:.6rem;margin-top:1rem">
+        <input type="checkbox" [ngModel]="noDependentChildrenConfirmed()" (ngModelChange)="noDependentChildrenConfirmed.set(!!$event)">
+        <span>Confermo di non avere figli fiscalmente a carico nel 2026. In Piemonte sono previste detrazioni regionali per figli in specifiche condizioni.</span>
+      </label>
+    }
     <label style="display:flex;align-items:flex-start;gap:.6rem;margin-top:1rem">
       <input type="checkbox" [ngModel]="locationConfirmed()" (ngModelChange)="locationConfirmed.set(!!$event)">
       <span>Confermo che regione e comune selezionati corrispondono al mio domicilio fiscale per il periodo considerato.</span>
@@ -106,6 +116,29 @@ import type { RegionalMefDataset } from '../../core/mef-regional';
         } @else { Non calcolabile }
       </p>
       <p class="field-hint">{{local()?.regional?.note}}</p>
+      @if(local()?.regional?.bands; as bands) {
+        <h3>Dettaglio delle fasce regionali</h3>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;text-align:left">
+            <thead><tr>
+              <th scope="col" style="padding:.5rem">Fascia</th>
+              <th scope="col" style="padding:.5rem">Quota imponibile</th>
+              <th scope="col" style="padding:.5rem">Aliquota</th>
+              <th scope="col" style="padding:.5rem">Imposta</th>
+            </tr></thead>
+            <tbody>
+              @for(b of bands;track $index) {
+                <tr>
+                  <th scope="row" style="padding:.5rem">{{money(b.from)}} – {{b.to===null?'oltre':money(b.to)}} €</th>
+                  <td style="padding:.5rem">{{money(b.taxableSlice)}} €</td>
+                  <td style="padding:.5rem">{{percentage(b.ratePct)}}%</td>
+                  <td style="padding:.5rem">{{money(b.tax)}} €</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
       @if(local()?.complete) {
         <div class="data-detail">
           <h3>Media netta stimata dopo le addizionali locali</h3>
@@ -132,6 +165,7 @@ export class SalaryComponent implements OnInit {
   readonly result=computed(()=>estimateSalary2026({grossYearlySalary:this.ral(),installments:this.installments(),employeeSocialSecurityRatePct:this.contributions()}));
   private readonly formatter=new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
   money(n:number):string{return this.formatter.format(n);}
+  percentage(n:number):string{return new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);}
   clamp(value:unknown,max:number):number {const v=Number(value); return Number.isFinite(v) ? Math.min(max,Math.max(0,v)) : 0;}
   setInstallments(v:unknown):void { const n=Number(v); if(n===12||n===13||n===14) this.installments.set(n); }
   readonly municipalDataset=signal<MunicipalDataset|null>(null);
@@ -140,6 +174,8 @@ export class SalaryComponent implements OnInit {
   readonly selectedMunicipalityCode=signal('');
   readonly selectedRegion=signal('');
   readonly locationConfirmed=signal(false);
+  readonly noDependentChildrenConfirmed=signal(false);
+  readonly isCoherentLocation=computed(()=>{const m=this.selectedMunicipality();return !!m&&isValidMunicipalRegion(m.province,this.selectedRegion());});
   readonly regions=computed(()=>[...new Set((this.regionalDataset()?.records??[]).map(r=>r.region))].sort((a,b)=>a.localeCompare(b,'it')));
   readonly municipalityMatches=computed(()=>{
     const input=this.municipalitySearch().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').trim().toLowerCase();
@@ -154,9 +190,21 @@ export class SalaryComponent implements OnInit {
       municipal:this.selectedMunicipality(),municipalDataset:this.municipalDataset(),
       regionalDataset:this.regionalDataset(),region:this.selectedRegion(),
       taxableIncome:this.result().taxableIncome,nationalIrpefDue:this.result().nationalIrpefAfterDeductions,
-      yearlyBeforeLocal:this.result().yearlyBeforeLocalTaxes,installments:this.installments()
+      yearlyBeforeLocal:this.result().yearlyBeforeLocalTaxes,installments:this.installments(),
+      noDependentChildrenConfirmed:this.noDependentChildrenConfirmed()
     });
   });
+  selectMunicipality(code:string,province:string):void{
+    this.selectedMunicipalityCode.set(code);
+    this.selectedRegion.set(taxRegionFromProvince(province)??'');
+    this.locationConfirmed.set(false);
+    this.noDependentChildrenConfirmed.set(false);
+  }
+  changeRegion(region:string):void{
+    this.selectedRegion.set(region);
+    this.locationConfirmed.set(false);
+    this.noDependentChildrenConfirmed.set(false);
+  }
   changeMunicipalitySearch(v:string):void{
     this.municipalitySearch.set(v);this.selectedMunicipalityCode.set('');this.locationConfirmed.set(false);
   }

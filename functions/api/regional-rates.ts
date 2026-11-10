@@ -10,7 +10,7 @@ export async function onRequestGet({request}:RequestContext):Promise<Response> {
   const u=new URL(request.url);
   if(u.pathname!=='/api/regional-rates')return new Response('Not found',{status:404});
   const edge=typeof caches!=='undefined' ? (caches as unknown as {default?:Cache}).default : undefined;
-  const key=new Request(u.origin+'/api/regional-rates');
+  const key=new Request(u.origin+'/api/regional-rates?schema=2');
   if(edge){const cached=await edge.match(key);if(cached)return cached;}
   try{
     const upstream=await fetch(REGIONAL_MEF_CSV_URL,{
@@ -23,7 +23,9 @@ export async function onRequestGet({request}:RequestContext):Promise<Response> {
     let csv:string;
     try{csv=new TextDecoder('utf-8',{fatal:true}).decode(raw);}
     catch{csv=new TextDecoder('windows-1252').decode(raw);}
-    const dataset=parseRegionalMefCsv(csv,new Date().toISOString());
+    const digest=await crypto.subtle.digest('SHA-256',raw);
+    const sourceSha256=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+    const dataset=parseRegionalMefCsv(csv,new Date().toISOString(),sourceSha256);
     const response=new Response(JSON.stringify(dataset),{headers:cacheHeaders,status:200});
     if(edge)await edge.put(key,response.clone());
     return response;
