@@ -3,6 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { validateMunicipalDataset, type MunicipalRecord } from '../../core/municipal-data';
 import { taxRegionFromProvince } from '../../core/italian-territories';
+import {
+  parseFuelSnapshot, isFuelRecent, fuelForProvince, monthlyFuelCost,
+  type ProvinceFuelSnapshot, type FuelType
+} from '../../core/province-fuel';
 import { estimateSalary2026 } from '../../core/salary-2026';
 import { estimateLocalTaxes2026 } from '../../core/local-tax-2026';
 import { type RegionalMefDataset } from '../../core/mef-regional';
@@ -241,6 +245,69 @@ const emptyBudget=():CityBudget=>({
   </div>
 </section>
 
+<section class="container compare-fuel" aria-labelledby="fuel-title">
+  <h2 id="fuel-title">Prezzo dei carburanti: confronto tra province</h2>
+  <p>Prezzi mediani alla pompa per benzina e gasolio self-service, aggregati per <strong>provincia</strong> a partire dai dati MIMIT. Non sono prezzi del singolo comune e non includono manutenzione, parcheggi, assicurazione o pedaggi.</p>
+  @if(fuelLoading()){
+    <p role="status">Caricamento dell'ultima rilevazione provinciale disponibile…</p>
+  } @else if(fuelData(); as snapshot){
+    <p class="compare-tiny">Ultimo giorno rilevato: <strong>{{snapshot.period}}</strong>. Campione disponibile per {{snapshot.provinces.length}} province. Valori in €/litro.</p>
+    @if(!fuelRecent()){
+      <p class="compare-alert" role="status">Rilevazione non abbastanza recente: mostriamo la data storica ma disabilitiamo l'applicazione automatica della stima al budget.</p>
+    }
+    <div class="compare-fuel-controls">
+      <div>
+        <label class="field-label" for="compare-fuel-type">Tipo di carburante</label>
+        <select class="standalone-input" id="compare-fuel-type" [ngModel]="fuelType()" (ngModelChange)="setFuelType($event)">
+          <option value="benzina_self">Benzina self</option>
+          <option value="gasolio_self">Gasolio self</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="compare-fuel-km">Chilometri percorsi al mese</label>
+        <input class="standalone-input" id="compare-fuel-km" type="number" min="0" max="20000" step="50"
+          [ngModel]="monthlyKilometers()" (ngModelChange)="setMonthlyKilometers($event)" placeholder="Inserisci i tuoi km">
+      </div>
+      <div>
+        <label class="field-label" for="compare-fuel-consumption">Consumo dell'auto (litri/100 km)</label>
+        <input class="standalone-input" id="compare-fuel-consumption" type="number" min="0.1" max="40" step=".1"
+          [ngModel]="fuelConsumption()" (ngModelChange)="setFuelConsumption($event)" placeholder="Es. 6,5">
+      </div>
+    </div>
+    <div class="compare-layout">
+      @for(side of sides;track side.key){
+        <article class="compare-omi-card">
+          <h3>{{name(side.key)}}</h3>
+          @if(fuelProvince(side); as province){
+            <p class="compare-tiny">Prezzi rilevati nella provincia di <strong>{{province.name}} ({{province.code}})</strong>.</p>
+            @if(fuelObservation(side);as observation){
+              <p>Prezzo mediano: <strong>{{pricePerLitre(observation.median)}} €/l</strong></p>
+              <p class="compare-tiny">Dal primo al terzo quartile: {{pricePerLitre(observation.q1)}} – {{pricePerLitre(observation.q3)}} €/l, {{observation.stations}} impianti.</p>
+              @if(fuelMonthlyEstimate(side)!==null){
+                <p class="compare-emphasis">Carburante stimato: {{money(fuelMonthlyEstimate(side)!)}} € / mese</p>
+                <button type="button" class="compare-use-net"
+                  [disabled]="!fuelRecent()" (click)="applyFuelEstimate(side)">
+                  Usa questa stima nei trasporti
+                </button>
+              } @else {
+                <p class="compare-tiny">Inserisci i tuoi km e il consumo della tua auto per stimare il costo del solo carburante.</p>
+              }
+            }
+          } @else {
+            <p class="compare-tiny">Nessuna rilevazione provinciale verificata per questo comune.</p>
+          }
+        </article>
+      }
+    </div>
+    <p class="compare-tiny">Il pulsante sostituisce la voce «Trasporti» del budget con il costo stimato del <strong>solo carburante</strong>. Aggiungi manualmente le altre spese di mobilità, quando presenti.</p>
+  } @else {
+    <p class="compare-alert" role="status">{{fuelError()}}</p>
+  }
+  <p class="compare-tiny">Fonte: <a href="https://optenergy.it/dati/" target="_blank" rel="noopener noreferrer">elaborazione optenergy (CC BY 4.0)</a>
+    su <a href="https://www.mimit.gov.it/it/open-data/elenco-dataset/carburanti-prezzi-praticati-e-anagrafica-degli-impianti" target="_blank" rel="noopener noreferrer">dati ufficiali MIMIT (IODL 2.0)</a>.
+    Il file viene aggiornato con controlli di qualità; la data mostrata è quella della rilevazione, non della visita alla pagina.</p>
+</section>
+
 <section class="container compare-omi" aria-label="Verifica degli affitti con OMI">
   <div class="compare-omi-head">
     <div>
@@ -322,6 +389,12 @@ const emptyBudget=():CityBudget=>({
     .compare-results,.compare-reference,.compare-omi,.compare-footer,.compare-salary{margin-top:48px}
     .compare-salary{background:#fff;border:1px solid var(--line);border-radius:18px;padding:26px}
     .compare-salary-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin:18px 0}
+    .compare-fuel{margin-top:48px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:26px}
+    .compare-fuel-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin:20px 0}
+    .compare-fuel-controls .standalone-input{width:100%;padding:11px;border:1px solid #bfcddd;border-radius:9px;min-height:44px;background:#fff}
+    .compare-fuel-controls .field-label{display:block;margin-bottom:7px}
+    .compare-fuel .compare-omi-card{background:#f4f8fc}
+    .compare-use-net:disabled{opacity:.45;cursor:not-allowed}
     .compare-salary-controls .field-label{display:block;margin-bottom:7px}
     .compare-salary-controls .standalone-input{width:100%;padding:11px;border:1px solid #bfcddd;border-radius:9px;min-height:44px;background:#fff}
     .compare-salary .compare-omi-card{background:#f4f8fc}
@@ -356,7 +429,8 @@ const emptyBudget=():CityBudget=>({
     .compare-footer{border-top:1px solid var(--line);padding-top:25px}
     .compare-alert{padding:15px;border-radius:10px;background:#fff1dc;color:#815310}
     @media(max-width:800px){
-      .compare-layout,.compare-result-cards,.compare-salary-controls{grid-template-columns:1fr}
+      .compare-layout,.compare-result-cards,.compare-salary-controls,.compare-fuel-controls{grid-template-columns:1fr}
+      .compare-fuel{padding:18px}
       .compare-salary{padding:18px}
       .compare-city-card,.compare-reference-card,.compare-omi-card,.compare-intro,.compare-kpi{padding:18px}
       .compare-bar-line{grid-template-columns:70px 1fr 72px;gap:8px}
@@ -371,6 +445,16 @@ export class CompareComponent implements OnInit {
   readonly loading=signal(true);
   readonly error=signal('');
   readonly shareStatus=signal('');
+  readonly fuelData=signal<ProvinceFuelSnapshot|null>(null);
+  readonly fuelLoading=signal(true);
+  readonly fuelError=signal('Dataset provinciale non disponibile.');
+  readonly fuelType=signal<FuelType>('benzina_self');
+  readonly monthlyKilometers=signal<number|null>(null);
+  readonly fuelConsumption=signal<number|null>(null);
+  readonly fuelRecent=computed(()=>{
+    const snapshot=this.fuelData();
+    return snapshot!==null && isFuelRecent(snapshot);
+  });
   readonly records=signal<MunicipalRecord[]>([]);
   readonly municipalData=signal<MunicipalDataset|null>(null);
   readonly regionalTaxData=signal<RegionalMefDataset|null>(null);
@@ -403,7 +487,7 @@ export class CompareComponent implements OnInit {
   });
   private readonly formatter=new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
   constructor(private readonly route:ActivatedRoute,private readonly router:Router){}
-  ngOnInit():void{void this.loadMunicipalities();void this.loadRegionalTaxes();}
+  ngOnInit():void{void this.loadMunicipalities();void this.loadRegionalTaxes();void this.loadFuelSnapshot();}
   async loadMunicipalities():Promise<void>{
     try{
       const response=await fetch('/data/municipal-2026.json',{cache:'no-cache'});
@@ -419,6 +503,46 @@ export class CompareComponent implements OnInit {
     }catch{
       this.error.set('Catalogo dei comuni non disponibile. Il confronto non usa dati dimostrativi: riprova dopo il deploy e verifica lo stato dei dati.');
     }finally{this.loading.set(false);}
+  }
+  private async loadFuelSnapshot():Promise<void>{
+    try{
+      const response=await fetch('/data/province-fuel-latest.json',{cache:'no-cache'});
+      if(!response.ok)throw new Error('HTTP '+response.status);
+      const snapshot=parseFuelSnapshot(await response.json());
+      this.fuelData.set(snapshot);
+    }catch{
+      this.fuelError.set('I prezzi provinciali verificati non sono disponibili. Nessun valore alternativo viene inventato.');
+    }finally{this.fuelLoading.set(false);}
+  }
+  setFuelType(value:unknown):void{
+    if(value==='benzina_self'||value==='gasolio_self')this.fuelType.set(value);
+  }
+  setMonthlyKilometers(value:unknown):void{
+    this.monthlyKilometers.set(validMoney(value,20000));
+  }
+  setFuelConsumption(value:unknown):void{
+    this.fuelConsumption.set(validMoney(value,40));
+  }
+  pricePerLitre(value:number):string{
+    return new Intl.NumberFormat('it-IT',{minimumFractionDigits:3,maximumFractionDigits:3}).format(value);
+  }
+  fuelProvince(side:Side){
+    const city=this.city(side);
+    return city?fuelForProvince(this.fuelData(),city.province):null;
+  }
+  fuelObservation(side:Side){
+    const province=this.fuelProvince(side);
+    return province?province[this.fuelType()]:null;
+  }
+  fuelMonthlyEstimate(side:Side):number|null{
+    const obs=this.fuelObservation(side),km=this.monthlyKilometers(),consumption=this.fuelConsumption();
+    return obs&&km!==null&&consumption!==null
+      ?monthlyFuelCost(obs.median,km,consumption):null;
+  }
+  applyFuelEstimate(side:Side):void{
+    if(!this.fuelRecent())return;
+    const amount=this.fuelMonthlyEstimate(side);
+    if(amount!==null)this.setCost(side,'transport',amount);
   }
   private async loadRegionalTaxes():Promise<void>{
     try{
