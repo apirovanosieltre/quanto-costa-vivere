@@ -1,23 +1,56 @@
-name: Rental open data - source review
+name: Rental OMI open data - verified derivative
 on:
   pull_request:
+    branches: [main]
     paths:
-      - 'scripts/inspect-milan-rents.mjs'
       - 'scripts/omi-milan-rent.mjs'
       - 'scripts/omi-milan-rent.test.mjs'
+      - 'scripts/sync-milan-rent.mjs'
+      - '.github/workflows/rent-source-quality.yml'
+  push:
+    branches: [feature/rent-open-data-pilot]
+    paths:
+      - 'scripts/omi-milan-rent.mjs'
+      - 'scripts/omi-milan-rent.test.mjs'
+      - 'scripts/sync-milan-rent.mjs'
       - '.github/workflows/rent-source-quality.yml'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
+concurrency:
+  group: milan-rent-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   inspect:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: {node-version: '24'}
-      - name: Inspect official Milan OMI CC BY CSV (no publication)
-        run: node scripts/inspect-milan-rents.mjs
-      - name: Test municipal derived summary if present
-        run: if [ -f scripts/omi-milan-rent.test.mjs ]; then node --test scripts/omi-milan-rent.test.mjs; fi
+      - name: Test aggregation and strict source interpretation
+        run: node --test scripts/omi-milan-rent.test.mjs
+      - name: Fetch Milan City 2025/2 source and build derived aggregate only
+        run: node scripts/sync-milan-rent.mjs
+      - name: Verify no raw zone rows are published
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const d=JSON.parse(fs.readFileSync('public/data/municipal-rent-benchmarks.json','utf8'));
+          if(d.schemaVersion!==1||d.cities.length!==1)process.exit(1);
+          const m=d.cities[0];
+          if(m.municipalCode!=='F205'||m.basePeriod!=='2025/2'||
+            m.zonesCount<20||m.areaType!=='L'||m.rawQuoteRowsPublished!==false||
+            !/^[a-f0-9]{64}$/.test(m.sourceSha256)||
+            m.lowerMedian<=0||m.upperMedian<=m.lowerMedian) process.exit(1);
+          console.log('Approved derived Milan city indicator:',m.basePeriod,m.zonesCount,m.lowerMedian,m.upperMedian);
+          NODE
+      - name: Commit verified derived benchmark only on feature branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/rent-open-data-pilot'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/data/municipal-rent-benchmarks.json
+          if git diff --cached --quiet; then echo 'No updated aggregate'; exit 0; fi
+          git commit -m 'data(rents): stage audited derived Milan OMI 2025/2 aggregate'
+          git push origin HEAD:refs/heads/feature/rent-open-data-pilot
