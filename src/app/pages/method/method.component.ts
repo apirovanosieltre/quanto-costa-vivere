@@ -16,19 +16,19 @@ import { RouterLink } from '@angular/router';
       <section class="method-card" aria-labelledby="current-data-title">
         <div class="method-symbol" aria-hidden="true">✓</div>
         <h2 id="current-data-title">Cosa funziona già</h2>
-        <p>Il budget usa gli importi inseriti nel browser. L'IRPEF lorda e la stima del netto prima delle addizionali applicano regole nazionali 2026. Per l'inflazione è pronto il collegamento all'API Eurostat (da verificare in Cloudflare).</p>
+        <p>Il budget usa gli importi inseriti nel browser. L'IRPEF lorda e la stima del netto prima delle addizionali applicano regole nazionali 2026. Per l'inflazione è disponibile il collegamento Eurostat; per le fasce regionali il Worker legge il CSV MEF 2026. Le spese familiari ISTAT 2025 sono tratte dal comunicato ufficiale.</p>
         <a routerLink="/irpef-2026" class="text-link">Apri il calcolo IRPEF <span aria-hidden="true">↗</span></a>
       </section>
       <section class="method-card" aria-labelledby="missing-data-title">
         <div class="method-symbol method-symbol-amber" aria-hidden="true">!</div>
         <h2 id="missing-data-title">Cosa non è ancora disponibile</h2>
-        <p>I prezzi medi della vita per comune, gli affitti per zona e le addizionali fiscali locali non sono ancora pubblicati come dati verificati. Il selettore del comune serve a preparare le future funzioni e oggi non altera il calcolo.</p>
+        <p>Non esiste ancora un calcolo territoriale automatico del costo della vita. Le aliquote locali non sono applicate alla stima della RAL. Per OMI puoi consultare la mappa ufficiale e riportare manualmente i valori per zona; non abbiamo una banca dati immobiliare importata. Il comune selezionato nel budget non altera ancora il risultato.</p>
       </section>
     </div>
     <section class="container sources-section" aria-labelledby="sources-title">
       <span class="eyebrow eyebrow-subtle">I NOSTRI RIFERIMENTI</span>
-      <h2 id="sources-title">Fonti ufficiali da utilizzare</h2>
-      <p class="sources-lead">Alcune fonti sono già usate per le regole fiscali, altre sono pianificate. La disponibilità dei dati e le licenze di riutilizzo devono essere controllate prima di un'integrazione automatica.</p>
+      <h2 id="sources-title">Fonti ufficiali e integrazioni</h2>
+      <p class="sources-lead">Alcune fonti sono già collegate, altre richiedono ancora validazione. La disponibilità dei dati e le licenze di riutilizzo devono essere controllate prima di un'integrazione automatica.</p>
       <div class="sources-table-wrap">
         <table>
           <thead><tr><th scope="col">Fonte</th><th scope="col">Informazione</th><th scope="col">Stato</th></tr></thead>
@@ -36,9 +36,10 @@ import { RouterLink } from '@angular/router';
             <tr><td><a href="https://www.inps.it/it/it/inps-comunica/notizie/dettaglio-news-page.news.2026.02.riduzione-irpef-e-incremento-delle-maggiorazioni-sociali.html" target="_blank" rel="noopener noreferrer">INPS ↗</a></td><td>Modifica dell'aliquota intermedia IRPEF 2026</td><td><span class="status-tag ready">Regola applicata</span></td></tr>
             <tr><td><a href="https://temi.camera.it/temi/19_tl18_irpef.html" target="_blank" rel="noopener noreferrer">Camera dei Deputati ↗</a></td><td>Scaglioni nazionali e detrazioni</td><td><span class="status-tag ready">Fonte consultata</span></td></tr>
             <tr><td><a href="https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/nuova_addcomirpef/download/tabella.htm" target="_blank" rel="noopener noreferrer">MEF ↗</a></td><td>Addizionali comunali IRPEF</td><td><span class="status-tag planned">Importatore con revisione</span></td></tr>
+            <tr><td><a href="https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/download/tabella.htm" target="_blank" rel="noopener noreferrer">MEF regionali ↗</a></td><td>Righe, aliquote e fasce 2026 senza calcolo automatico</td><td><span class="status-tag ready">API CSV con verifica</span></td></tr>
             <tr><td><a href="https://ec.europa.eu/eurostat/web/hicp/information-data" target="_blank" rel="noopener noreferrer">Eurostat ↗</a></td><td>IPCA: variazione prezzi annuale dell'Italia, API prc_hicp_minr</td><td><span class="status-tag ready">API predisposta</span></td></tr>
-            <tr><td><a href="https://www.istat.it/" target="_blank" rel="noopener noreferrer">ISTAT ↗</a></td><td>Prezzi e statistiche sul costo della vita</td><td><span class="status-tag planned">Da integrare</span></td></tr>
-            <tr><td><a href="https://www.agenziaentrate.gov.it/portale/" target="_blank" rel="noopener noreferrer">Agenzia delle Entrate ↗</a></td><td>Quotazioni OMI per zone immobiliari</td><td><span class="status-tag planned">Licenza e dataset da verificare</span></td></tr>
+            <tr><td><a href="https://www.istat.it/comunicato-stampa/spese-per-consumi-delle-famiglie-anno-2025/" target="_blank" rel="noopener noreferrer">ISTAT ↗</a></td><td>Spesa delle famiglie, anno 2025: dati nazionali e subset regionale</td><td><span class="status-tag ready">Dataset pubblico versionato</span></td></tr>
+            <tr><td><a href="https://www1.agenziaentrate.gov.it/servizi/geopoi_omi/index.htm" target="_blank" rel="noopener noreferrer">Agenzia delle Entrate ↗</a></td><td>Quotazioni OMI per zone immobiliari</td><td><span class="status-tag ready">Consultazione e stima manuale</span></td></tr>
           </tbody>
         </table>
       </div>
