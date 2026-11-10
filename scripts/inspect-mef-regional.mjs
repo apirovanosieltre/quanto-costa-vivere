@@ -41,6 +41,14 @@ try {
     note: 'Ispezione struttura soltanto: nessuna aliquota regionale validata o pubblicata.'
   };
   await fs.writeFile('mef-regional-report.json', JSON.stringify(report,null,2));
+  const targets=['LOMBARDIA','EMILIA-ROMAGNA','LIGURIA','PIEMONTE',"VALLE D'AOSTA",'TOSCANA','VENETO','UMBRIA'];
+  for (const target of targets) {
+    const chosen=rows.slice(1).filter(r=>r[1]?.toUpperCase().includes(target));
+    console.log('MEF REGIONAL PROFILE '+target+': '+JSON.stringify(chosen.map(r=>({
+      region:r[1],rate:r[7],band:r[8],disposition:r[4]?.slice(0,1200),
+      norms:r[5]?.slice(0,300),notes:r[6]?.slice(0,400)
+    }))));
+  }
   console.log('MEF regional CSV QA:', JSON.stringify({rowCount:report.rowCount,columnCount:report.columnCount,headers:report.headers,firstRows:report.firstRows,regions:report.regions,sha256:report.sha256},null,2));
 } catch (e) {
   console.error('Importazione MEF regionale non validata:',e.message);
