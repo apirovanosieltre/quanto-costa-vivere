@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://costovita.cicioweb.app/sitemap.xml
