@@ -19,27 +19,27 @@ import {fileURLToPath} from 'node:url';
 
 export const WATER_OFFICIAL_SOURCES=[
   {id:'nuove-acque',provider:'Nuove Acque',cities:'Arezzo',type:'html',
-    url:'https://nuoveacque.it/tariffe-acqua/',year:'2026',
+    url:'https://nuoveacque.it/tariffe-acqua/',landingUrl:'https://nuoveacque.it/tariffe-acqua/',year:'2026',
     tokens:['0,873755','1,544142','5,190004','34,11424']},
   {id:'publiacqua',provider:'Publiacqua',cities:'Firenze, Pistoia, Prato',type:'pdf',
     url:'https://www.publiacqua.it/sites/publiacqua/files/tariffe_2026.pdf',year:'2026',
     tokens:['2,000722','2,706863','5,531431','55,144788']},
   {id:'fiora',provider:'Acquedotto del Fiora',cities:'Grosseto, Siena',type:'pdf',
-    url:'https://www.fiora.it/wp-content/uploads/2026/01/AdF_tariffe_2026.pdf',year:'2026',
+    url:'https://www.fiora.it/wp-content/uploads/2026/01/AdF_tariffe_2026.pdf',landingUrl:'https://www.fiora.it/richieste-e-servizi/bollette-e-pagamenti/tariffe/',year:'2026',
     tokens:['0,806200','1,612399','3,573745','25,721880']},
   {id:'asa',provider:'ASA',cities:'Livorno',type:'pdf',
-    url:'https://www.asaspa.it/wp-content/uploads/2026/03/Tariffe-01_03_2026.pdf',year:'2026',
+    url:'https://www.asaspa.it/wp-content/uploads/2026/03/Tariffe-01_03_2026.pdf',landingUrl:'https://www.asaspa.it/acqua-i-tuoi-diritti/tariffe/sistema-tariffario/',year:'2026',
     tokens:['2,672341','3,505557','6,838421','59,258200']},
   {id:'geal',provider:'GEAL',cities:'Lucca',type:'pdf',
     url:'https://www.geal-lucca.it/wp-content/uploads/2025/10/Articolazione-tariffaria-civili-a-Valori-2025-GEAL.pdf',
-    year:'2025 (esteso al 2026 dal gestore)',
+    landingUrl:'https://www.geal-lucca.it/tariffe/',year:'2025 (esteso al 2026 dal gestore)',
     tokens:['0,503503','1,007005','2,224051','32,363518']},
   {id:'gaia',provider:'GAIA',cities:'Massa, bacino Piana',type:'pdf',
     url:'https://www.gaia-spa.it/images/CONTRATTO/Tariffa%20del%20servizio%20idrico/doc-pdf/Tariffe_2026.pdf',
-    year:'2026',tokens:['0,512823','1,025645','3,076940','33,884388']},
+    landingUrl:'https://www.gaia-spa.it/index.php/incarichi-e-consulenze/consulenti/14-categoria-contratto/50-tariffa-del-servizio-idrico',year:'2026',tokens:['0,512823','1,025645','3,076940','33,884388']},
   {id:'acque',provider:'Acque SpA',cities:'Pisa',type:'pdf',
     url:'https://www.acque.net/wp-content/uploads/tariffe-2026.pdf',
-    year:'2026',tokens:['0,711606','1,423211','3,284747','35,036307']}
+    landingUrl:'https://www.acque.net/i-miei-diritti/tariffe/tariffe-fornitura/',year:'2026',tokens:['0,711606','1,423211','3,284747','35,036307']}
 ];
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const MANIFEST=path.join(ROOT,'data','tuscany-water-source-hashes.json');
@@ -77,6 +77,20 @@ async function fetchDocument(url){
   throw latest;
 }
 
+async function detectNewYearListing(source){
+  if(!source.landingUrl)return false;
+  try{
+    const raw=await fetchDocument(source.landingUrl);
+    const html=raw.toString('utf8');
+    // Require an explicit tariff heading. Generic regulatory citations to 2027
+    // in 2026 documents must NOT trigger an update proposal.
+    return /tariff(?:e|ario)(?:\s|&nbsp;|<[^>]*>){0,15}(?:civili\s*)?2027/i.test(html)||
+      /articolazione\s+tariffaria\s+2027/i.test(html);
+  }catch(e){
+    console.warn('Tariff index temporarily unavailable',source.id,String(e).slice(0,150));
+    return false;
+  }
+}
 async function sourceRecord(source){
   const raw=await fetchDocument(source.url);
   let content;
@@ -98,7 +112,8 @@ async function sourceRecord(source){
   const tokensAbsent=source.tokens.filter(t=>!content.includes(t));
   // Binary hash for PDFs, normalized one-person tariff-section hash for HTML.
   const digest=hash(source.type==='pdf'?raw:content);
-  return {id:source.id,provider:source.provider,cities:source.cities,url:source.url,
+  const nextYearListed=await detectNewYearListing(source);
+  return {nextYearListed,id:source.id,provider:source.provider,cities:source.cities,url:source.url,
     sourceYear:source.year,sha256:digest,referenceTokensPresent:tokensAbsent.length===0,
     missingReferenceTokens:tokensAbsent};
 }
@@ -140,7 +155,10 @@ async function run(){
     return;
   }
   const prior=new Map(existing.sources.map(r=>[r.id,r]));
-  const changes=successes.filter(x=>prior.get(x.record.id)?.sha256!==x.record.sha256);
+  const changes=successes.filter(x=>
+    prior.get(x.record.id)?.sha256!==x.record.sha256||
+    (x.record.nextYearListed===true && prior.get(x.record.id)?.nextYearListed!==true)
+  );
   if(!changes.length){
     console.log('No confirmed official source changes. Nothing to publish.');
     return;
@@ -159,7 +177,7 @@ async function run(){
     '| Gestore e città | Digest precedente | Digest attuale | Confronto numeri pubblicati |',
     '|---|---|---|---|',
     ...changes.map(({source,record})=>
-      `| ${escape(source.provider)} · ${escape(source.cities)} | ${prior.get(record.id)?.sha256?.slice(0,12)??'assente'} | ${record.sha256.slice(0,12)} | ${record.referenceTokensPresent?'cifre già presenti':'**ATTENZIONE: cifre originarie modificate o struttura cambiata**'} |`),
+      `| ${escape(source.provider)} · ${escape(source.cities)} | ${prior.get(record.id)?.sha256?.slice(0,12)??'assente'} | ${record.sha256.slice(0,12)} | ${record.nextYearListed?'**Nuovo tariffario 2027 segnalato**. ':''}${record.referenceTokensPresent?'cifre già presenti':'**ATTENZIONE: cifre originarie modificate o struttura cambiata**'} |`),
     '',
     '## Revisione necessaria prima del merge',
     '',
