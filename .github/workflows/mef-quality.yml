@@ -34,9 +34,29 @@ jobs:
       - name: Test parser MEF
         run: node --test scripts/mef-csv.test.mjs
       - name: Scarica e verifica CSV ufficiale
-        run: node scripts/sync-mef.mjs
+        run: |
+          set +e
+          node scripts/sync-mef.mjs
+          status=$?
+          set -e
+          if [ "$status" -eq 2 ]; then
+            echo "::warning::MEF comunale temporaneamente non raggiungibile; sorgente non verificata in questa esecuzione."
+            echo "MEF_COMUNALE_UNAVAILABLE=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          exit "$status"
       - name: Audit CSV comunale 2026
-        run: node scripts/audit-mef-2026.mjs
+        if: env.MEF_COMUNALE_UNAVAILABLE != '1'
+        run: |
+          set +e
+          node scripts/audit-mef-2026.mjs
+          status=$?
+          set -e
+          if [ "$status" -eq 2 ]; then
+            echo "::warning::Audit comunale non eseguito: sito MEF temporaneamente non raggiungibile."
+            exit 0
+          fi
+          exit "$status"
       - name: Ispeziona tracciato ufficiale addizionali regionali 2026
         run: |
           set +e
