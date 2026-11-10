@@ -1,0 +1,23 @@
+name: Rental open data - source review
+on:
+  pull_request:
+    paths:
+      - 'scripts/inspect-milan-rents.mjs'
+      - 'scripts/omi-milan-rent.mjs'
+      - 'scripts/omi-milan-rent.test.mjs'
+      - '.github/workflows/rent-source-quality.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Inspect official Milan OMI CC BY CSV (no publication)
+        run: node scripts/inspect-milan-rents.mjs
+      - name: Test municipal derived summary if present
+        run: if [ -f scripts/omi-milan-rent.test.mjs ]; then node --test scripts/omi-milan-rent.test.mjs; fi
