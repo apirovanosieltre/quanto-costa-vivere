@@ -21,6 +21,10 @@ const flagCount={};
 for(const {r} of records)flagCount[r[32]]=(flagCount[r[32]]??0)+1;
 console.log('CSV audit sourceSha256',createHash('sha256').update(bytes).digest('hex'));
 console.log('CSV audit headers',JSON.stringify(head));
+const noteFreq={};for(const item of records){const note=item.r[6]??'';noteFreq[note]=(noteFreq[note]??0)+1;}
+console.log('CSV audit note frequencies',JSON.stringify(Object.entries(noteFreq).sort((a,b)=>b[1]-a[1]).slice(0,40)));
+console.log('CSV audit note sample',JSON.stringify(records.filter(x=>['1','2'].includes(x.r[32])).slice(0,25).map(({r,n})=>({c:n.code,name:n.municipality,note:r[6],flag:r[32],reason:n.reason}))));
+
 console.log('CSV audit total',records.length,'flags',JSON.stringify(flagCount));
 console.log('CSV audit normalized statuses',JSON.stringify(Object.fromEntries(['simple','needs-review','pending'].map(k=>[k,records.filter(x=>x.n.status===k).length]))));
 console.log('CSV audit representative simple FIRST',JSON.stringify(simple.slice(0,12).map(({r,n,i})=>({i,name:n.municipality,code:n.code,flag:r[32],threshold:r[33],values:r.slice(7,20),normalized:n}))));
