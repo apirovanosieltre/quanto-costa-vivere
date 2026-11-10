@@ -4,9 +4,24 @@ import { createHash } from 'node:crypto';
 import { parseCsv, detectDelimiter, normalizeMunicipalRow } from './mef-csv.mjs';
 
 const url='https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/nuova_addcomirpef/download/download.php?anno=2026';
-const r=await fetch(url,{signal:AbortSignal.timeout(30000)});
+let r;
+try {
+  r=await fetch(url,{signal:AbortSignal.timeout(30000)});
+} catch(error) {
+  console.error('MEF comunale temporaneamente non raggiungibile:',error.message);
+  process.exit(2);
+}
+if([403,408,429].includes(r.status)||r.status>=500){
+  console.error('MEF comunale temporaneamente non raggiungibile: HTTP '+r.status);
+  process.exit(2);
+}
 if(!r.ok) throw Error('MEF HTTP '+r.status);
-const bytes=Buffer.from(await r.arrayBuffer());
+let bytes;
+try { bytes=Buffer.from(await r.arrayBuffer()); }
+catch(error){
+  console.error('Lettura sorgente MEF comunale interrotta:',error.message);
+  process.exit(2);
+}
 let source;
 try{source=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}
 catch{source=new TextDecoder('windows-1252').decode(bytes);}
