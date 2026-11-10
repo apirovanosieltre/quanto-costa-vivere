@@ -39,18 +39,31 @@ describe('2026: costi essenziali 1 persona nei 10 capoluoghi toscani',()=>{
     expect(()=>tariBaseMonthly2026ForCity('A390',0)).toThrow();
     expect(()=>tariBaseMonthly2026ForCity('A390',301)).toThrow();
   });
-  it('usa le tariffe acqua 2026 per Arezzo e Firenze, Pistoia, Prato: nessuna ricostruzione per gli altri 6',()=>{
-    const arezzo=waterMonthly2026ForCity('A390',45);
-    expect(arezzo.annualEUR).toBe(182.30);
-    expect(arezzo.monthlyEUR).toBe(15.19);
-    expect(arezzo.sourceUrl).toBe(TUSCANY_ESSENTIAL_SOURCES.nuoveAcque);
-    for(const code of ['D612','G713','G999']){
-      const water=waterMonthly2026ForCity(code,45);
-      expect(water.monthlyEUR).toBe(13.63);
-      expect(water.sourceUrl).toBe(TUSCANY_ESSENTIAL_SOURCES.publiacqua);
+  it('calcola acqua residenziale 2026 per tutti i 10 capoluoghi con tariffario del gestore corretto',()=>{
+    const expected=[
+      ['A390',15.19,'nuoveacque.it'],
+      ['D612',13.63,'publiacqua.it'],
+      ['E202',16.23,'fiora.it'], // Grosseto, AdF
+      ['E625',16.76,'asaspa.it'], // Livorno: tariffa in vigore dal 01/03/2026
+      ['E715',13.15,'geal-lucca.it'], // Lucca: tariffa 2025 mantenuta nel 2026
+      ['F023',16.72,'gaia-spa.it'], // Massa, bacino Piana
+      ['G702',18.40,'acque.net'], // Pisa
+      ['G713',13.63,'publiacqua.it'],
+      ['G999',13.63,'publiacqua.it'],
+      ['I726',16.23,'fiora.it'] // Siena, AdF
+    ] as const;
+    expect(expected).toHaveLength(10);
+    for(const [code,amount,domain] of expected){
+      const r=waterMonthly2026ForCity(code,45);
+      expect(r.monthlyEUR).toBe(amount);
+      expect(r.classification).toBe('local-tariff');
+      expect(r.sourceUrl).toContain(domain);
+      expect(r.note).toContain('non è una bolletta finale');
     }
-    for(const code of ['E202','E625','E715','F023','G702','I726']){
-      expect(waterMonthly2026ForCity(code,45).monthlyEUR).toBeNull();
+    for(const code of ['F839','H501','B832']){
+      const unknown=waterMonthly2026ForCity(code,45);
+      expect(unknown.monthlyEUR).toBeNull();
+      expect(unknown.classification).toBe('unavailable');
     }
   });
   it('calcola correttamente le fasce idriche con quota fissa e blocca consumi non validi',()=>{
@@ -80,9 +93,9 @@ describe('2026: costi essenziali 1 persona nei 10 capoluoghi toscani',()=>{
     expect(a.tariIncludedByDefault).toBe(false);
     expect(f.utilitiesScenarioMonthly).toBe(119.08);
     expect(f.tari.monthlyEUR).toBeNull();
-    expect(p.utilitiesScenarioMonthly).toBe(120.45);
-    expect(p.utilitiesAssumptions).toContain('IPOTETICA');
-    expect(p.water.monthlyEUR).toBeNull();
+    expect(p.utilitiesScenarioMonthly).toBe(123.85);
+    expect(p.utilitiesAssumptions).not.toContain('IPOTETICA');
+    expect(p.water.monthlyEUR).toBe(18.40);
   });
   it('aggiunge TARI al totale derivato una sola volta, senza modificare i campi originari',()=>{
     const original={
