@@ -2,7 +2,7 @@ import { describe,expect,it } from 'vitest';
 import {
   estimateEssentialCosts2026,tariBaseMonthly2026ForCity,waterMonthly2026ForCity,
   electricityReference2026,tuscanyTransit2026,gasCommodityOnlyReference,
-  DEFAULT_ESSENTIAL_PROFILE,TUSCANY_ESSENTIAL_SOURCES
+  DEFAULT_ESSENTIAL_PROFILE,TUSCANY_ESSENTIAL_SOURCES,budgetWithOptionalTari
 } from './tuscany-essential-2026';
 import { TUSCANY_CAPITAL_RENTS_2024 } from './tuscany-capital-rents-2024';
 
@@ -83,6 +83,21 @@ describe('2026: costi essenziali 1 persona nei 10 capoluoghi toscani',()=>{
     expect(p.utilitiesScenarioMonthly).toBe(120.45);
     expect(p.utilitiesAssumptions).toContain('IPOTETICA');
     expect(p.water.monthlyEUR).toBeNull();
+  });
+  it('aggiunge TARI al totale derivato una sola volta, senza modificare i campi originari',()=>{
+    const original={
+      netIncome:1800,
+      expenses:{housing:550,utilities:120,groceries:300,transport:42.2,other:225}
+    };
+    const applied=budgetWithOptionalTari(original,16.70,true);
+    expect(applied.expenses.other).toBe(241.7);
+    expect(original.expenses.other).toBe(225);
+    expect(budgetWithOptionalTari(original,16.70,true).expenses.other).toBe(241.7);
+    expect(budgetWithOptionalTari(original,16.70,false)).toBe(original);
+    expect(budgetWithOptionalTari(original,null,true)).toBe(original);
+    expect(budgetWithOptionalTari({...original,expenses:{...original.expenses,other:null}},16.70,true)
+      .expenses.other).toBeNull();
+    expect(()=>budgetWithOptionalTari(original,-1,true)).toThrow();
   });
   it('ricalcola scenari e non accetta dati che possono produrre costi sbagliati',()=>{
     const p=estimateEssentialCosts2026('A390',{...DEFAULT_ESSENTIAL_PROFILE,
