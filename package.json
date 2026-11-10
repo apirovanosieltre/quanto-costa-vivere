@@ -9,7 +9,7 @@
     "test": "ng test --watch=false",
     "test:mef": "node --test scripts/mef-csv.test.mjs",
     "data:mef:check": "node scripts/sync-mef.mjs",
-    "data:mef:publish": "node scripts/sync-mef.mjs --publish --reviewed"
+    "data:mef:publish": "node scripts/sync-mef.mjs --publish --reviewed --manifest scripts/mef-reviewed-2026.json"
   },
   "dependencies": {
     "@angular/common": "^22.2.5",

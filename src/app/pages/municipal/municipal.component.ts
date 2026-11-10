@@ -19,7 +19,7 @@ import { calculateMunicipalAdditional, validateMunicipalDataset, type MunicipalD
       <p class="data-error" role="status"><strong>Dataset in attesa di validazione.</strong> Il sito non pubblica aliquote locali prima dell'importazione ufficiale.</p>
       <p>La pipeline di importazione è già predisposta. Dopo il controllo del file MEF 2026, sarà possibile cercare i comuni disponibili.</p>
     } @else {
-      <p class="field-hint">Fonte: Dipartimento delle Finanze · importata il {{ dataset()?.retrievedAt || 'non disponibile' }}.</p>
+      <p class="field-hint">Fonte: Dipartimento delle Finanze · importata il {{ dataset()?.retrievedAt || 'non disponibile' }} · revisione tecnica del {{ dataset()?.review?.reviewedAt || 'non indicata' }}.</p>
       <label class="field-label" for="municipality-search">Cerca comune o provincia</label>
       <input class="standalone-input" id="municipality-search" type="search" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Es. Milano, Arezzo, MI" aria-describedby="municipality-hint">
       <p id="municipality-hint" class="field-hint">Fino a 15 risultati. Se il comune non compare, specifica meglio la ricerca.</p>
@@ -36,9 +36,17 @@ import { calculateMunicipalAdditional, validateMunicipalDataset, type MunicipalD
             @if(row.exemptionThreshold !== null) {<p>Esenzione generale fino a <strong>{{money(row.exemptionThreshold)}} €</strong> di imponibile.</p>}
             <label class="field-label" for="local-income">Imponibile annuo (€)</label>
             <input class="standalone-input" id="local-income" type="number" min="0" max="100000000" [ngModel]="income()" (ngModelChange)="income.set(clamp($event))">
-            <p><strong>Addizionale comunale indicativa:</strong> {{money(amount()!)}} € annui</p>
+            <label style="display:flex;align-items:flex-start;gap:.55rem;margin-top:1rem">
+              <input type="checkbox" [ngModel]="irpefNazionaleDovuta()" (ngModelChange)="irpefNazionaleDovuta.set(!!$event)">
+              <span>Confermo che per il 2026 risulta dovuta IRPEF nazionale netta dopo le detrazioni.</span>
+            </label>
+            @if(irpefNazionaleDovuta()) {
+              <p><strong>Addizionale comunale indicativa:</strong> {{money(amount()!)}} € annui</p>
+            } @else {
+              <p class="field-hint">Se l'IRPEF nazionale netta è zero, non è dovuta l'addizionale. Conferma il requisito per stimare un importo diverso da zero.</p>
+            }
           } @else {<p>Calcolo non disponibile: {{row.reason}}</p>}
-          <p class="field-hint">Questo risultato non comprende l'addizionale regionale, detrazioni e condizioni particolari.</p>
+          <p class="field-hint">Stima non sostitutiva del cedolino: non comprende l'addizionale regionale, detrazioni, condizioni personali e conguagli. Se l'imponibile inserito non corrisponde alla base fiscale applicabile, il risultato cambia.</p>
         </div>
       }
     }
@@ -53,13 +61,14 @@ import { calculateMunicipalAdditional, validateMunicipalDataset, type MunicipalD
 export class MunicipalComponent implements OnInit {
   readonly loading=signal(true); readonly error=signal(''); readonly dataset=signal<MunicipalDataset | null>(null);
   readonly search=signal('Milano'); readonly selectedCode=signal(''); readonly income=signal(30000);
+  readonly irpefNazionaleDovuta=signal(false);
   readonly matches=computed(()=>{
     const needle=this.search().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
     if(needle.length<2) return [];
     return (this.dataset()?.records??[]).filter(r=>`${r.municipality} ${r.province}`.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(needle)).slice(0,15);
   });
   readonly selected=computed(()=>this.dataset()?.records.find(r=>r.code===this.selectedCode())??null);
-  readonly amount=computed(()=>{const row=this.selected();return row?calculateMunicipalAdditional(row,this.income()):null;});
+  readonly amount=computed(()=>{const row=this.selected();return row && this.irpefNazionaleDovuta()?calculateMunicipalAdditional(row,this.income()):null;});
   private readonly formatter=new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
   money(n:number):string{return this.formatter.format(n);}
   clamp(x:unknown):number { const n=Number(x);return Number.isFinite(n)?Math.max(0,Math.min(n,100000000)):0; }
