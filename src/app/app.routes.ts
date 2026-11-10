@@ -20,5 +20,8 @@ export const routes: Routes = [
   { path: 'inflazione', title: 'Inflazione italiana: dati Eurostat | QuantoCostaVivere', loadComponent: () => import('./pages/inflation/inflation.component').then(m => m.InflationComponent) },
   { path: 'stipendio-netto-2026', title: 'Stima stipendio netto nazionale 2026 | QuantoCostaVivere', loadComponent: () => import('./pages/salary/salary.component').then(m => m.SalaryComponent) },
   { path: 'addizionali-comunali', title: 'Addizionali comunali MEF 2026 | QuantoCostaVivere', loadComponent: () => import('./pages/municipal/municipal.component').then(m => m.MunicipalComponent) },
+  { path: 'addizionali-regionali', title: 'Addizionali regionali MEF 2026 | QuantoCostaVivere', loadComponent: () => import('./pages/regional/regional.component').then(m => m.RegionalComponent) },
+  { path: 'spese-famiglie', title: 'Spesa media delle famiglie ISTAT 2025 | QuantoCostaVivere', loadComponent: () => import('./pages/household-spending/household-spending.component').then(m => m.HouseholdSpendingComponent) },
+  { path: 'quotazioni-omi', title: 'Quotazioni OMI e stima canoni di locazione | QuantoCostaVivere', loadComponent: () => import('./pages/omi/omi.component').then(m => m.OmiComponent) },
   { path: '**', redirectTo: '' }
 ];
