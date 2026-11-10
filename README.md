@@ -1,4 +1,4 @@
-# QuantoCostaVivere · v0.3
+# QuantoCostaVivere · v0.4
 
 Portale Angular 22, mobile-first e accessibile, per **budget domestico, IRPEF 2026, stima nazionale da RAL e inflazione ufficiale italiana**. Integra una Cloudflare Pages Function per Eurostat e una pipeline **di acquisizione + validazione** degli elenchi MEF.
 
@@ -13,6 +13,9 @@ Portale Angular 22, mobile-first e accessibile, per **budget domestico, IRPEF 20
 | `/stipendio-netto-2026` | Operativa | Stima per caso standard: fino a RAL 56.224 €, **prima di addizionali locali e altre variabili** |
 | `/inflazione` | API integrata nel codice | Eurostat ufficiale `prc_hicp_minr`, API Cloudflare `/api/inflation`, serie reale fino a 12 mesi e fallback diretto in sviluppo; **richiede deploy e collaudo live** |
 | `/addizionali-comunali` | Pipeline + UI pronte | Nessun valore ufficiale caricato finché non viene importato e revisionato il CSV MEF |
+| `/addizionali-regionali` | API MEF integrata | CSV regionale 2026 letto dal Worker e verificato; mostra fasce e disposizioni senza calcolare l'imposta, richiede verifica live dopo deploy |
+| `/spese-famiglie` | Dataset ISTAT 2025 | Dati reali dal comunicato ISTAT 8 ottobre 2026, solo regioni citate nella pubblicazione |
+| `/quotazioni-omi` | Strumento manuale | Ricerca nel portale ufficiale OMI e calcolo intervallo locazione da quote €/m²/mese inserite dall'utente |
 | `/stato-dati` | Operativa | Verifica live dell'API Eurostat, disponibilità dataset MEF e provenienza |
 | `/fonti-e-metodo` | Operativa | Trasparenza e limiti |
 
@@ -24,7 +27,7 @@ Per un progetto creato da **Workers & Pages → Workers** il deploy legge `wrang
 - Deploy command: `npx wrangler deploy`
 - Output statico: `dist/quanto-costa-vivere/browser`
 - Rotte Angular: fallback SPA con `assets.not_found_handling=single-page-application`, senza `_redirects`.
-- API `/api/inflation`: entry point `worker/index.ts`, che riutilizza la funzione Eurostat.
+- API `/api/inflation`, `/api/household-spending` e `/api/regional-rates`: entry point `worker/index.ts`, con tre moduli riutilizzabili come Pages Functions.
 
 **Non inserire `/* /index.html 200` in `public/_redirects`**: il deploy Workers rileva una regola circolare e fallisce con codice 100324.
 
@@ -98,11 +101,38 @@ node scripts/sync-mef.mjs --file ./Add_comunale_irpef2026.csv
 node scripts/sync-mef.mjs --file ./Add_comunale_irpef2026.csv --publish --reviewed
 ```
 
-La verifica produce `mef-validation-report.json` con SHA-256 del CSV e campioni distinti per stato, e `mef-candidate-2026.json` con `published:false`. La GitHub Action settimanale e avviabile manualmente (**Actions → MEF 2026 - controllo dataset → Run workflow**) conserva entrambi i file tra gli artifact, senza pubblicare il dataset. La pubblicazione revisionata sostituisce `public/data/municipal-2026.json`. Prima di fare commit, controlla **report, numero di comuni, casi pendenti, checksum e campioni casuali**. Il file vuoto iniziale (`published:false`) è intenzionale. **L'addizionale regionale NON è implementata**; non è lecito mostrare un netto complessivo. Non aggiungere tassi di una regione basandosi su un unico valore non verificato.
+La verifica produce `mef-validation-report.json` con SHA-256 del CSV e campioni distinti per stato, e `mef-candidate-2026.json` con `published:false`. La GitHub Action settimanale e avviabile manualmente (**Actions → MEF 2026 - controllo dataset → Run workflow**) conserva entrambi i file tra gli artifact, senza pubblicare il dataset. La pubblicazione revisionata sostituisce `public/data/municipal-2026.json`. Prima di fare commit, controlla **report, numero di comuni, casi pendenti, checksum e campioni casuali**. Il file vuoto iniziale (`published:false`) è intenzionale. **L'addizionale regionale non è calcolata**: le fasce MEF 2026 sono consultabili senza trasformarle in un netto complessivo. Non aggiungere tassi di una regione basandosi su un unico valore non verificato.
 
 Una GitHub Action `.github/workflows/mef-quality.yml` esegue ogni settimana **solo controllo QA**, senza pubblicazione non revisionata.
 
 Pagine ufficiali: [MEF Comuni](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/nuova_addcomirpef/download/tabella.htm), [MEF Regioni](https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/download/tabella.htm).
+
+## ISTAT: spese delle famiglie, dati 2025 verificabili
+
+- Pagina `/spese-famiglie` e endpoint `/api/household-spending`.
+- Snapshot versionato della pubblicazione ISTAT dell'8 ottobre 2026, riferimento anno 2025.
+- Media nazionale 2.782 €/mese per famiglia, mediana 2.338 €/mese, consumi alimentari 552 €/mese, affitto medio delle sole famiglie in affitto 438 €/mese.
+- Per le regioni pubblichiamo soltanto i valori esplicitamente riportati nel comunicato (8 regioni), senza ricostruire le restanti.
+- Licenza ISTAT CC BY 4.0, con attribuzione alla fonte. Non è un dataset live SDMX: per quello serve individuare un dataflow specifico e validare dimensioni e filtri. Per evitare i limiti del servizio ISTAT, l'endpoint distribuisce uno snapshot locale.
+
+Fonte: https://www.istat.it/comunicato-stampa/spese-per-consumi-delle-famiglie-anno-2025/
+
+## MEF regionali: consultazione delle fasce e verifica della fonte
+
+- Il CSV regionale 2026 ufficiale è reperibile su `https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/download/download.php?anno=2026&tipo=reg`.
+- L'API Worker `/api/regional-rates` recupera le righe, valida il tracciato a 9 colonne, la struttura delle aliquote e l'annualità, quindi restituisce le disposizioni testuali e le fasce. Cache edge 12 ore.
+- Se il download fallisce o cambia il formato, risposta 503 senza aliquote sostitutive.
+- La GitHub Action MEF produce anche `mef-regional-report.json` con hash SHA-256, intestazioni ed esempi, senza pubblicare aliquote comunali non revisionate.
+- **Le fasce non sono formule fiscali.** Umbria e Valle d'Aosta sono esempi di condizioni aggiuntive: gli importi regionali non sono sottratti automaticamente dalla stima della RAL.
+
+## OMI: intervalli immobiliari
+
+- La pagina `/quotazioni-omi` collega alla ricerca ufficiale per semestre, provincia, comune e zona.
+- L'utente riporta valori minimo/massimo di locazione in €/m²/mese, superficie della stessa tipologia (lorda o netta), e riceve un semplice prodotto tra valori e metri quadrati.
+- Nessun dato di mercato viene inventato o importato da portali terzi. Il portale non dispone ancora di un'API ufficiale OMI pubblica integrata o di un dataset bulk autorizzato per redistribuzione commerciale.
+- I valori OMI non equivalgono a canoni contrattuali effettivi.
+
+Consulta la fonte ufficiale: https://www1.agenziaentrate.gov.it/servizi/geopoi_omi/index.htm
 
 ## Stima stipendio 2026: ipotesi importanti
 
@@ -112,9 +142,9 @@ Fonti: [art. 13 TUIR](https://www.normattiva.it/atto/caricaDettaglioAtto?atto.ar
 
 ## Ancora da sviluppare
 
-1. **Regionali MEF** con scaglioni, esenzioni e test per le 19 regioni + province autonome.
-2. **OMI**: condizioni di riutilizzo commerciale, estrazione periodica per zone e tipologia.
-3. **Statistiche ISTAT specifiche** su spese familiari, prezzi locali disponibili e copertura geografica. La prima integrazione live è Eurostat (dati armonizzati prodotti dai Paesi UE). ISTAT limita il web service SDMX a 5 query/minuto/IP; un'eventuale integrazione futura dovrà usare caching e un dataset specifico con dimensioni verificate.
+1. **Calcolo regionale MEF** con modellazione e revisione legale di scaglioni, esenzioni e detrazioni per tutte le regioni e province autonome (la sola consultazione del CSV è integrata).
+2. **OMI**: condizioni di riutilizzo commerciale, estrazione periodica bulk per zone e tipologia (consultazione ufficiale e calcolatore manuale disponibili).
+3. **ISTAT SDMX**: completare tutte le regioni e aggiornare i dati annuali tramite un dataflow selezionato e verificato; oggi è disponibile uno snapshot ufficiale 2025 parziale. ISTAT limita il servizio a 5 query/minuto/IP: l'integrazione richiederà caching e controlli.
 4. **Ricerca completa comuni**, normalizzazione catastale/ISTAT, mapping regioni e confronto territoriale.
 5. **Stipendio netto effettivo**, includendo trattamento integrativo, casi contrattuali, addizionali e agevolazioni.
 6. **SEO, accessibilità e privacy**: test browser/axe, pagine dinamiche SEO solo con dati autentici, CMP pubblicitaria se necessaria.
