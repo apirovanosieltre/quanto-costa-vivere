@@ -90,7 +90,7 @@ describe('Assisted Italian city comparison: honest coverage and reproducible sam
     expect(different[0].amount).toBe(402.5);
     expect(different[0].sourceUrl).toContain('regione.toscana.it');
   });
-  it('includes 2026 water tariffs and keeps others as unverified scenario with separate price evidence',()=>{
+  it('includes 2026 water tariffs in all ten Tuscan capitals and marks mixed utility scenarios',()=>{
     const arezzo=byKey('A390');
     const prato=byKey('G999');
     const grosseto=byKey('E202');
@@ -98,8 +98,9 @@ describe('Assisted Italian city comparison: honest coverage and reproducible sam
     expect(arezzo['utilities'].sourceUrl).toContain('nuoveacque.it');
     expect(prato['utilities'].amount).toBe(119.08);
     expect(prato['utilities'].sourceUrl).toContain('publiacqua.it');
-    expect(grosseto['utilities'].amount).toBe(120.45);
-    expect(grosseto['utilities'].explanation).toContain('IPOTETICA');
+    expect(grosseto['utilities'].amount).toBe(121.68);
+    expect(grosseto['utilities'].sourceUrl).toContain('fiora.it');
+    expect(grosseto['utilities'].explanation).not.toContain('IPOTETICA');
     expect(grosseto['utilities'].confidence).toBe('bassa');
     const annual=suggestSinglePersonCosts('A390',rentalData,
       {...DEFAULT_SINGLE_PERSON_OPTIONS,transitPass:'annual'});

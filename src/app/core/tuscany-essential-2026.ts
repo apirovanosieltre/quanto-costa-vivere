@@ -38,6 +38,13 @@ export const TUSCANY_ESSENTIAL_SOURCES={
   nuoveAcque:'https://nuoveacque.it/tariffe-acqua/',
   publiacqua:'https://www.publiacqua.it/sites/publiacqua/files/tariffe_2026.pdf',
   publiacquaCoverage:'https://www.publiacqua.it/chi-siamo',
+  fiora:'https://www.fiora.it/wp-content/uploads/2026/01/AdF_tariffe_2026.pdf',
+  asaLivorno:'https://www.asaspa.it/wp-content/uploads/2026/03/Tariffe-01_03_2026.pdf',
+  gealLucca:'https://www.geal-lucca.it/wp-content/uploads/2025/10/Articolazione-tariffaria-civili-a-Valori-2025-GEAL.pdf',
+  gealTariffs:'https://www.geal-lucca.it/tariffe/',
+  acquePisa:'https://www.acque.net/wp-content/uploads/tariffe-2026.pdf',
+  gaiaMassa:'https://www.gaia-spa.it/images/CONTRATTO/Tariffa%20del%20servizio%20idrico/doc-pdf/Tariffe_2026.pdf',
+  gaiaMassaBasinEvidence:'https://comune.fosdinovo.ms.it/wp-content/uploads/sites/127/2021/05/Bilancio_2023-gaia-spa.pdf',
   busMonthly:'https://www.at-bus.it/it/ticket/abbonamenti-urbani/abbonamento-urbano-capoluogo-mensile',
   busAnnual:'https://www.at-bus.it/it/ticket/abbonamenti-urbani/abbonamento-urbano-capoluogo-annuale',
   electricArera:'https://www.arera.it/comunicati-stampa/dettaglio/elettricit%C3%A0-maggior-tutela-373-nel-iv-trimestre-2026-per-i-clienti-vulnerabili',
@@ -66,11 +73,63 @@ const NUOVE_ACQUE:WaterTariff={
   tiers:[0.873755+0.581917+1.004682,1.544142+0.581917+1.004682,5.190004+0.581917+1.004682],
   fixedAnnual:34.11424+8.122437+11.912908
 };
+/* Tutti i dati sotto si riferiscono al residente con un solo componente.
+ * ADF: tariffe base acquedotto/fognatura/depurazione senza componenti UI.
+ * ASA: tariffario aggiornato dal 01/03/2026 (si confronta sul periodo
+ * annualizzato come proiezione a condizioni del secondo periodo; il 2026
+ * effettivo ha anche una fascia tariffaria precedente a marzo).
+ * GEAL: conferma esplicita delle tariffe 2025 per il 2026 fino ad aggiornamento.
+ * GAIA: Massa bacino Comuni Piana; bacino transitorio Massa terminato 2020
+ * secondo bilancio ufficiale GAIA 2023.
+ */
+const FIORA:WaterTariff={
+  provider:'Acquedotto del Fiora',sourceUrl:TUSCANY_ESSENTIAL_SOURCES.fiora,
+  firstEnd:19,secondEnd:67,
+  tiers:[0.806200+0.806199+1.209299,
+         1.612399+0.806199+1.209299,
+         3.573745+0.806199+1.209299],
+  fixedAnnual:25.721880+8.418069+12.627104
+};
+const ASA:WaterTariff={
+  provider:'ASA Livorno (tariffe dal 01/03/2026)',sourceUrl:TUSCANY_ESSENTIAL_SOURCES.asaLivorno,
+  firstEnd:19,secondEnd:67,
+  // Include componenti UI gia presenti nel totale A+F+D esposto da ASA.
+  tiers:[2.672341,3.505557,6.838421],
+  fixedAnnual:37.925249+7.110983+14.221968
+};
+const GEAL:WaterTariff={
+  provider:'GEAL Lucca (tariffe 2025 confermate nel 2026)',sourceUrl:TUSCANY_ESSENTIAL_SOURCES.gealLucca,
+  firstEnd:19,secondEnd:57,
+  tiers:[0.503503+0.611039+0.647391,
+         1.007005+0.611039+0.647391,
+         2.224051+0.611039+0.647391],
+  fixedAnnual:32.363518+15.772738+17.244860
+};
+const ACQUE:WaterTariff={
+  provider:'Acque SpA Pisa',sourceUrl:TUSCANY_ESSENTIAL_SOURCES.acquePisa,
+  firstEnd:19,secondEnd:67,
+  tiers:[0.711606+0.884373+1.402002,
+         1.423211+0.884373+1.402002,
+         3.284747+0.884373+1.402002],
+  fixedAnnual:35.036307+13.475502+18.865702
+};
+const GAIA_PIANA:WaterTariff={
+  provider:'GAIA Massa · Bacino Comuni Piana',sourceUrl:TUSCANY_ESSENTIAL_SOURCES.gaiaMassa,
+  firstEnd:19,secondEnd:67,
+  tiers:[2.625136,3.137958,5.189253],
+  fixedAnnual:33.884388+15.904915+19.362507
+};
 const WATER_BY_CITY:Readonly<Record<string,WaterTariff>>={
   A390:NUOVE_ACQUE,
   D612:PUBLIACQUA,
+  E202:FIORA,
+  E625:ASA,
+  E715:GEAL,
+  F023:GAIA_PIANA,
+  G702:ACQUE,
   G713:PUBLIACQUA,
-  G999:PUBLIACQUA
+  G999:PUBLIACQUA,
+  I726:FIORA
 };
 
 export interface EssentialCosts {
@@ -98,10 +157,11 @@ export function waterMonthly2026ForCity(cityCode:string,annualM3:number):Evidenc
   const third=Math.max(annualM3-tariff.secondEnd,0);
   const annual=round(tariff.fixedAnnual+first*tariff.tiers[0]+second*tariff.tiers[1]+third*tariff.tiers[2]);
   return {
-    monthlyEUR:round(annual/12),annualEUR:annual,classification:'local-tariff',
+    // Divide annual euros in cents first: avoids 16.225 rounding down from binary floating point.
+    monthlyEUR:Math.round(annual*100/12)/100,annualEUR:annual,classification:'local-tariff',
     title:'Acqua, fognatura e depurazione',geography:tariff.provider+' · utenza residente 1 componente',
     period:'Tariffe 2026',sourceUrl:tariff.sourceUrl,
-    note:`Scaglioni + quota fissa per ${annualM3} m³/anno ipotizzati. Esclusi IVA, eventuali conguagli, spese accessorie, differenze per utenze condominiali e altri oneri; non è una bolletta finale.`
+    note:`Scaglioni e quota fissa per ${annualM3} m³/anno ipotizzati. Esclusi IVA, componenti eventuali, conguagli, differenze per utenze condominiali e altri oneri; non è una bolletta finale. Per Livorno si annualizza la tariffa dal 01/03/2026, non la spesa esatta dell'anno civile 2026. Per Lucca il gestore conferma le tariffe 2025 anche nel 2026, salvo successive approvazioni.`
   };
 }
 

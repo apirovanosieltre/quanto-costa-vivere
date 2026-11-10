@@ -1,0 +1,98 @@
+name: Water tariffs - automatic source audit
+
+on:
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+  push:
+    branches: [feature/water-all-tuscany-auto-review]
+    paths:
+      - 'scripts/audit-tuscany-water-sources.mjs'
+      - '.github/workflows/water-source-quality.yml'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: water-source-audit-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify PDF text extraction is available
+        run: command -v pdftotext || (sudo apt-get -qq update && sudo apt-get -qq install -y poppler-utils)
+      - name: Seed reviewed official-document fingerprints on staging branch
+        if: github.ref == 'refs/heads/feature/water-all-tuscany-auto-review'
+        run: node scripts/audit-tuscany-water-sources.mjs --seed
+      - name: Commit verified source fingerprints on staging branch only
+        if: github.ref == 'refs/heads/feature/water-all-tuscany-auto-review'
+        run: |
+          if [ ! -f data/tuscany-water-source-hashes.json ]; then
+            echo "::warning::Baseline was not initialized; one or more official sources unavailable"
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/tuscany-water-source-hashes.json
+          if git diff --cached --quiet; then echo 'Source hashes already staged'; exit 0; fi
+          git commit -m 'data(water): pin 2026 source fingerprints from official providers'
+          git push origin HEAD:refs/heads/feature/water-all-tuscany-auto-review
+      - name: Re-check all official water price documents (weekly/manual)
+        if: github.ref == 'refs/heads/main'
+        run: node scripts/audit-tuscany-water-sources.mjs --check
+      - name: Detect proposed audit updates
+        if: github.ref == 'refs/heads/main'
+        id: changes
+        shell: bash
+        run: |
+          if [ -f docs/water-tariffs-review.md ] && ! git diff --quiet -- data/tuscany-water-source-hashes.json docs/water-tariffs-review.md; then
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "found=false" >> "$GITHUB_OUTPUT"
+            echo 'Tariffs stable or upstream temporarily inaccessible. No action required.'
+          fi
+      - name: Open or update one pull request for source changes
+        if: github.ref == 'refs/heads/main' && steps.changes.outputs.found == 'true'
+        id: pr
+        continue-on-error: true
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: automation/water-official-source-review
+          delete-branch: true
+          commit-message: 'data(water): propose official tariff source verification'
+          title: 'Dati acqua: controllare tariffari ufficiali aggiornati'
+          body: |
+            Rilevata automaticamente una modifica dei documenti ufficiali.
+            **Non è un aggiornamento dei prezzi del calcolatore.**
+            Prima di approvare questa PR verificare i tariffari 1 residente, la
+            decorrenza e tutte le componenti di costo. Applicare le modifiche
+            necessarie alle formule e ai test. In assenza di differenze tariffarie,
+            si può approvare soltanto l'aggiornamento delle impronte digitali.
+
+            Il controllo si ripete ogni lunedì ma utilizza **un solo branch PR fisso**
+            e non apre una PR nuova ogni settimana per la stessa variazione.
+          add-paths: |
+            data/tuscany-water-source-hashes.json
+            docs/water-tariffs-review.md
+      - name: Non-fatal fallback when repository policy disallows bot pull requests
+        if: github.ref == 'refs/heads/main' && steps.changes.outputs.found == 'true' && steps.pr.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "::warning::Official water source changed but bot PR was blocked by repo settings."
+          current="$(gh issue list --state open --search 'Aggiornare tariffari acqua Toscana' --json number --jq '.[0].number' 2>/dev/null || true)"
+          if [ -n "$current" ]; then
+            echo "Existing review issue #$current; no duplicate notification."
+          else
+            gh issue create --title 'Aggiornare tariffari acqua Toscana'               --body 'Sono cambiati uno o più documenti ufficiali sul servizio idrico. Eseguire manualmente la workflow Water tariffs - automatic source audit e verificare il report PR. Non aggiornare i prezzi senza revisione.' || true
+          fi

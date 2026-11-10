@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "year": 2026,
+  "sourceCount": 7,
+  "sources": [
+    {
+      "nextYearListed": false,
+      "listingDigest": "ae25bdb7e92f0f01751161f55a66eb3884417d235b105faa25b4ed435b872bbe",
+      "id": "acque",
+      "provider": "Acque SpA",
+      "cities": "Pisa",
+      "url": "https://www.acque.net/wp-content/uploads/tariffe-2026.pdf",
+      "sourceYear": "2026",
+      "sha256": "7cd17d7be8171aedcbd3ab475328f9cdd4df14b500093493b869a1aaf248c201",
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "nextYearListed": false,
+      "listingDigest": "7f44571ac35c5106a00f786db2fa341e88f80e8e90900f1d3b8b08a261b3972c",
+      "id": "asa",
+      "provider": "ASA",
+      "cities": "Livorno",
+      "url": "https://www.asaspa.it/wp-content/uploads/2026/03/Tariffe-01_03_2026.pdf",
+      "sourceYear": "2026",
+      "sha256": "5e821c0d64b724cf00be7ccd036a5cf73178087bc8a549a177db2e0b09b28958",
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "nextYearListed": false,
+      "listingDigest": "c90581c2b9623d1dca7e7e0e41981d48f856ed5ee77f3b681ffdbfb073de3723",
+      "id": "fiora",
+      "provider": "Acquedotto del Fiora",
+      "cities": "Grosseto, Siena",
+      "url": "https://www.fiora.it/wp-content/uploads/2026/01/AdF_tariffe_2026.pdf",
+      "sourceYear": "2026",
+      "sha256": "da6ddfaf41d3b22d4ed76de28e2821591d39367b9516c7561aa163cfbd80cd49",
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "nextYearListed": false,
+      "listingDigest": "c9a84974b7fb3f3495cd8336e012495dd8a490c563fe3f7fe22e3acf64a34f03",
+      "id": "gaia",
+      "provider": "GAIA",
+      "cities": "Massa, bacino Piana",
+      "url": "https://www.gaia-spa.it/images/CONTRATTO/Tariffa%20del%20servizio%20idrico/doc-pdf/Tariffe_2026.pdf",
+      "sourceYear": "2026",
+      "sha256": "a865e09a03c90f3f641b39a61ec68180d064d89ad1775c321f0b31d79774f2ca",
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "nextYearListed": false,
+      "listingDigest": "6e32990d38df0e32be385b857c85c0316573a0b8db16cfd8640366c0697fcc2e",
+      "id": "geal",
+      "provider": "GEAL",
+      "cities": "Lucca",
+      "url": "https://www.geal-lucca.it/wp-content/uploads/2025/10/Articolazione-tariffaria-civili-a-Valori-2025-GEAL.pdf",
+      "sourceYear": "2025 (esteso al 2026 dal gestore)",
+      "sha256": "0741dc8723fa289ce09245f3b50180007db4fb856f452b7c93410297c3e8b651",
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "nextYearListed": false,
+      "listingDigest": "8b7318f1a2e064e848cc9145d65fbbf671698daa2aafb4f3ce1c30e2c86954eb",
+      "id": "nuove-acque",
+      "provider": "Nuove Acque",
+      "cities": "Arezzo",
+      "url": "https://nuoveacque.it/tariffe-acqua/",
+      "sourceYear": "2026",
+      "sha256": "37de644a806a037d42e43333924dcf4050ec7198dc2e63983261dec196427706",
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "nextYearListed": false,
+      "listingDigest": null,
+      "id": "publiacqua",
+      "provider": "Publiacqua",
+      "cities": "Firenze, Pistoia, Prato",
+      "url": "https://www.publiacqua.it/sites/publiacqua/files/tariffe_2026.pdf",
+      "sourceYear": "2026",
+      "sha256": "2c4281d154333242af7562e961ceb25de8e779e8138497817384b93fd97a4ee4",
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    }
+  ]
+}
