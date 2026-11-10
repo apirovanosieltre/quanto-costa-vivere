@@ -278,15 +278,15 @@ const emptyBudget=():CityBudget=>({
       @for(side of sides;track side.key){
         <article class="compare-omi-card">
           <h3>{{name(side.key)}}</h3>
-          @if(fuelProvince(side); as province){
+          @if(fuelProvince(side.key); as province){
             <p class="compare-tiny">Prezzi rilevati nella provincia di <strong>{{province.name}} ({{province.code}})</strong>.</p>
-            @if(fuelObservation(side);as observation){
+            @if(fuelObservation(side.key);as observation){
               <p>Prezzo mediano: <strong>{{pricePerLitre(observation.median)}} €/l</strong></p>
               <p class="compare-tiny">Dal primo al terzo quartile: {{pricePerLitre(observation.q1)}} – {{pricePerLitre(observation.q3)}} €/l, {{observation.stations}} impianti.</p>
-              @if(fuelMonthlyEstimate(side)!==null){
-                <p class="compare-emphasis">Carburante stimato: {{money(fuelMonthlyEstimate(side)!)}} € / mese</p>
+              @if(fuelMonthlyEstimate(side.key)!==null){
+                <p class="compare-emphasis">Carburante stimato: {{money(fuelMonthlyEstimate(side.key)!)}} € / mese</p>
                 <button type="button" class="compare-use-net"
-                  [disabled]="!fuelRecent()" (click)="applyFuelEstimate(side)">
+                  [disabled]="!fuelRecent()" (click)="applyFuelEstimate(side.key)">
                   Usa questa stima nei trasporti
                 </button>
               } @else {
