@@ -78,7 +78,7 @@ export class InflationComponent implements OnInit {
         if (!Number.isFinite(row.annualRate) || row.geography !== 'IT' ||
             row.category !== 'TOTAL' || row.dataset !== 'prc_hicp_minr' ||
             !Array.isArray(row.history) || row.history.length === 0 ||
-            row.history.some(p => !/^\\d{4}-\\d{2}$/.test(p.period) || !Number.isFinite(p.annualRate))) {
+            row.history.some(p => !/\d{4}-\d{2}/.test(p.period) || !Number.isFinite(p.annualRate))) {
           throw new Error('Serie non valida');
         }
         this.data.set(row);
