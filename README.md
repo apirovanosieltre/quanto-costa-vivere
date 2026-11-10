@@ -78,7 +78,7 @@ La pagina principale `/confronta-citta` ora suggerisce automaticamente cinque ma
 - **Pisa**: Acque SpA, tariffario 2026 **provvisorio** per 1 componente, fino a approvazione definitiva: https://www.acque.net/wp-content/uploads/tariffe-2026.pdf
 - **Massa**: GAIA, tariffario 2026 per **Bacino Comuni Piana**. Il bacino transitorio del Comune di Massa è confluito in quello di pianura nel 2021 secondo il bilancio GAIA 2023: https://www.gaia-spa.it/images/CONTRATTO/Tariffa%20del%20servizio%20idrico/doc-pdf/Tariffe_2026.pdf
 
-**Per 45 m³ annui, una persona, esclusi IVA e possibili oneri aggiuntivi**: Grosseto/Siena 16,23 €/mese; Livorno 16,76; Lucca 13,15; Massa 16,72; Pisa 18,40. Non sono bollette effettive.
+**Per 45 m³ annui, una persona, esclusi IVA e possibili oneri aggiuntivi**: Grosseto/Siena 16,23 €/mese; Livorno 16,77; Lucca 13,15; Massa 16,72; Pisa 18,40. Non sono bollette effettive.
 
 **Aggiornamenti settimanali controllati**: `.github/workflows/water-source-quality.yml` ricontrolla ogni lunedì i 7 gestori dal sito o PDF ufficiale, i dati del nucleo residente con un componente e l'eventuale comparsa di nuovi tariffari. Le impronte digitali sono in `data/tuscany-water-source-hashes.json`. Quando una fonte cambia, il bot crea **una sola PR di verifica**, anziché sovrascrivere automaticamente numeri non revisionati; il merge delle nuove tariffe richiede verifica delle fasce, dell'anno di decorrenza, dei gestori e test CI. In caso di interruzione temporanea dei siti esterni, non pubblica dati falsi e non fa fallire la CI.
 
