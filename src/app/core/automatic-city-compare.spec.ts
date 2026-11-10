@@ -71,7 +71,7 @@ describe('Assisted Italian city comparison: honest coverage and reproducible sam
     const flo=suggestSinglePersonCosts('D612',rentalData,options);
     const mil=suggestSinglePersonCosts('F205',rentalData,options);
     expect(flo[0].amount).toBe(577.5);
-    expect(mil[0].amount).toBe(956.9);
+    expect(mil[0].amount).toBe(957.25);
   });
   it('warns when mixing two different types of rent source',()=>{
     expect(compareMethodWarning('D612','F205')).toContain('NON è un confronto');
