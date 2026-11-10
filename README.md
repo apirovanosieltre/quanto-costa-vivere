@@ -69,7 +69,7 @@ La pagina principale `/confronta-citta` ora suggerisce automaticamente cinque ma
 | TARI 2026 | **Solo Arezzo** con tariffe complete verificate | Quota comunale fissa 1,12107 €/m²/anno × superficie imponibile + quota variabile 138,77659 €/anno per 1 occupante | **Quota base, NON avviso TARI completo**: esclusi TEFA, componenti perequative, bonus, riduzioni, conguagli |
 | Elettricità | Indicatore **nazionale**, non comunale | Riferimento ARERA per il **cliente vulnerabile** tipo in Maggior Tutela, 2.000 kWh/anno e 3 kW: **665,38 €/anno** nel periodo 01/01/2026–31/12/2026 | Non è un'offerta del mercato libero né una stima della tua bolletta reale |
 | Gas / riscaldamento | Nessun costo finale locale verificato | Spesa di scenario modificabile, inizialmente 50 €/mese; ARERA pubblica **solo materia prima** ottobre 2026 a 0,945436 €/Smc | La componente materia prima non si può utilizzare come bolletta completa; non è inserita automaticamente in luogo dell'ipotesi |
-| Altre 6 TARI e 6 tariffe idriche non ancora documentate | **Non disponibili** | Valore mancante e fonti in revisione | Mai stimate copiando valori da un altro comune |
+| Altri 9 capoluoghi senza TARI e 6 senza tariffa idrica verificata | **Non disponibili** | Valore mancante e fonti in revisione | Mai stimate copiando valori da un altro comune |
 
 **Fonti esatte:**
 - TARI domestica Arezzo 2026, allegato A del Comune (delibera C.C. n. 78, 29/07/2026): https://www.comune.arezzo.it/sites/default/files/2026-08/Allegato%20A%20tariffe%20utenze%20domestiche.pdf
