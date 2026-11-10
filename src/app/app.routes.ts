@@ -23,7 +23,7 @@ export const routes: Routes = [
   { path: 'addizionali-regionali', title: 'Addizionali regionali MEF 2026 | QuantoCostaVivere', loadComponent: () => import('./pages/regional/regional.component').then(m => m.RegionalComponent) },
   { path: 'spese-famiglie', title: 'Spesa media delle famiglie ISTAT 2025 | QuantoCostaVivere', loadComponent: () => import('./pages/household-spending/household-spending.component').then(m => m.HouseholdSpendingComponent) },
   { path: 'quotazioni-omi', title: 'Quotazioni OMI e stima canoni di locazione | QuantoCostaVivere', loadComponent: () => import('./pages/omi/omi.component').then(m => m.OmiComponent) },
-  { path: 'confronta-citta', title: 'Confronta costo della vita tra città | QuantoCostaVivere', loadComponent: () => import('./pages/compare/compare.component').then(m => m.CompareComponent) },
+  { path: 'confronta-citta', title: 'Confronto costo della vita tra città, con stime iniziali | QuantoCostaVivere', loadComponent: () => import('./pages/compare/compare.component').then(m => m.CompareComponent) },
   { path: 'costo-vita-firenze-persona-sola', title: 'Quanto costa vivere a Firenze da soli? Stima e fonti | QuantoCostaVivere', loadComponent: () => import('./pages/automatic-florence/automatic-florence.component').then(m => m.AutomaticFlorenceComponent) },
   { path: '**', redirectTo: '' }
 ];
