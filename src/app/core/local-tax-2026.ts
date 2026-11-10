@@ -1,5 +1,5 @@
 import { calculateMunicipalAdditional, type MunicipalDataset, type MunicipalRecord } from './municipal-data';
-import { REGIONAL_MEF_PAGE_URL, type RegionalMefDataset, type RegionalMefRecord } from './mef-regional';
+import { REGIONAL_MEF_PAGE_URL, REVIEWED_REGIONAL_CSV_SHA256_2026, type RegionalMefDataset, type RegionalMefRecord } from './mef-regional';
 import { isValidMunicipalRegion } from './italian-territories';
 
 export type TaxCalculationStatus = 'calculated' | 'excluded' | 'unavailable';
@@ -113,6 +113,8 @@ export function estimateRegional2026(
   if(!dataset||dataset.year!==2026||dataset.source!=='MEF - Dipartimento delle Finanze'||
     dataset.sourceUrl!==REGIONAL_MEF_PAGE_URL||!Array.isArray(dataset.records))
     return unavailable('Elenco MEF regionale 2026 assente o non verificato.');
+  if(dataset.sourceSha256!==REVIEWED_REGIONAL_CSV_SHA256_2026)
+    return unavailable('Il CSV MEF 2026 è cambiato rispetto alla versione revisionata: calcolo sospeso fino a nuova verifica.');
   const rows=dataset.records.filter(r=>r.region===region);
   if(region==="REGIONE VALLE D'AOSTA"){
     if(rows.length!==1)return unavailable('Disposizione Valle d’Aosta incompleta.');
