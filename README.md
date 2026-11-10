@@ -1,4 +1,4 @@
-# QuantoCostaVivere · v0.9
+# QuantoCostaVivere · v1.0
 
 Portale Angular 22, mobile-first e accessibile, per **confronto del costo della vita tra città, budget domestico, IRPEF 2026, stima RAL e inflazione ufficiale italiana**. Integra una Cloudflare Pages Function per Eurostat e una pipeline **di acquisizione + validazione** degli elenchi MEF.
 
@@ -9,6 +9,7 @@ Portale Angular 22, mobile-first e accessibile, per **confronto del costo della 
 | Route | Stato | Note |
 |---|---|---|
 | `/` | Operativa | Budget manuale, i valori iniziali sono demo; comune non influenza il budget |
+| `/costo-vita-firenze-persona-sola` | Pilota automatico | Scenario per una persona, fonti Regione Toscana 2024, Publiacqua 2026, Autolinee Toscane, ISTAT 2025 + ipotesi editoriali esplicite | 
 | `/confronta-citta` | Operativa | Due comuni MEF (7.897), budget personalizzato e RAL se verificata, **benchmark affitto OMI aggregato Milano 2025/2**, OMI manuale altrove, ISTAT, paniere campione e prezzi provinciali dei carburanti MIMIT |
 | `/irpef-2026` | Operativa | Imposta lorda nazionale a scaglioni |
 | `/stipendio-netto-2026` | Operativa | Netto nazionale con comunali semplici revisionate e regionali verificate: Lombardia, Toscana, Emilia-Romagna, Liguria, Piemonte (senza figli a carico) e Valle d'Aosta; **netto completo solo con entrambe le addizionali disponibili** |
@@ -40,6 +41,22 @@ Fonti:
 - Agenzia Entrate OMI: https://www1.agenziaentrate.gov.it/servizi/geopoi_omi/index.htm
 
 **Limite attuale:** non disponiamo di dati automaticamente riutilizzabili e verificati su affitti e prezzi di ogni singolo comune. Evitiamo di generare migliaia di pagine SEO vuote o inventate; il comparatore ha una singola pagina indicizzabile, con parametri per le coppie selezionate. L'espansione delle schede città richiederà dataset locali realmente pubblicabili.
+
+## Firenze, una persona: pilota di stima automatica verificabile
+
+La route `/costo-vita-firenze-persona-sola` crea un **budget di scenario precompilato e modificabile** con fonti per ciascuna voce. **Non è un prezzo medio ufficiale di Firenze**: il totale mescola valori storici, tariffe attuali, un proxy statistico nazionale e ipotesi senza dati locali.
+
+**Riferimenti:**
+- **Affitto**: rapporto Regione Toscana `Abitare in Toscana 2025` (pubblicato aprile 2026), **Tabella 2.2, pagina 35**, nuovi contratti del 2024 nel capoluogo Firenze: `160 €/m²/anno` ordinario oltre 3 anni, `99 €/m²/anno` concordato e `244 €/m²/anno` ordinario transitorio. Per lo scenario si ipotizzano 55 m² editabili. Non sono quotazioni degli annunci 2026 e non rappresentano la stessa tipologia di immobile o zona. Fonte: https://www.regione.toscana.it/documents/d/guest/abitare-in-toscana2025_v3_interattivo
+- **Acqua**: Publiacqua 2026, **uso domestico residente 1 componente**: quota fissa 55,144788 €/anno, 0–19 m³ a 2,000722 €/m³, 20–67 a 2,706863, oltre 67 a 5,531431. Scenario iniziale `45 m³/anno` (scelta di pianificazione, **non un consumo rilevato**). Il costo deriva dall'applicazione progressiva delle tariffe e dalla quota fissa, senza dare per inclusi eventuali imposte e costi aggiuntivi. Fonte: https://www.publiacqua.it/sites/publiacqua/files/tariffe_2026.pdf
+- **Trasporto**: tariffa standard abbonamento urbano capoluogo Autolinee Toscane `42,20 €/mese`, valida anche nell'area metropolitana fiorentina secondo condizioni dell'operatore. Scelta dell'utente tra abbonamento e nessun abbonamento. Fonte: https://www.at-bus.it/it/ticket/abbonamenti-urbani/abbonamento-urbano-capoluogo-mensile
+- **Alimentari**: ISTAT 2025 indica 2.070 €/mese di spesa totale media delle famiglie monocomponente e 552 € alimentari su 2.782 € di spesa media tra **tutte** le famiglie. Il valore iniziale usa **2.070 × 552/2.782**. È una *proiezione nazionale con attendibilità bassa*, **non** una rilevazione per persona sola o su Firenze. Fonte: https://www.istat.it/comunicato-stampa/spese-per-consumi-delle-famiglie-anno-2025/
+- **Elettricità, gas, internet, altre spese**: cifre iniziali esclusivamente illustrative, da personalizzare. Non sono prezzi locali né sono state calibrate sui contratti di una specifica persona.
+- **Reddito netto**: facoltativo; senza inserimento non viene calcolato il residuo mensile. I numeri restano soltanto nel browser e non vengono trasmessi al server.
+
+Il modello separa le categorie in `observed`, `tariff`, `statistical-proxy`, `scenario`, specificando fonte, ambito geografico, data e attendibilità (alta, media, bassa); calcola i totali per gruppo senza attribuire un falso livello di precisione al totale complessivo. `src/app/core/automatic-cost-florence.ts` è puro, testato e separato dalla UI per agevolare l'estensione alle altre città.
+
+**Nota importante**: il benchmark fiorentino non è lo stesso del benchmark OMI aggregato pubblicato per Milano nel sito; periodi, metodi e selezione degli immobili non sono omogenei. Non effettuare un confronto numerico tra questi due benchmark senza una metodologia comune.
 
 ## Benchmark degli affitti comunali: Milano, primo dataset
 
