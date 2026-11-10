@@ -77,18 +77,32 @@ async function fetchDocument(url){
   throw latest;
 }
 
-async function detectNewYearListing(source){
-  if(!source.landingUrl)return false;
+async function inspectTariffIndex(source){
+  if(!source.landingUrl)return {nextYearListed:false,listingDigest:null};
   try{
     const raw=await fetchDocument(source.landingUrl);
     const html=raw.toString('utf8');
-    // Require an explicit tariff heading. Generic regulatory citations to 2027
-    // in 2026 documents must NOT trigger an update proposal.
-    return /tariff(?:e|ario)(?:\s|&nbsp;|<[^>]*>){0,15}(?:civili\s*)?2027/i.test(html)||
-      /articolazione\s+tariffaria\s+2027/i.test(html);
+    // Only the tariff document links are relevant. Hashing full HTML would
+    // create alerts when the provider changes cookie notices or site menus.
+    const links=[];
+    const anchors=html.matchAll(/<a\b[^>]*\bhref\s*=\s*(["'])(.*?)\1[^>]*>([\s\S]*?)<\/a>/gi);
+    for(const [, ,href,body] of anchors){
+      const label=body.replace(/<[^>]+>/g,' ').replace(/&nbsp;/gi,' ')
+        .replace(/\s+/g,' ').trim();
+      if(!/tariff(?:e|ario|aria)?/i.test(label)||
+        !/\b202[5-9]\b/.test(label))continue;
+      try{links.push(label.slice(0,180)+'|'+new URL(href,source.landingUrl).href);}
+      catch{/* Invalid site link skipped without causing false updates. */}
+    }
+    const relevant=[...new Set(links)].sort();
+    return {
+      nextYearListed:/tariff(?:e|ario)(?:\s|&nbsp;|<[^>]*>){0,15}(?:civili\s*)?2027/i.test(html)||
+        /articolazione\s+tariffaria\s+2027/i.test(html),
+      listingDigest:relevant.length?hash(relevant.join('\n')):null
+    };
   }catch(e){
     console.warn('Tariff index temporarily unavailable',source.id,String(e).slice(0,150));
-    return false;
+    return {nextYearListed:false,listingDigest:null};
   }
 }
 async function sourceRecord(source){
@@ -112,8 +126,8 @@ async function sourceRecord(source){
   const tokensAbsent=source.tokens.filter(t=>!content.includes(t));
   // Binary hash for PDFs, normalized one-person tariff-section hash for HTML.
   const digest=hash(source.type==='pdf'?raw:content);
-  const nextYearListed=await detectNewYearListing(source);
-  return {nextYearListed,id:source.id,provider:source.provider,cities:source.cities,url:source.url,
+  const {nextYearListed,listingDigest}=await inspectTariffIndex(source);
+  return {nextYearListed,listingDigest,id:source.id,provider:source.provider,cities:source.cities,url:source.url,
     sourceYear:source.year,sha256:digest,referenceTokensPresent:tokensAbsent.length===0,
     missingReferenceTokens:tokensAbsent};
 }
@@ -157,7 +171,9 @@ async function run(){
   const prior=new Map(existing.sources.map(r=>[r.id,r]));
   const changes=successes.filter(x=>
     prior.get(x.record.id)?.sha256!==x.record.sha256||
-    (x.record.nextYearListed===true && prior.get(x.record.id)?.nextYearListed!==true)
+    (x.record.nextYearListed===true && prior.get(x.record.id)?.nextYearListed!==true)||
+    (x.record.listingDigest!==null && prior.get(x.record.id)?.listingDigest!==null &&
+      prior.get(x.record.id)?.listingDigest!==x.record.listingDigest)
   );
   if(!changes.length){
     console.log('No confirmed official source changes. Nothing to publish.');
