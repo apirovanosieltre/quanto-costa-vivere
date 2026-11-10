@@ -26,7 +26,7 @@ describe('Assisted Italian city comparison: honest coverage and reproducible sam
     const results=byKey('D612');
     expect(results['housing'].amount).toBe(733.33);
     expect(results['housing'].date).toContain('2024');
-    expect(results['utilities'].amount).toBe(123.63);
+    expect(results['utilities'].amount).toBe(119.08);
     expect(results['utilities'].kind).toBe('mixed');
     expect(results['groceries'].amount).toBe(410.73);
     expect(results['groceries'].kind).toBe('proxy');
@@ -40,7 +40,7 @@ describe('Assisted Italian city comparison: honest coverage and reproducible sam
       utilities:results['utilities'].amount,groceries:results['groceries'].amount,
       transport:results['transport'].amount,other:results['other'].amount
     }});
-    expect(summary.monthlyTotal).toBe(1534.89);
+    expect(summary.monthlyTotal).toBe(1530.34);
     expect(cityDataCoverage(data).available).toBe(5);
     expect(cityDataCoverage(data).supported).toBe(2);
   });
@@ -80,11 +80,37 @@ describe('Assisted Italian city comparison: honest coverage and reproducible sam
       expect(housing.date).toContain('2024');
       expect(housing.geography).toContain('Comune capoluogo');
       expect(cityDataCoverage(items).available).toBe(5);
+      const transit=items.find(x=>x.key==='transport')!;
+      expect(transit.amount).toBe(42.2);
+      expect(transit.kind).toBe('tariff');
+      expect(transit.sourceUrl).toContain('at-bus.it');
     }
     const different=suggestSinglePersonCosts('A390',rentalData,
       {...DEFAULT_SINGLE_PERSON_OPTIONS,areaSqm:70,florenceContract:'agreed'});
     expect(different[0].amount).toBe(402.5);
     expect(different[0].sourceUrl).toContain('regione.toscana.it');
+  });
+  it('includes 2026 water tariffs and keeps others as unverified scenario with separate price evidence',()=>{
+    const arezzo=byKey('A390');
+    const prato=byKey('G999');
+    const grosseto=byKey('E202');
+    expect(arezzo['utilities'].amount).toBe(120.64);
+    expect(arezzo['utilities'].sourceUrl).toContain('nuoveacque.it');
+    expect(prato['utilities'].amount).toBe(119.08);
+    expect(prato['utilities'].sourceUrl).toContain('publiacqua.it');
+    expect(grosseto['utilities'].amount).toBe(120.45);
+    expect(grosseto['utilities'].explanation).toContain('IPOTETICA');
+    expect(grosseto['utilities'].confidence).toBe('bassa');
+    const annual=suggestSinglePersonCosts('A390',rentalData,
+      {...DEFAULT_SINGLE_PERSON_OPTIONS,transitPass:'annual'});
+    expect(annual.find(x=>x.key==='transport')?.amount).toBe(28.57);
+    const none=suggestSinglePersonCosts('A390',rentalData,
+      {...DEFAULT_SINGLE_PERSON_OPTIONS,transitPass:'none'});
+    expect(none.find(x=>x.key==='transport')?.amount).toBe(0);
+    expect(none.find(x=>x.key==='transport')?.kind).toBe('scenario');
+    const noGas=suggestSinglePersonCosts('A390',rentalData,
+      {...DEFAULT_SINGLE_PERSON_OPTIONS,gasMonthlyScenarioEUR:0});
+    expect(noGas.find(x=>x.key==='utilities')?.amount).toBe(70.64);
   });
   it('updates rent according to shared surface and Florence contract',()=>{
     const options={...DEFAULT_SINGLE_PERSON_OPTIONS,areaSqm:70,florenceContract:'agreed' as const};

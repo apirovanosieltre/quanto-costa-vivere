@@ -21,7 +21,11 @@ import {
   type CategorySuggestion
 } from '../../core/automatic-city-compare';
 import {type RentContract} from '../../core/automatic-cost-florence';
-import { comparableTuscanRentPair, TUSCANY_CAPITAL_RENTS_2024 } from '../../core/tuscany-capital-rents-2024';
+import { comparableTuscanRentPair, tuscanCapitalRentRecord, TUSCANY_CAPITAL_RENTS_2024 } from '../../core/tuscany-capital-rents-2024';
+import {
+  estimateEssentialCosts2026, budgetWithOptionalTari, DEFAULT_ESSENTIAL_PROFILE, TUSCANY_ESSENTIAL_SOURCES,
+  GAS_ARERA_COMMODITY_OCT_2026, type TransitPass
+} from '../../core/tuscany-essential-2026';
 import {
   COST_KEYS, COST_LABELS, EMPTY_BUDGET, compareCityBudgets,
   basketForCity, regionalFamilySpending, omiRentalRange,validMoney,
@@ -62,7 +66,7 @@ const emptyBudget=():CityBudget=>({
   <div class="compare-auto-intro">
     <div>
       <span class="eyebrow eyebrow-subtle">STEP 1 · PROFILO DELLA SIMULAZIONE</span>
-      <h2 id="auto-panel-title">Una persona, appartamento in affitto</h2>
+      <h2 id="auto-panel-title">Una persona in affitto, con mezzi pubblici</h2>
       <p>Le cifre vengono precompilate dove abbiamo dati o ipotesi dichiarate. I campi che cambi manualmente restano tuoi: aggiornare la superficie non li sovrascrive.</p>
     </div>
     <div class="compare-auto-controls">
@@ -81,9 +85,28 @@ const emptyBudget=():CityBudget=>({
         </select>
       </div>
       <div>
-        <label class="field-label" for="auto-water">Acqua: m³/anno per Firenze</label>
+        <label class="field-label" for="auto-water">Consumo acqua stimato (m³/anno, 1 persona)</label>
         <input class="standalone-input" id="auto-water" type="number" min="0" max="500" step="5"
           [ngModel]="autoWaterM3()" (ngModelChange)="setAutoWater($event)">
+      </div>
+      <div>
+        <label class="field-label" for="auto-tari-area">Superficie soggetta a TARI (m²)</label>
+        <input class="standalone-input" id="auto-tari-area" type="number" min="15" max="300" step="5"
+          [ngModel]="tariAreaSqm()" (ngModelChange)="setTariArea($event)">
+      </div>
+      <div>
+        <label class="field-label" for="auto-pass">Abbonamento urbano (10 capoluoghi toscani)</label>
+        <select class="standalone-input" id="auto-pass" [ngModel]="transitPass()" (ngModelChange)="setTransitPass($event)">
+          <option value="monthly">Mensile ordinario · 42,20 €</option>
+          <option value="annual">Annuale ordinario · 342,80 €/anno</option>
+          <option value="none">Non acquisto un abbonamento</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="auto-gas">Gas e riscaldamento (ipotesi €/mese)</label>
+        <input class="standalone-input" id="auto-gas" type="number" inputmode="decimal"
+          min="0" max="1000" step="5" [ngModel]="gasMonthlyScenario()"
+          (ngModelChange)="setGasScenario($event)">
       </div>
       <div>
         <label class="field-label" for="auto-common-income">Stesso netto mensile nelle due città (facoltativo)</label>
@@ -122,9 +145,17 @@ const emptyBudget=():CityBudget=>({
           <p>Spese note {{money(summary(side.key).knownExpenses)}} €. Mancano: {{missingCategoryLabels(side.key)}}.</p>
         }
         <p class="compare-tiny">{{coverage(side.key).available}} voci precompilate su 5; {{coverage(side.key).supported}} usano un indicatore o tariffa territoriale. Le altre sono proxy o ipotesi.</p>
+        @if(tariIncluded(side.key)){
+          <p class="compare-tiny">La quota TARI {{money(tariMonthly(side.key)!)}} €/mese è inclusa nel totale e sommata alle altre spese, senza modificare il campo manuale.</p>
+        } @else {
+          <p class="compare-tiny">TARI esclusa dal totale iniziale. Puoi attivarla più sotto quando hai un importo.</p>
+        }
       </div>
     }
   </div>
+  @if(tariIncluded('left')!==tariIncluded('right')){
+    <p class="compare-alert" role="note">Attenzione: la TARI è inclusa nel budget di una sola città. La differenza delle spese non comprende le stesse voci.</p>
+  }
   @if(comparableRents()){
     <p class="compare-glance-delta" role="note">
       <strong>Affitti confrontabili come dati storici (2024):</strong>
@@ -142,6 +173,84 @@ const emptyBudget=():CityBudget=>({
     </p>
     <p class="compare-tiny">Importo ipotetico, NON indice di quale città è realmente più economica. Le fonti sull'affitto sono omogenee soltanto tra i capoluoghi toscani coperti dal rapporto 2024.</p>
   }
+</section>
+
+<section class="container compare-essentials" aria-labelledby="essentials-title">
+  <div class="compare-glance-head">
+    <div>
+      <span class="eyebrow eyebrow-subtle">TARI E UTENZE · DATI UFFICIALI 2026</span>
+      <h2 id="essentials-title">Cosa è calcolato, cosa è soltanto ipotizzato</h2>
+    </div>
+  </div>
+  <p class="compare-tiny">Profilo domestico residente di una persona. L'affitto è separato dalla superficie imponibile TARI; le tariffe idriche dipendono dal gestore, e la luce di riferimento ARERA riguarda soltanto il cliente tipo vulnerabile.</p>
+  <div class="compare-layout">
+    @for(side of sides;track side.key){
+      <article class="compare-essentials-card">
+        <h3>{{name(side.key)}}</h3>
+        @if(essentialsFor(side.key);as detail){
+          <div class="compare-essential-line">
+            <strong>Trasporto urbano</strong>
+            @if(detail.transit.monthlyEUR!==null){
+              <span>{{money(detail.transit.monthlyEUR!)}} €/mese</span>
+              <p>{{detail.transit.note}}</p>
+              <a [href]="detail.transit.sourceUrl" target="_blank" rel="noopener noreferrer">Autolinee Toscane, tariffa verificata ↗</a>
+            } @else {<p>Tariffa urbana non disponibile</p>}
+          </div>
+          <div class="compare-essential-line">
+            <strong>Acqua, fognatura, depurazione</strong>
+            @if(detail.water.monthlyEUR!==null){
+              <span>{{money(detail.water.monthlyEUR!)}} €/mese</span>
+              <p>{{detail.water.geography}} · {{detail.water.period}}. {{detail.water.note}}</p>
+              <a [href]="detail.water.sourceUrl" target="_blank" rel="noopener noreferrer">Consulta tariffe del gestore ↗</a>
+            } @else {
+              <span>Dato locale non disponibile</span>
+              <p>La voce utenze contiene 15 € come mera ipotesi d'acqua, da correggere.</p>
+            }
+          </div>
+          <div class="compare-essential-line">
+            <strong>Elettricità: riferimento nazionale ARERA</strong>
+            <span>{{money(detail.electricity.monthlyEUR!)}} €/mese</span>
+            <p>{{detail.electricity.note}}</p>
+            <a [href]="detail.electricity.sourceUrl" target="_blank" rel="noopener noreferrer">Fonte ARERA, riferimento 2026 ↗</a>
+          </div>
+          <div class="compare-essential-line">
+            <strong>Gas e riscaldamento: ipotesi</strong>
+            <span>{{money(detail.gas.monthlyEUR!)}} €/mese</span>
+            <p>Non è un prezzo locale verificato. ARERA pubblica per ottobre 2026 la sola materia prima a {{gasRawReference}} €/Smc, che NON rappresenta l'intera bolletta.</p>
+            <a [href]="essentialSourceUrls.gasArera" target="_blank" rel="noopener noreferrer">Fonte ARERA, sola componente gas ↗</a>
+          </div>
+          <div class="compare-essential-line">
+            <strong>TARI 2026: quota comunale base, una persona</strong>
+            @if(detail.tari.monthlyEUR!==null){
+              <span>{{money(detail.tari.monthlyEUR!)}} €/mese ({{money(detail.tari.annualEUR!)}} €/anno)</span>
+              <p>{{detail.tari.note}}</p>
+              <a [href]="detail.tari.sourceUrl" target="_blank" rel="noopener noreferrer">Documento ufficiale TARI ↗</a>
+            } @else {
+              <span>Tariffa 2026 non verificata</span>
+              <p>Puoi inserire l'importo annuo dell'avviso TARI per questo comune, se lo conosci. Non ereditiamo le tariffe di Arezzo.</p>
+            }
+            <label class="field-label" [for]="'tari-manual-'+side.key">TARI annua personalizzata (facoltativa, €)</label>
+            <input class="standalone-input" type="number" inputmode="decimal" min="0" max="10000" step="1"
+              [id]="'tari-manual-'+side.key" [ngModel]="tariManual(side.key)"
+              (ngModelChange)="setTariManual(side.key,$event)" placeholder="Usa la quota ufficiale o inserisci la tua">
+            <label class="compare-tari-choice">
+              <input type="checkbox" [ngModel]="tariIncluded(side.key)" (ngModelChange)="setTariIncluded(side.key,!!$event)"
+                [disabled]="tariMonthly(side.key)===null">
+              <span>Aggiungi {{tariMonthly(side.key)===null?'TARI':money(tariMonthly(side.key)!)+' €/mese'}} alle «Altre spese» del budget</span>
+            </label>
+            @if(tariIncluded(side.key)){
+              <p class="compare-tiny">Inclusa una sola volta nel totale. La cifra nel campo «Altre spese» resta quella senza TARI.</p>
+            } @else {
+              <p class="compare-tiny">TARI non inclusa nel totale automatico. La quota ufficiale di Arezzo esclude TEFA, componenti perequative, sconti e bonus.</p>
+            }
+          </div>
+        } @else {
+          <p class="compare-tiny">Motore essenziale 2026 disponibile per i 10 capoluoghi toscani. Per questo comune non sono state importate tariffe locali comparabili.</p>
+        }
+      </article>
+    }
+  </div>
+  <p class="compare-tiny">La TARI aggiunta a una sola città rende il confronto dei totali non omogeneo. Per entrambe le città è preferibile usare l'importo annuo effettivo del proprio avviso, se disponibile. Il calcolo idrico usa le sole quote fisse e variabili pubblicate, escludendo imposte e ulteriori oneri.</p>
 </section>
 
 <section id="budget-due-citta" class="container compare-layout" aria-label="Budget delle due città">
@@ -260,12 +369,12 @@ const emptyBudget=():CityBudget=>({
           <div class="compare-bar-line">
             <span class="compare-bar-name">{{name('left')}}</span>
             <div class="compare-bar-track"><span class="compare-left-bar" [style.width.%]="barWidth('left',key)"></span></div>
-            <span>{{money(budget('left').expenses[key]!)}} €</span>
+            <span>{{money(effectiveBudget('left').expenses[key]!)}} €</span>
           </div>
           <div class="compare-bar-line">
             <span class="compare-bar-name">{{name('right')}}</span>
             <div class="compare-bar-track"><span class="compare-right-bar" [style.width.%]="barWidth('right',key)"></span></div>
-            <span>{{money(budget('right').expenses[key]!)}} €</span>
+            <span>{{money(effectiveBudget('right').expenses[key]!)}} €</span>
           </div>
         </div>
       }
@@ -532,6 +641,17 @@ const emptyBudget=():CityBudget=>({
 </section>
 `,
   styles:[`
+    .compare-essentials{margin-top:18px;margin-bottom:30px}
+    .compare-essentials-card{background:#fff;border:1px solid var(--line);padding:21px;border-radius:16px;min-width:0}
+    .compare-essentials-card h3{margin:0 0 15px}
+    .compare-essential-line{border-top:1px solid #e2e8ef;padding:13px 0;font-size:.83rem;line-height:1.5}
+    .compare-essential-line>strong{display:block;margin-bottom:5px}
+    .compare-essential-line>span{display:block;font-weight:750;color:var(--navy);font-size:.98rem}
+    .compare-essential-line p{color:var(--muted);font-size:.76rem;margin:6px 0}
+    .compare-essential-line a{font-size:.76rem}
+    .compare-essential-line>.standalone-input{display:block;margin:9px 0;width:100%}
+    .compare-tari-choice{display:flex;align-items:flex-start;gap:10px;margin:12px 0;font-weight:650;font-size:.8rem}
+    .compare-tari-choice input{width:19px;height:19px;flex-shrink:0}
     .compare-glance{margin-bottom:24px}
     .compare-glance-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:13px}
     .compare-glance-head h2{font-size:1.38rem;margin:6px 0}
@@ -653,6 +773,15 @@ export class CompareComponent implements OnInit {
   });
   readonly florenceContract=signal<RentContract>(DEFAULT_SINGLE_PERSON_OPTIONS.florenceContract);
   readonly autoWaterM3=signal(DEFAULT_SINGLE_PERSON_OPTIONS.waterM3PerYear);
+  readonly tariAreaSqm=signal(DEFAULT_ESSENTIAL_PROFILE.tariAreaSqm);
+  readonly gasMonthlyScenario=signal(DEFAULT_ESSENTIAL_PROFILE.gasMonthlyScenarioEUR);
+  readonly transitPass=signal<TransitPass>(DEFAULT_ESSENTIAL_PROFILE.transitPass);
+  readonly tariManualLeft=signal<number|null>(null);
+  readonly tariManualRight=signal<number|null>(null);
+  readonly tariIncludedLeft=signal(false);
+  readonly tariIncludedRight=signal(false);
+  readonly essentialSourceUrls=TUSCANY_ESSENTIAL_SOURCES;
+  readonly gasRawReference=GAS_ARERA_COMMODITY_OCT_2026;
   readonly commonNet=signal<number|null>(null);
   readonly autoFeedback=signal('');
   readonly editedLeft=signal<Partial<Record<CostKey,boolean>>>({});
@@ -698,10 +827,12 @@ export class CompareComponent implements OnInit {
   readonly leftOmi=signal<OmiInputs>(emptyOmi());
   readonly rightOmi=signal<OmiInputs>(emptyOmi());
 
+  readonly leftEssentials=computed(()=>this.makeEssentials('left'));
+  readonly rightEssentials=computed(()=>this.makeEssentials('right'));
   readonly leftSuggestions=computed(()=>this.makeSuggestions('left'));
   readonly rightSuggestions=computed(()=>this.makeSuggestions('right'));
   readonly comparisonWarning=computed(()=>compareMethodWarning(this.leftCode(),this.rightCode()));
-  readonly comparison=computed(()=>compareCityBudgets(this.leftBudget(),this.rightBudget()));
+  readonly comparison=computed(()=>compareCityBudgets(this.effectiveBudget('left'),this.effectiveBudget('right')));
   readonly sameCity=computed(()=>this.leftCode()===this.rightCode());
   readonly basketDifference=computed(()=>{
     const a=this.basket('left'),b=this.basket('right');
@@ -847,12 +978,76 @@ export class CompareComponent implements OnInit {
   query(side:Side):string{return side==='left'?this.leftQuery():this.rightQuery();}
   private edited(side:Side){return side==='left'?this.editedLeft:this.editedRight;}
   isEdited(side:Side,key:CostKey):boolean{return this.edited(side)()[key]===true;}
+  private makeEssentials(side:Side){
+    const code=side==='left'?this.leftCode():this.rightCode();
+    if(!tuscanCapitalRentRecord(code))return null;
+    return estimateEssentialCosts2026(code,{
+      tariAreaSqm:this.tariAreaSqm(),waterM3Year:this.autoWaterM3(),
+      gasMonthlyScenarioEUR:this.gasMonthlyScenario(),transitPass:this.transitPass()
+    });
+  }
+  essentialsFor(side:Side){return side==='left'?this.leftEssentials():this.rightEssentials();}
+  private tariManualSignal(side:Side){return side==='left'?this.tariManualLeft:this.tariManualRight;}
+  private tariIncludedSignal(side:Side){return side==='left'?this.tariIncludedLeft:this.tariIncludedRight;}
+  tariManual(side:Side):number|null{return this.tariManualSignal(side)();}
+  tariIncluded(side:Side):boolean{return this.tariIncludedSignal(side)();}
+  tariMonthly(side:Side):number|null{
+    const manual=this.tariManual(side);
+    if(manual!==null)return Math.round(manual/12*100)/100;
+    return this.essentialsFor(side)?.tari.monthlyEUR??null;
+  }
+  effectiveBudget(side:Side):CityBudget{
+    return budgetWithOptionalTari(this.budget(side),this.tariMonthly(side),this.tariIncluded(side));
+  }
+  setTariManual(side:Side,value:unknown):void{
+    if(value===''||value===null){
+      this.tariManualSignal(side).set(null);
+      if(this.essentialsFor(side)?.tari.monthlyEUR===null||!this.essentialsFor(side))
+        this.tariIncludedSignal(side).set(false);
+      this.autoFeedback.set('');
+      return;
+    }
+    const num=validMoney(value,10000);
+    if(num===null){this.autoFeedback.set('Importo TARI annuo non valido (0–10.000 €).');return;}
+    this.tariManualSignal(side).set(num);
+    this.autoFeedback.set('');
+  }
+  setTariIncluded(side:Side,value:boolean):void{
+    if(value&&this.tariMonthly(side)===null){
+      this.autoFeedback.set('La quota TARI per questa città non è disponibile: inserisci prima un importo annuo documentato.');
+      this.tariIncludedSignal(side).set(false);return;
+    }
+    this.tariIncludedSignal(side).set(value);
+    this.autoFeedback.set('');
+  }
+  private resetTariSide(side:Side):void{
+    this.tariManualSignal(side).set(null);
+    this.tariIncludedSignal(side).set(false);
+  }
+  setTariArea(value:unknown):void{
+    const num=validMoney(value,300);
+    if(num===null||num<15){this.autoFeedback.set('La superficie TARI deve essere tra 15 e 300 m².');return;}
+    this.tariAreaSqm.set(num);this.autoFeedback.set('');
+  }
+  setGasScenario(value:unknown):void{
+    const n=validMoney(value,1000);
+    if(n===null){this.autoFeedback.set('Spesa gas ipotizzata non valida (0–1.000 €).');return;}
+    this.gasMonthlyScenario.set(n);this.autoFeedback.set('');
+    this.refreshBothSuggestions();
+  }
+  setTransitPass(value:unknown):void{
+    if(value==='monthly'||value==='annual'||value==='none'){
+      this.transitPass.set(value);this.autoFeedback.set('');
+      this.refreshBothSuggestions();
+    }
+  }
   private makeSuggestions(side:Side):CategorySuggestion[]{
     const code=side==='left'?this.leftCode():this.rightCode();
     if(!this.cityByCode().has(code))return [];
     return suggestSinglePersonCosts(code,this.rentalData(),{
       areaSqm:this.rentAreaSqm()??DEFAULT_SINGLE_PERSON_OPTIONS.areaSqm,
-      waterM3PerYear:this.autoWaterM3(),florenceContract:this.florenceContract()
+      waterM3PerYear:this.autoWaterM3(),florenceContract:this.florenceContract(),
+      gasMonthlyScenarioEUR:this.gasMonthlyScenario(),transitPass:this.transitPass()
     });
   }
   suggestionsFor(side:Side):CategorySuggestion[]{
@@ -915,8 +1110,8 @@ export class CompareComponent implements OnInit {
     this.autoFeedback.set('Stesso netto applicato a entrambe le città.');
   }
   onSearch(side:Side,value:string):void{
-    if(side==='left'){this.leftQuery.set(value);this.leftCode.set('');this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());this.editedLeft.set({});}
-    else{this.rightQuery.set(value);this.rightCode.set('');this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());this.editedRight.set({});}
+    if(side==='left'){this.leftQuery.set(value);this.leftCode.set('');this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());this.editedLeft.set({});this.resetTariSide('left');}
+    else{this.rightQuery.set(value);this.rightCode.set('');this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());this.editedRight.set({});this.resetTariSide('right');}
     this.shareStatus.set('');
   }
   matches(side:Side):MunicipalRecord[]{
@@ -931,10 +1126,10 @@ export class CompareComponent implements OnInit {
     const city=this.cityByCode().get(code);
     if(!city||code===(side==='left'?this.rightCode():this.leftCode()))return;
     if(side==='left'){
-      if(this.leftCode()!==code){this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());this.editedLeft.set({});}
+      if(this.leftCode()!==code){this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());this.editedLeft.set({});this.resetTariSide('left');}
       this.leftCode.set(code);this.leftQuery.set(this.displayCity(city));
     }else{
-      if(this.rightCode()!==code){this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());this.editedRight.set({});}
+      if(this.rightCode()!==code){this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());this.editedRight.set({});this.resetTariSide('right');}
       this.rightCode.set(code);this.rightQuery.set(this.displayCity(city));
     }
     this.refreshSideSuggestions(side);
@@ -943,8 +1138,8 @@ export class CompareComponent implements OnInit {
   selectPair(first:string,second:string,update=true):void{
     const a=this.cityByCode().get(first),b=this.cityByCode().get(second);
     if(!a||!b||first===second)return;
-    if(this.leftCode()!==first){this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());this.editedLeft.set({});}
-    if(this.rightCode()!==second){this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());this.editedRight.set({});}
+    if(this.leftCode()!==first){this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());this.editedLeft.set({});this.resetTariSide('left');}
+    if(this.rightCode()!==second){this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());this.editedRight.set({});this.resetTariSide('right');}
     this.leftCode.set(first);this.rightCode.set(second);
     this.leftQuery.set(this.displayCity(a));this.rightQuery.set(this.displayCity(b));
     this.refreshBothSuggestions();
@@ -955,12 +1150,16 @@ export class CompareComponent implements OnInit {
     if(!this.cityByCode().has(a)||!this.cityByCode().has(b))return;
     const leftBudget=this.leftBudget(),rightBudget=this.rightBudget(),leftOmi=this.leftOmi(),rightOmi=this.rightOmi();
     const leftEdited=this.editedLeft(),rightEdited=this.editedRight();
+    const leftTariManual=this.tariManualLeft(),rightTariManual=this.tariManualRight();
+    const leftTariIncluded=this.tariIncludedLeft(),rightTariIncluded=this.tariIncludedRight();
     this.leftCode.set(b);this.rightCode.set(a);
     this.leftQuery.set(this.displayCity(this.cityByCode().get(b)!));
     this.rightQuery.set(this.displayCity(this.cityByCode().get(a)!));
     this.leftBudget.set(rightBudget);this.rightBudget.set(leftBudget);
     this.leftOmi.set(rightOmi);this.rightOmi.set(leftOmi);
     this.editedLeft.set(rightEdited);this.editedRight.set(leftEdited);
+    this.tariManualLeft.set(rightTariManual);this.tariManualRight.set(leftTariManual);
+    this.tariIncludedLeft.set(rightTariIncluded);this.tariIncludedRight.set(leftTariIncluded);
     this.updateUrl();
   }
   private updateUrl():void{
@@ -992,10 +1191,11 @@ export class CompareComponent implements OnInit {
   absolute(value:number):number{return Math.abs(value);}
   signedMoney(value:number):string{return (value>0?'+':'')+this.money(value);}
   barWidth(side:Side,key:CostKey):number{
-    const a=this.leftBudget().expenses[key]??0,b=this.rightBudget().expenses[key]??0;
-    const max=Math.max(a,b);
+    const left=this.effectiveBudget('left').expenses[key]??0;
+    const right=this.effectiveBudget('right').expenses[key]??0;
+    const max=Math.max(left,right);
     if(max===0)return 0;
-    return Math.max(0,Math.min(100,(this.budget(side).expenses[key]??0)/max*100));
+    return Math.max(0,Math.min(100,(this.effectiveBudget(side).expenses[key]??0)/max*100));
   }
   istatReference(side:Side){const c=this.city(side);return c?regionalFamilySpending(c.province):null;}
   basket(side:Side){return basketForCity(side==='left'?this.leftCode():this.rightCode());}

@@ -1,4 +1,4 @@
-# QuantoCostaVivere · v1.2
+# QuantoCostaVivere · v1.3
 
 Portale Angular 22, mobile-first e accessibile, per **confronto del costo della vita tra città, budget domestico, IRPEF 2026, stima RAL e inflazione ufficiale italiana**. Integra una Cloudflare Pages Function per Eurostat e una pipeline **di acquisizione + validazione** degli elenchi MEF.
 
@@ -55,6 +55,40 @@ La pagina principale `/confronta-citta` ora suggerisce automaticamente cinque ma
 - Test automatici `src/app/core/automatic-city-compare.spec.ts` validano valori, fonte, copertura, affitti mancanti, scenario con metrature diverse e messaggi di comparabilità.
 
 **Principio UX:** l'utente comincia da importi suggeriti e decide se correggerli, anziché compilare tutte le categorie. Il sito non spaccia ipotesi nazionali per prezzi realmente osservati in città.
+
+## Motore spese essenziali 2026: profilo una persona in affitto
+
+`src/app/core/tuscany-essential-2026.ts` integra la parte documentata di **TARI, servizio idrico, elettricità, gas e trasporto urbano** con le stime iniziali esistenti, utilizzando solo pagine e allegati istituzionali accessibili gratuitamente. Nessun database o API a pagamento.
+
+### Copertura reale, senza dati inventati
+
+| Componente | Comuni effettivamente coperti | Metodo | Limite |
+|---|---|---|---|
+| Trasporto pubblico urbano | Tutti e 10 i capoluoghi toscani | Abbonamento Autolinee Toscane mensile 42,20 €, annuale 342,80 € (pari a 28,57 €/mese) oppure nessun abbonamento | Prezzi per area urbana e titolo ordinario, non tutti gli spostamenti |
+| Acqua, fognatura e depurazione | Arezzo (Nuove Acque), Firenze, Prato e Pistoia (Publiacqua) | Scaglioni 2026 + quota fissa per **1 residente** e consumo annuo scelto | Non include IVA, conguagli, eventuali componenti aggiuntive o fatture condominiali |
+| TARI 2026 | **Solo Arezzo** con tariffe complete verificate | Quota comunale fissa 1,12107 €/m²/anno × superficie imponibile + quota variabile 138,77659 €/anno per 1 occupante | **Quota base, NON avviso TARI completo**: esclusi TEFA, componenti perequative, bonus, riduzioni, conguagli |
+| Elettricità | Indicatore **nazionale**, non comunale | Riferimento ARERA per il **cliente vulnerabile** tipo in Maggior Tutela, 2.000 kWh/anno e 3 kW: **665,38 €/anno** nel periodo 01/01/2026–31/12/2026 | Non è un'offerta del mercato libero né una stima della tua bolletta reale |
+| Gas / riscaldamento | Nessun costo finale locale verificato | Spesa di scenario modificabile, inizialmente 50 €/mese; ARERA pubblica **solo materia prima** ottobre 2026 a 0,945436 €/Smc | La componente materia prima non si può utilizzare come bolletta completa; non è inserita automaticamente in luogo dell'ipotesi |
+| Altri 9 capoluoghi senza TARI e 6 senza tariffa idrica verificata | **Non disponibili** | Valore mancante e fonti in revisione | Mai stimate copiando valori da un altro comune |
+
+**Fonti esatte:**
+- TARI domestica Arezzo 2026, allegato A del Comune (delibera C.C. n. 78, 29/07/2026): https://www.comune.arezzo.it/sites/default/files/2026-08/Allegato%20A%20tariffe%20utenze%20domestiche.pdf
+- Nuove Acque, tariffa residente 1 CNF 2026, fasce 0–19/20–67/oltre 67 m³, quote fisse di acquedotto, fognatura e depurazione: https://nuoveacque.it/tariffe-acqua/
+- Publiacqua, tariffario 2026 residenti 1 componente: https://www.publiacqua.it/sites/publiacqua/files/tariffe_2026.pdf
+- Publiacqua, perimetro servizio Toscana centrale: https://www.publiacqua.it/chi-siamo
+- Autolinee Toscane, mensile: https://www.at-bus.it/it/ticket/abbonamenti-urbani/abbonamento-urbano-capoluogo-mensile
+- Autolinee Toscane, annuale: https://www.at-bus.it/it/ticket/abbonamenti-urbani/abbonamento-urbano-capoluogo-annuale
+- ARERA, riferimento nazionale annuale e prezzi IV trimestre 2026: https://www.arera.it/comunicati-stampa/dettaglio/elettricit%C3%A0-maggior-tutela-373-nel-iv-trimestre-2026-per-i-clienti-vulnerabili
+- ARERA, ottobre 2026 materia prima gas (non prezzo complessivo): https://www.arera.it/comunicati-stampa/dettaglio/gas-valore-materia-prima-vulnerabilita-ottobre-2026
+
+### Interazione con il confronto
+
+- Per **una persona residente**, imposta superficie dell'immobile, superficie imponibile TARI (può differire), consumo idrico, spesa gas ipotetica, tipo di abbonamento. Tutte le tariffe hanno fonte e periodo visualizzabili.
+- La voce **Utenze** propone inizialmente un **totale di scenario**: riferimento ARERA 2026 cliente vulnerabile + ipotesi gas + acqua calcolata dai tariffari dove verificati (altrimenti **15 € puramente ipotetici**). È sempre etichettata come `mixed` e con **attendibilità bassa**, anche quando la componente acqua è supportata.
+- La TARI base Arezzo è mostrata in €/anno e €/mese ma **non** viene inclusa inizialmente nel budget. L'utente può selezionare *Aggiungi TARI alle altre spese* oppure inserire un proprio importo annuo per altri comuni. Il modello somma la quota nella vista dei risultati **una volta sola**, lasciando invariato il campo «Altre spese» che rappresenta il budget senza TARI.
+- Il totale automatico senza TARI **non è un costo completo**; la vista avvisa esplicitamente se TARI è inclusa per una sola città. Non sostituire un importo non disponibile con 0 (salvo scelta intenzionale dell'utente).
+- I dati individuali restano sul browser, senza backend e senza condivisione da URL.
+- Test: `src/app/core/tuscany-essential-2026.spec.ts`, `src/app/core/automatic-city-compare.spec.ts`.
 
 ## Estensione 2024: canoni registrati nei 10 capoluoghi toscani
 
