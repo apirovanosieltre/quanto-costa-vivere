@@ -16,13 +16,13 @@ import { RouterLink } from '@angular/router';
       <section class="method-card" aria-labelledby="current-data-title">
         <div class="method-symbol" aria-hidden="true">✓</div>
         <h2 id="current-data-title">Cosa funziona già</h2>
-        <p>Il budget usa gli importi inseriti nel browser. L'IRPEF lorda e la stima del netto prima delle addizionali applicano regole nazionali 2026. Per l'inflazione è disponibile il collegamento Eurostat; per le fasce regionali il Worker legge il CSV MEF 2026. Le spese familiari ISTAT 2025 sono tratte dal comunicato ufficiale.</p>
+        <p>Il budget e il comparatore tra città usano gli importi inseriti nel browser. L'IRPEF lorda e la stima del netto prima delle addizionali applicano regole nazionali 2026. Per l'inflazione è disponibile il collegamento Eurostat; per le fasce regionali il Worker legge il CSV MEF 2026. Le spese familiari ISTAT 2025 sono tratte dal comunicato ufficiale.</p>
         <a routerLink="/irpef-2026" class="text-link">Apri il calcolo IRPEF <span aria-hidden="true">↗</span></a>
       </section>
       <section class="method-card" aria-labelledby="missing-data-title">
         <div class="method-symbol method-symbol-amber" aria-hidden="true">!</div>
         <h2 id="missing-data-title">Cosa non è ancora disponibile</h2>
-        <p>Non esiste ancora un calcolo territoriale automatico del costo della vita. La stima della RAL integra le addizionali comunali semplici e sei profili regionali verificati; negli altri casi il risultato locale resta parziale. Per OMI puoi consultare la mappa ufficiale e riportare manualmente i valori per zona; non abbiamo una banca dati immobiliare importata. Il comune selezionato nel budget non altera ancora il risultato.</p>
+        <p>Il confronto tra due comuni è disponibile con le tue cifre, ma non esiste ancora un catalogo completo di prezzi locali automatici. La stima della RAL integra le addizionali comunali semplici e sei profili regionali verificati; negli altri casi il risultato locale resta parziale. Per OMI puoi consultare la mappa ufficiale e riportare manualmente i valori per zona; non abbiamo una banca dati immobiliare importata. Il comune selezionato nel budget non altera ancora il risultato.</p>
       </section>
     </div>
     <section class="container sources-section" aria-labelledby="sources-title">
@@ -39,6 +39,7 @@ import { RouterLink } from '@angular/router';
             <tr><td><a href="https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/download/tabella.htm" target="_blank" rel="noopener noreferrer">MEF regionali ↗</a></td><td>Righe e fasce MEF 2026 con calcolo progressivo solo per sei profili revisionati</td><td><span class="status-tag ready">API CSV con verifica</span></td></tr>
             <tr><td><a href="https://ec.europa.eu/eurostat/web/hicp/information-data" target="_blank" rel="noopener noreferrer">Eurostat ↗</a></td><td>IPCA: variazione prezzi annuale dell'Italia, API prc_hicp_minr</td><td><span class="status-tag ready">API predisposta</span></td></tr>
             <tr><td><a href="https://www.istat.it/comunicato-stampa/spese-per-consumi-delle-famiglie-anno-2025/" target="_blank" rel="noopener noreferrer">ISTAT ↗</a></td><td>Spesa delle famiglie, anno 2025: dati nazionali e subset regionale</td><td><span class="status-tag ready">Dataset pubblico versionato</span></td></tr>
+            <tr><td><a href="https://press.regione.puglia.it/web/ufficio-statistico/-/codacons.-i-prezzi-di-beni-e-servizi-nelle-principali-citta-italiane.-anno-2025" target="_blank" rel="noopener noreferrer">CODACONS · Regione Puglia ↗</a></td><td>Paniere campione 2025 per sei città citate; non spesa mensile</td><td><span class="status-tag ready">Campione pubblicato</span></td></tr>
             <tr><td><a href="https://www1.agenziaentrate.gov.it/servizi/geopoi_omi/index.htm" target="_blank" rel="noopener noreferrer">Agenzia delle Entrate ↗</a></td><td>Quotazioni OMI per zone immobiliari</td><td><span class="status-tag ready">Consultazione e stima manuale</span></td></tr>
           </tbody>
         </table>

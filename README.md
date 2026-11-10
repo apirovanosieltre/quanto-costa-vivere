@@ -1,6 +1,6 @@
-# QuantoCostaVivere · v0.6
+# QuantoCostaVivere · v0.7
 
-Portale Angular 22, mobile-first e accessibile, per **budget domestico, IRPEF 2026, stima nazionale da RAL e inflazione ufficiale italiana**. Integra una Cloudflare Pages Function per Eurostat e una pipeline **di acquisizione + validazione** degli elenchi MEF.
+Portale Angular 22, mobile-first e accessibile, per **confronto del costo della vita tra città, budget domestico, IRPEF 2026, stima RAL e inflazione ufficiale italiana**. Integra una Cloudflare Pages Function per Eurostat e una pipeline **di acquisizione + validazione** degli elenchi MEF.
 
 > Stato: repository GitHub con verifiche CI. CSV MEF comunale 2026 acquisito tramite GitHub Actions e revisionato tecnicamente contro lo schema ufficiale, con hash sorgente fissato e campioni verificati. **La revisione è tecnica e a campione, non un parere fiscale su tutte le 7.897 delibere.** Nessun deploy Cloudflare è stato certificato dall'ambiente di generazione.
 
@@ -9,6 +9,7 @@ Portale Angular 22, mobile-first e accessibile, per **budget domestico, IRPEF 20
 | Route | Stato | Note |
 |---|---|---|
 | `/` | Operativa | Budget manuale, i valori iniziali sono demo; comune non influenza il budget |
+| `/confronta-citta` | Nuova funzionalità | Confronta due comuni del catalogo MEF (7.897): 5 voci mensili + netto, simulazione RAL verificata dove disponibile, OMI manuale, indicatori ISTAT e paniere campione Codacons 2025 |
 | `/irpef-2026` | Operativa | Imposta lorda nazionale a scaglioni |
 | `/stipendio-netto-2026` | Operativa | Netto nazionale con comunali semplici revisionate e regionali verificate: Lombardia, Toscana, Emilia-Romagna, Liguria, Piemonte (senza figli a carico) e Valle d'Aosta; **netto completo solo con entrambe le addizionali disponibili** |
 | `/inflazione` | API integrata nel codice | Eurostat ufficiale `prc_hicp_minr`, API Cloudflare `/api/inflation`, serie reale fino a 12 mesi e fallback diretto in sviluppo; **richiede deploy e collaudo live** |
@@ -18,6 +19,26 @@ Portale Angular 22, mobile-first e accessibile, per **budget domestico, IRPEF 20
 | `/quotazioni-omi` | Strumento manuale | Ricerca nel portale ufficiale OMI e calcolo intervallo locazione da quote €/m²/mese inserite dall'utente |
 | `/stato-dati` | Operativa | Verifica live dell'API Eurostat, disponibilità dataset MEF e provenienza |
 | `/fonti-e-metodo` | Operativa | Trasparenza e limiti |
+
+## Confronta città: metodi, fonti e limiti
+
+La pagina `/confronta-citta` è una **simulazione personalizzata**, non una classifica automatica di affitti o prezzi locali:
+
+- Selezione da 7.897 comuni presenti nel catalogo pubblico MEF 2026, con codici catastali. Gli stessi codici nei parametri URL `?da=F205&a=F839` permettono di condividere **solo la coppia di comuni**, mai entrate o importi privati.
+- Due budget indipendenti: stipendio/entrate nette, casa, utenze, alimentari, trasporti e altre spese. La cifra zero è valida **solo quando inserita esplicitamente**. Campi vuoti producono un confronto parziale, mai totali o residui fasulli.
+- Differenza mensile tra i due totali e differenza nel residuo soltanto quando ci sono tutti i valori necessari. Non eseguiamo assunzioni generiche sui consumi di una persona o sulle differenze di prezzo tra città.
+- Simulazione opzionale della **stessa RAL** nelle due città: usa il motore fiscale nazionale 2026, dati comunali MEF revisionati e profili regionali verificati. Un netto locale è mostrato soltanto quando entrambe le addizionali sono disponibili; poi l'utente può applicarlo volontariamente al budget. Per il Piemonte senza figli a carico è richiesta conferma esplicita.
+- Le quotazioni **OMI** sono ricavate manualmente dall'utente per la zona, tipologia, superficie e semestre selezionati sul sito dell'Agenzia delle Entrate. Si possono applicare i valori minimo o massimo al proprio budget con un clic; non esiste importazione automatica dei prezzi.
+- I riferimenti **ISTAT 2025** disponibili sono medie familiari per **8 regioni esplicitamente citate**, non importi delle città. Sono mostrati come informazioni di contesto, non sommati nel budget.
+- Per 6 comuni con valori esplicitamente riportati dalla sintesi dell'indagine **Codacons 2025** dell'Ufficio statistico della Regione Puglia, viene visualizzato il costo del paniere campione di 28 alimentari + 11 servizi. Non rappresenta il costo mensile di vita, né viene inserito nel budget. Le cifre arrotondate dalla pubblicazione sono indicate come approssimative.
+- Nessun login, database o raccolta dei numeri personali. Le spese restano in memoria del browser durante la sessione e non vengono condivise da URL.
+
+Fonti:
+- ISTAT, consumi famiglie 2025: https://www.istat.it/comunicato-stampa/spese-per-consumi-delle-famiglie-anno-2025/
+- CODACONS 2025, sintesi Ufficio statistico Regione Puglia (13/01/2026): https://press.regione.puglia.it/web/ufficio-statistico/-/codacons.-i-prezzi-di-beni-e-servizi-nelle-principali-citta-italiane.-anno-2025
+- Agenzia Entrate OMI: https://www1.agenziaentrate.gov.it/servizi/geopoi_omi/index.htm
+
+**Limite attuale:** non disponiamo di dati automaticamente riutilizzabili e verificati su affitti e prezzi di ogni singolo comune. Evitiamo di generare migliaia di pagine SEO vuote o inventate; il comparatore ha una singola pagina indicizzabile, con parametri per le coppie selezionate. L'espansione delle schede città richiederà dataset locali realmente pubblicabili.
 
 ## Cloudflare Workers (Git integration)
 

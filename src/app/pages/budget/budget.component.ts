@@ -16,6 +16,7 @@ interface City { name: string; region: string; province: string; }
         <p class="hero-lead">Metti in ordine le tue spese, scopri quanto puoi risparmiare e capisci davvero dove finiscono i tuoi soldi.</p>
         <div class="hero-actions">
           <a class="button-primary" href="#calcolatore">Calcola il tuo budget <span aria-hidden="true">→</span></a>
+          <a class="text-link" routerLink="/confronta-citta">Confronta due città <span aria-hidden="true">↗</span></a>
           <a class="text-link" routerLink="/fonti-e-metodo">Come funzionano i calcoli <span aria-hidden="true">↗</span></a>
         </div>
         <div class="hero-benefits" aria-label="Caratteristiche del servizio">
@@ -131,6 +132,7 @@ interface City { name: string; region: string; province: string; }
     <section class="more-tools container" aria-labelledby="more-heading">
       <div class="more-top"><span class="eyebrow eyebrow-subtle">UN PASSO IN PIÙ</span><h2 id="more-heading">Capire il budget è solo l'inizio.</h2></div>
       <div class="tool-card-grid">
+        <a class="tool-card" routerLink="/confronta-citta"><div class="tool-symbol tool-symbol-green" aria-hidden="true">↔</div><span class="tool-label">NUOVO · CONFRONTO TRA CITTÀ</span><h3>Dove conviene vivere?</h3><p>Confronta due comuni italiani con spese personalizzate, statistiche documentate e quotazioni OMI.</p><span class="tool-arrow">Confronta due città <span aria-hidden="true">↗</span></span></a>
         <a class="tool-card" routerLink="/irpef-2026"><div class="tool-symbol tool-symbol-blue" aria-hidden="true">%</div><span class="tool-label">TASSE · AGGIORNATO AL 2026</span><h3>Calcolatore IRPEF lorda</h3><p>Scopri come si suddivide il tuo imponibile nei tre scaglioni nazionali.</p><span class="tool-arrow">Apri calcolatore <span aria-hidden="true">↗</span></span></a>
         <a class="tool-card" routerLink="/stipendio-netto-2026"><div class="tool-symbol tool-symbol-green" aria-hidden="true">€</div><span class="tool-label">STIPENDIO · ANNO 2026</span><h3>RAL, netto e addizionali</h3><p>Stima il netto nazionale e, quando calcolabili, le imposte comunali e regionali con dettaglio delle fasce.</p><span class="tool-arrow">Apri simulatore <span aria-hidden="true">↗</span></span></a>
         <a class="tool-card" routerLink="/inflazione"><div class="tool-symbol tool-symbol-blue" aria-hidden="true">↗</div><span class="tool-label">API UFFICIALE EUROSTAT</span><h3>Inflazione in Italia</h3><p>Leggi la variazione annua più recente dei prezzi al consumo, dalla fonte europea.</p><span class="tool-arrow">Mostra i dati <span aria-hidden="true">↗</span></span></a>
