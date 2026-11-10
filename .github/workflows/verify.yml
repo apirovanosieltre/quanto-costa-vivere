@@ -1,0 +1,27 @@
+name: Build and verify data APIs
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build Angular and Worker assets
+        run: npm run build
+      - name: Test Angular data parsers and components
+        run: npm test
+      - name: Test MEF CSV parser
+        run: npm run test:mef
