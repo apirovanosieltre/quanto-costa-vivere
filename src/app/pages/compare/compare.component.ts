@@ -16,6 +16,12 @@ import { estimateLocalTaxes2026 } from '../../core/local-tax-2026';
 import { type RegionalMefDataset } from '../../core/mef-regional';
 import { type MunicipalDataset } from '../../core/municipal-data';
 import {
+  suggestSinglePersonCosts, cityDataCoverage, compareMethodWarning,
+  DEFAULT_SINGLE_PERSON_OPTIONS,
+  type CategorySuggestion
+} from '../../core/automatic-city-compare';
+import {type RentContract} from '../../core/automatic-cost-florence';
+import {
   COST_KEYS, COST_LABELS, EMPTY_BUDGET, compareCityBudgets,
   basketForCity, regionalFamilySpending, omiRentalRange,validMoney,
   CODACONS_BASKET_SOURCE, type CostKey, type CityBudget
@@ -34,10 +40,11 @@ const emptyBudget=():CityBudget=>({
   imports:[FormsModule,RouterLink],
   template:`
 <section class="page-hero container">
-  <span class="eyebrow eyebrow-subtle">CONFRONTO TRA COMUNI ITALIANI</span>
-  <h1>In quale città <span>ti resta di più?</span></h1>
-  <p>Confronta il tuo budget mensile tra due città italiane, con le stesse categorie di spesa e il netto che prevedi di ricevere. Prezzi non verificati non vengono inseriti automaticamente.</p>
+  <span class="eyebrow eyebrow-subtle">CONFRONTO ASSISTITO · PERSONA SOLA</span>
+  <h1>Due città, <span>un budget già pronto.</span></h1>
+  <p>Parti dalle stime disponibili per una persona sola, senza riempire tutto a mano. Fonti, anni e ipotesi sono sempre visibili. Quando un costo locale non è disponibile lo segnaliamo, senza inventare un affitto.</p>
   <div class="compare-shortcuts" aria-label="Esempi di città">
+    <button type="button" (click)="selectPair('D612','F205')">Firenze vs Milano</button>
     <button type="button" (click)="selectPair('F205','F839')">Milano vs Napoli</button>
     <button type="button" (click)="selectPair('A390','D612')">Arezzo vs Firenze</button>
     <button type="button" (click)="swapCities()">Inverti città ↔</button>
@@ -45,6 +52,47 @@ const emptyBudget=():CityBudget=>({
   </div>
   <p class="compare-micro" role="status">{{shareStatus()}}</p>
   <p><a routerLink="/costo-vita-firenze-persona-sola">Nuovo: stima iniziale automatica per Firenze, persona sola, con fonti e attendibilità ↗</a></p>
+</section>
+
+<section class="container compare-auto-panel" aria-labelledby="auto-panel-title">
+  <div class="compare-auto-intro">
+    <div>
+      <span class="eyebrow eyebrow-subtle">STEP 1 · PROFILO DELLA SIMULAZIONE</span>
+      <h2 id="auto-panel-title">Una persona, appartamento in affitto</h2>
+      <p>Le cifre vengono precompilate dove abbiamo dati o ipotesi dichiarate. I campi che cambi manualmente restano tuoi: aggiornare la superficie non li sovrascrive.</p>
+    </div>
+    <div class="compare-auto-controls">
+      <div>
+        <label class="field-label" for="auto-area">Superficie di riferimento (m²)</label>
+        <input class="standalone-input" id="auto-area" type="number" min="15" max="300" step="5"
+          [ngModel]="rentAreaSqm()" (ngModelChange)="setRentArea($event)">
+      </div>
+      <div>
+        <label class="field-label" for="auto-florence-contract">Contratto per Firenze</label>
+        <select class="standalone-input" id="auto-florence-contract"
+          [ngModel]="florenceContract()" (ngModelChange)="setFlorenceContract($event)">
+          <option value="long">Ordinario oltre 3 anni</option>
+          <option value="agreed">Concordato</option>
+          <option value="temporary">Transitorio</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="auto-water">Acqua: m³/anno per Firenze</label>
+        <input class="standalone-input" id="auto-water" type="number" min="0" max="500" step="5"
+          [ngModel]="autoWaterM3()" (ngModelChange)="setAutoWater($event)">
+      </div>
+      <div>
+        <label class="field-label" for="auto-common-income">Stesso netto mensile nelle due città (facoltativo)</label>
+        <row gap={2}>
+          <input class="standalone-input" id="auto-common-income" type="number" min="0" max="100000" step="50"
+            [ngModel]="commonNet()" (ngModelChange)="setCommonNet($event)" placeholder="Es. 1900">
+          <button type="button" (click)="applyCommonNet()" [disabled]="commonNet()===null">Applica</button>
+        </row>
+      </div>
+    </div>
+  </div>
+  <p class="compare-tiny">I suggerimenti non sono tutti prezzi locali: gli alimentari derivano da un proxy nazionale ISTAT e varie bollette sono ipotesi di pianificazione. <a routerLink="/costo-vita-firenze-persona-sola">Vedi anche il modello dettagliato per Firenze ↗</a></p>
+  @if(autoFeedback()){<p class="compare-alert" role="status">{{autoFeedback()}}</p>}
 </section>
 
 <section class="container compare-layout" aria-label="Budget delle due città">
@@ -85,6 +133,7 @@ const emptyBudget=():CityBudget=>({
 
       <div class="compare-divider"></div>
       <h3>Entrate e spese mensili</h3>
+      <p class="compare-tiny">Suggerimenti iniziali per persona sola. <strong>{{coverage(side.key).available}}/5 voci proposte</strong>, di cui {{coverage(side.key).supported}} con una tariffa o un indicatore territoriale diretto o derivato. Le altre sono ipotesi o proxy, non prezzi locali.</p>
       <label class="field-label" [for]="'income-'+side.key">Stipendio o entrate nette previste (€ / mese)</label>
       <input class="standalone-input" type="number" inputmode="decimal" min="0" max="100000" step="10"
         [id]="'income-'+side.key" [ngModel]="budget(side.key).netIncome"
@@ -96,7 +145,28 @@ const emptyBudget=():CityBudget=>({
           [id]="side.key+'-'+key" [ngModel]="budget(side.key).expenses[key]"
           (ngModelChange)="setCost(side.key,key,$event)" placeholder="Da inserire, oppure 0">
       }
-      <p class="compare-tiny">Se una spesa non esiste, inserisci <strong>0</strong>. Lascia vuota una voce che non conosci: il confronto resterà parziale.</p>
+      <div class="compare-shortcuts">
+        <button type="button" (click)="resetAutoCosts(side.key)">Ripristina i suggerimenti di {{name(side.key)}}</button>
+      </div>
+      <p class="compare-tiny">Puoi correggere qualsiasi cifra. <strong>0</strong> significa che la spesa non esiste; un campo vuoto segnala una voce senza costo conosciuto.</p>
+      <details class="compare-evidence">
+        <summary>Origine dei suggerimenti e attendibilità delle 5 voci</summary>
+        @for(suggestion of suggestionsFor(side.key);track suggestion.key){
+          <div class="compare-evidence-line">
+            <div class="compare-evidence-title">
+              <strong>{{costLabels[suggestion.key]}}</strong>
+              <span>{{suggestion.amount===null?'Senza stima':money(suggestion.amount)+' €'}} · {{suggestion.confidence}}</span>
+            </div>
+            <p>{{kindLabel(suggestion.kind)}} · {{suggestion.geography}} · {{suggestion.date}}
+              @if(isEdited(side.key,suggestion.key)){ · <strong>Importo personalizzato</strong>}
+            </p>
+            <p>{{suggestion.explanation}}</p>
+            @if(suggestion.sourceUrl){
+              <a [href]="suggestion.sourceUrl" target="_blank" rel="noopener noreferrer">Fonte: {{suggestion.sourceName}} ↗</a>
+            }
+          </div>
+        }
+      </details>
 
       <div class="compare-city-result">
         <p>Voci compilate: <strong>{{summary(side.key).filled}} / {{summary(side.key).totalCategories}}</strong></p>
@@ -113,7 +183,11 @@ const emptyBudget=():CityBudget=>({
 </section>
 
 <section class="container compare-results" aria-label="Risultati del confronto">
-  <h2>La differenza in numeri</h2>
+  <h2>La differenza tra gli scenari</h2>
+  <p class="compare-tiny">Non è una classifica del costo della vita: alcuni valori sono tariffe o rilevazioni, altri sono ipotesi. Per confrontare due città è essenziale controllare la copertura delle fonti.</p>
+  @if(comparisonWarning()){
+    <p class="compare-alert" role="note">{{comparisonWarning()}}</p>
+  }
   @if(sameCity()){
     <p class="compare-alert">Scegli due comuni diversi per confrontare le spese.</p>
   } @else if(comparison().expenseDifference!==null){
@@ -121,7 +195,7 @@ const emptyBudget=():CityBudget=>({
       <div class="compare-kpi">
         <span>Differenza nelle spese mensili · seconda meno prima</span>
         <strong>{{signedMoney(comparison().expenseDifference!)}} €</strong>
-        <small>Confronto basato solo sulle cinque categorie compilate per entrambe le città.</small>
+        <small>Delta fra due scenari personalizzabili, NON differenza statistica certificata fra città.</small>
       </div>
       <div class="compare-kpi">
         <span>Differenza nel residuo mensile · seconda meno prima</span>
@@ -150,7 +224,10 @@ const emptyBudget=():CityBudget=>({
   } @else {
     <div class="compare-intro" role="status">
       <h3>Il confronto si completa con i tuoi importi</h3>
-      <p>Compila tutte le cinque voci in entrambe le città, anche con valore 0 quando non applicabile. Non assumiamo che una voce lasciata vuota sia gratuita.</p>
+      <p>La simulazione è già precompilata dove è possibile. Per completare il confronto mancano questi importi:</p>
+      <p><strong>{{name('left')}}:</strong> {{missingCategoryLabels('left')}}</p>
+      <p><strong>{{name('right')}}:</strong> {{missingCategoryLabels('right')}}</p>
+      <p>Se conosci l'affitto di una città senza benchmark, inseriscilo. Non assumiamo che le voci lasciate vuote siano gratuite.</p>
     </div>
   }
 </section>
@@ -406,6 +483,22 @@ const emptyBudget=():CityBudget=>({
 </section>
 `,
   styles:[`
+    .compare-auto-panel{margin-bottom:22px;background:#fff;border:1px solid var(--line);padding:23px;border-radius:18px}
+    .compare-auto-intro{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.2fr);gap:22px}
+    .compare-auto-intro h2{font-size:1.25rem;margin:7px 0 11px}
+    .compare-auto-intro p{font-size:.85rem;margin:0}
+    .compare-auto-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .compare-auto-controls>div{min-width:0}
+    .compare-auto-controls .standalone-input{width:100%;min-height:44px;background:#fff;border:1px solid #bfcddd;border-radius:9px;padding:10px}
+    .compare-auto-controls .field-label{display:block;margin-bottom:6px;font-size:.8rem}
+    .compare-auto-controls button{background:#1d4b8a;color:#fff;border:0;border-radius:8px;padding:9px 12px;font-weight:700}
+    .compare-auto-controls button:disabled{opacity:.5;cursor:not-allowed}
+    .compare-evidence{border:1px solid #d8e3ef;border-radius:10px;margin:16px 0;background:#f8fbfe}
+    .compare-evidence summary{cursor:pointer;color:var(--navy);font-weight:750;font-size:.83rem;padding:13px}
+    .compare-evidence-line{border-top:1px solid #e1e8ef;padding:12px 14px}
+    .compare-evidence-title{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:.82rem}
+    .compare-evidence-title span{color:#33536c}
+    .compare-evidence-line p,.compare-evidence-line a{font-size:.76rem;margin:5px 0;line-height:1.45}
     .compare-shortcuts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
     .compare-shortcuts button{border:1px solid #bfd1e2;background:#fff;color:var(--navy);font-weight:750;border-radius:10px;padding:10px 13px}
     .compare-shortcuts button:hover{background:#eaf1fc}
@@ -475,7 +568,7 @@ const emptyBudget=():CityBudget=>({
     .compare-footer{border-top:1px solid var(--line);padding-top:25px}
     .compare-alert{padding:15px;border-radius:10px;background:#fff1dc;color:#815310}
     @media(max-width:800px){
-      .compare-layout,.compare-result-cards,.compare-salary-controls,.compare-fuel-controls{grid-template-columns:1fr}
+      .compare-layout,.compare-result-cards,.compare-salary-controls,.compare-fuel-controls,.compare-auto-intro,.compare-auto-controls{grid-template-columns:1fr}
       .compare-fuel{padding:18px}
       .compare-salary{padding:18px}
       .compare-city-card,.compare-reference-card,.compare-omi-card,.compare-intro,.compare-kpi{padding:18px}
@@ -488,13 +581,19 @@ export class CompareComponent implements OnInit {
   readonly costKeys=COST_KEYS;
   readonly costLabels=COST_LABELS;
   readonly basketSource=CODACONS_BASKET_SOURCE;
+  readonly florenceContract=signal<RentContract>(DEFAULT_SINGLE_PERSON_OPTIONS.florenceContract);
+  readonly autoWaterM3=signal(DEFAULT_SINGLE_PERSON_OPTIONS.waterM3PerYear);
+  readonly commonNet=signal<number|null>(null);
+  readonly autoFeedback=signal('');
+  readonly editedLeft=signal<Partial<Record<CostKey,boolean>>>({});
+  readonly editedRight=signal<Partial<Record<CostKey,boolean>>>({});
   readonly loading=signal(true);
   readonly error=signal('');
   readonly shareStatus=signal('');
   readonly rentalData=signal<MunicipalRentDataset|null>(null);
   readonly rentalLoading=signal(true);
   readonly rentalError=signal('Benchmark affitti non disponibile.');
-  readonly rentAreaSqm=signal<number|null>(70);
+  readonly rentAreaSqm=signal<number|null>(DEFAULT_SINGLE_PERSON_OPTIONS.areaSqm);
   readonly fuelData=signal<ProvinceFuelSnapshot|null>(null);
   readonly fuelLoading=signal(true);
   readonly fuelError=signal('Dataset provinciale non disponibile.');
@@ -520,15 +619,18 @@ export class CompareComponent implements OnInit {
     });
   });
   readonly cityByCode=computed(()=>new Map(this.records().map(x=>[x.code,x])));
-  readonly leftCode=signal('F205');
-  readonly rightCode=signal('F839');
-  readonly leftQuery=signal('Milano');
-  readonly rightQuery=signal('Napoli');
+  readonly leftCode=signal('D612');
+  readonly rightCode=signal('F205');
+  readonly leftQuery=signal('Firenze');
+  readonly rightQuery=signal('Milano');
   readonly leftBudget=signal<CityBudget>(emptyBudget());
   readonly rightBudget=signal<CityBudget>(emptyBudget());
   readonly leftOmi=signal<OmiInputs>(emptyOmi());
   readonly rightOmi=signal<OmiInputs>(emptyOmi());
 
+  readonly leftSuggestions=computed(()=>this.makeSuggestions('left'));
+  readonly rightSuggestions=computed(()=>this.makeSuggestions('right'));
+  readonly comparisonWarning=computed(()=>compareMethodWarning(this.leftCode(),this.rightCode()));
   readonly comparison=computed(()=>compareCityBudgets(this.leftBudget(),this.rightBudget()));
   readonly sameCity=computed(()=>this.leftCode()===this.rightCode());
   readonly basketDifference=computed(()=>{
@@ -546,10 +648,11 @@ export class CompareComponent implements OnInit {
       if(!dataset.published)throw new Error('Il catalogo MEF non è stato ancora revisionato');
       this.municipalData.set(dataset);
       this.records.set(dataset.records);
-      const da=this.route.snapshot.queryParamMap.get('da')??'F205';
-      const a=this.route.snapshot.queryParamMap.get('a')??'F839';
+      const da=this.route.snapshot.queryParamMap.get('da')??'D612';
+      const a=this.route.snapshot.queryParamMap.get('a')??'F205';
       if(this.cityByCode().has(da)&&this.cityByCode().has(a)&&da!==a)this.selectPair(da,a,false);
-      else this.selectPair('F205','F839',false);
+      else this.selectPair('D612','F205',false);
+      this.refreshBothSuggestions();
     }catch{
       this.error.set('Catalogo dei comuni non disponibile. Il confronto non usa dati dimostrativi: riprova dopo il deploy e verifica lo stato dei dati.');
     }finally{this.loading.set(false);}
@@ -559,13 +662,20 @@ export class CompareComponent implements OnInit {
       const response=await fetch('/data/municipal-rent-benchmarks.json',{cache:'no-cache'});
       if(!response.ok)throw Error('HTTP '+response.status);
       this.rentalData.set(parseMunicipalRentData(await response.json()));
+      this.refreshBothSuggestions();
     }catch{
       this.rentalError.set('Le quotazioni immobiliari aggregate non sono disponibili. Puoi sempre inserire l’affitto manualmente.');
     }finally{this.rentalLoading.set(false);}
   }
   setRentArea(value:unknown):void{
     const area=validMoney(value,500);
-    this.rentAreaSqm.set(area!==null&&area>=15?area:null);
+    if(area===null||area<15||area>300){
+      this.autoFeedback.set('La superficie deve essere compresa tra 15 e 300 m².');
+      return;
+    }
+    this.autoFeedback.set('');
+    this.rentAreaSqm.set(area);
+    this.refreshBothSuggestions();
   }
   rentBenchmark(side:Side){
     return benchmarkForMunicipality(this.rentalData(),side==='left'?this.leftCode():this.rightCode());
@@ -665,9 +775,78 @@ export class CompareComponent implements OnInit {
   name(side:Side):string{return this.city(side)?this.displayCity(this.city(side)!):'Città non scelta';}
   nameRegion(province:string):string{return (taxRegionFromProvince(province)??'Regione non disponibile').replace(/^REGIONE /,'');}
   query(side:Side):string{return side==='left'?this.leftQuery():this.rightQuery();}
+  private edited(side:Side){return side==='left'?this.editedLeft:this.editedRight;}
+  isEdited(side:Side,key:CostKey):boolean{return this.edited(side)()[key]===true;}
+  private makeSuggestions(side:Side):CategorySuggestion[]{
+    const code=side==='left'?this.leftCode():this.rightCode();
+    if(!this.cityByCode().has(code))return [];
+    return suggestSinglePersonCosts(code,this.rentalData(),{
+      areaSqm:this.rentAreaSqm()??DEFAULT_SINGLE_PERSON_OPTIONS.areaSqm,
+      waterM3PerYear:this.autoWaterM3(),florenceContract:this.florenceContract()
+    });
+  }
+  suggestionsFor(side:Side):CategorySuggestion[]{
+    return side==='left'?this.leftSuggestions():this.rightSuggestions();
+  }
+  coverage(side:Side){return cityDataCoverage(this.suggestionsFor(side));}
+  missingCategoryLabels(side:Side):string{
+    const missing=COST_KEYS.filter(k=>this.budget(side).expenses[k]===null);
+    return missing.length?missing.map(k=>COST_LABELS[k]).join(', '):'nessun importo mancante';
+  }
+  kindLabel(kind:CategorySuggestion['kind']):string{
+    return ({
+      observed:'Contratti storici osservati',derived:'Indicatore derivato da dati pubblici',
+      tariff:'Tariffa urbana pubblicata',proxy:'Proiezione nazionale',
+      scenario:'Ipotesi illustrativa',mixed:'Tariffa + ipotesi',
+      unavailable:'Dato non disponibile'
+    } as const)[kind];
+  }
+  private refreshSideSuggestions(side:Side,force=false):void{
+    if(!this.city(side))return;
+    const current=this.budget(side);
+    const edited=this.edited(side)();
+    const next={...current.expenses};
+    for(const s of this.suggestionsFor(side)){
+      if(!force&&edited[s.key])continue;
+      next[s.key]=s.amount;
+    }
+    this.setBudget(side,{...current,expenses:next});
+    if(force)this.edited(side).set({});
+  }
+  private refreshBothSuggestions():void{
+    this.refreshSideSuggestions('left');this.refreshSideSuggestions('right');
+  }
+  resetAutoCosts(side:Side):void{
+    this.refreshSideSuggestions(side,true);
+    this.autoFeedback.set('Suggerimenti ripristinati per '+this.name(side)+'. Le entrate nette non sono state modificate.');
+  }
+  setFlorenceContract(v:unknown):void{
+    if(v==='long'||v==='agreed'||v==='temporary'){
+      this.florenceContract.set(v);
+      this.autoFeedback.set('');
+      this.refreshBothSuggestions();
+    }
+  }
+  setAutoWater(v:unknown):void{
+    const amount=validMoney(v,500);
+    if(amount===null){
+      this.autoFeedback.set('Consumo annuo di acqua non valido (0–500 m³).');return;
+    }
+    this.autoWaterM3.set(amount);
+    this.autoFeedback.set('');
+    this.refreshBothSuggestions();
+  }
+  setCommonNet(v:unknown):void{this.commonNet.set(validMoney(v));}
+  applyCommonNet():void{
+    const n=this.commonNet();
+    if(n===null)return;
+    this.setNet('left',n);
+    this.setNet('right',n);
+    this.autoFeedback.set('Stesso netto applicato a entrambe le città.');
+  }
   onSearch(side:Side,value:string):void{
-    if(side==='left'){this.leftQuery.set(value);this.leftCode.set('');this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());}
-    else{this.rightQuery.set(value);this.rightCode.set('');this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());}
+    if(side==='left'){this.leftQuery.set(value);this.leftCode.set('');this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());this.editedLeft.set({});}
+    else{this.rightQuery.set(value);this.rightCode.set('');this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());this.editedRight.set({});}
     this.shareStatus.set('');
   }
   matches(side:Side):MunicipalRecord[]{
@@ -682,32 +861,36 @@ export class CompareComponent implements OnInit {
     const city=this.cityByCode().get(code);
     if(!city||code===(side==='left'?this.rightCode():this.leftCode()))return;
     if(side==='left'){
-      if(this.leftCode()!==code){this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());}
+      if(this.leftCode()!==code){this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());this.editedLeft.set({});}
       this.leftCode.set(code);this.leftQuery.set(this.displayCity(city));
     }else{
-      if(this.rightCode()!==code){this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());}
+      if(this.rightCode()!==code){this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());this.editedRight.set({});}
       this.rightCode.set(code);this.rightQuery.set(this.displayCity(city));
     }
+    this.refreshSideSuggestions(side);
     this.updateUrl();
   }
   selectPair(first:string,second:string,update=true):void{
     const a=this.cityByCode().get(first),b=this.cityByCode().get(second);
     if(!a||!b||first===second)return;
-    if(this.leftCode()!==first){this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());}
-    if(this.rightCode()!==second){this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());}
+    if(this.leftCode()!==first){this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());this.editedLeft.set({});}
+    if(this.rightCode()!==second){this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());this.editedRight.set({});}
     this.leftCode.set(first);this.rightCode.set(second);
     this.leftQuery.set(this.displayCity(a));this.rightQuery.set(this.displayCity(b));
+    this.refreshBothSuggestions();
     if(update)this.updateUrl();
   }
   swapCities():void{
     const a=this.leftCode(),b=this.rightCode();
     if(!this.cityByCode().has(a)||!this.cityByCode().has(b))return;
     const leftBudget=this.leftBudget(),rightBudget=this.rightBudget(),leftOmi=this.leftOmi(),rightOmi=this.rightOmi();
+    const leftEdited=this.editedLeft(),rightEdited=this.editedRight();
     this.leftCode.set(b);this.rightCode.set(a);
     this.leftQuery.set(this.displayCity(this.cityByCode().get(b)!));
     this.rightQuery.set(this.displayCity(this.cityByCode().get(a)!));
     this.leftBudget.set(rightBudget);this.rightBudget.set(leftBudget);
     this.leftOmi.set(rightOmi);this.rightOmi.set(leftOmi);
+    this.editedLeft.set(rightEdited);this.editedRight.set(leftEdited);
     this.updateUrl();
   }
   private updateUrl():void{
@@ -730,6 +913,7 @@ export class CompareComponent implements OnInit {
   private setBudget(side:Side,value:CityBudget):void{(side==='left'?this.leftBudget:this.rightBudget).set(value);}
   setNet(side:Side,value:unknown):void{this.setBudget(side,{...this.budget(side),netIncome:validMoney(value)});}
   setCost(side:Side,key:CostKey,value:unknown):void{
+    this.edited(side).update(current=>({...current,[key]:true}));
     this.setBudget(side,{...this.budget(side),expenses:{...this.budget(side).expenses,[key]:validMoney(value)}});
   }
   summary(side:Side){return side==='left'?this.comparison().first:this.comparison().second;}
