@@ -6,10 +6,14 @@
  */
 import { type CostKey } from './city-compare';
 import { foodProxySolo2025, estimateFlorenceSolo,
-  DEFAULT_FLORENCE_SOLO, FLORENCE_RENT_REFERENCE, ISTAT_SOLO_REFERENCE,
+  DEFAULT_FLORENCE_SOLO, ISTAT_SOLO_REFERENCE,
   PUBLIACQUA_REFERENCE, AUTOLINEE_TOSCANE_REFERENCE,
   type RentContract, type CostEvidence } from './automatic-cost-florence';
 import { benchmarkForMunicipality, rentalRangeForArea, type MunicipalRentDataset } from './municipal-rents';
+import {
+  tuscanCapitalRentRecord, tuscanCapitalMonthlyRent2024, comparableTuscanRentPair,
+  TUSCANY_RENT_2024_SOURCE
+} from './tuscany-capital-rents-2024';
 
 export type SuggestionKind = 'observed'|'derived'|'tariff'|'proxy'|'scenario'|'mixed'|'unavailable';
 export type Confidence = 'alta'|'media'|'bassa'|'non disponibile';
@@ -27,6 +31,7 @@ export interface CategorySuggestion {
 export interface SinglePersonOptions {
   /** Same reference floor area in both cities. Rent source methodologies still differ. */
   areaSqm:number;
+  /** Same contract type for every covered Tuscan capital, not just Florence. */
   florenceContract:RentContract;
   waterM3PerYear:number;
 }
@@ -51,14 +56,20 @@ const unavailable=(key:CostKey,explanation:string):CategorySuggestion=>({
   sourceUrl:null
 });
 
-function fromFlorenceRent(area:number,contract:RentContract):CategorySuggestion {
-  const p=estimateFlorenceSolo({...DEFAULT_FLORENCE_SOLO,areaSqm:area,contract});
-  const rent=p.lines.find(x=>x.key==='housing')!;
+function fromTuscanCapitalRent(
+  code:string,area:number,contract:RentContract
+):CategorySuggestion{
+  const record=tuscanCapitalRentRecord(code);
+  const monthly=tuscanCapitalMonthlyRent2024(code,area,contract);
+  if(!record||monthly===null)
+    return unavailable('housing','Media dei nuovi contratti non disponibile per questo comune capoluogo.');
+  const rate=record.yearlyEURPerSqm[contract];
   return {
-    key:'housing',amount:rent.amountEUR,kind:'observed',confidence:'media',
-    geography:'Comune di Firenze',date:'Contratti registrati 2024',
-    explanation:rent.method+' Metodologia non direttamente confrontabile con le quotazioni OMI di Milano.',
-    sourceName:FLORENCE_RENT_REFERENCE.title,sourceUrl:FLORENCE_RENT_REFERENCE.url
+    key:'housing',amount:monthly,kind:'observed',confidence:'media',
+    geography:'Comune capoluogo di '+record.city+' (non provincia)',
+    date:'Nuovi contratti registrati 2024, rapporto pubblicato aprile 2026',
+    explanation:`Media storica per tipologia di contratto: ${rate} €/m²/anno × ${area} m² / 12. E' lo stesso metodo per tutti i dieci capoluoghi toscani; non rappresenta il canone di un immobile specifico né una quotazione del 2026.`,
+    sourceName:TUSCANY_RENT_2024_SOURCE.title,sourceUrl:TUSCANY_RENT_2024_SOURCE.url
   };
 }
 function fromMilanRent(area:number,rentalData:MunicipalRentDataset|null):CategorySuggestion {
@@ -93,15 +104,17 @@ export function suggestSinglePersonCosts(
     throw new Error('Parametri scenario persona sola non validi');
   }
   const isFirenze=municipalityCode==='D612';
+  const isTuscanCapital=tuscanCapitalRentRecord(municipalityCode)!==null;
   const isMilano=municipalityCode==='F205';
   const fl=isFirenze?estimateFlorenceSolo({
     ...DEFAULT_FLORENCE_SOLO,areaSqm:options.areaSqm,
     contract:options.florenceContract,waterCubicMetersPerYear:options.waterM3PerYear
   }):null;
   const water=fl?.lines.find(x=>x.key==='water');
-  const housing=isFirenze?fromFlorenceRent(options.areaSqm,options.florenceContract):
-    isMilano?fromMilanRent(options.areaSqm,rents):
-      unavailable('housing','Non esiste ancora un indicatore comunale dell’affitto verificato e riutilizzabile. Inserisci un importo reale o ricavato da una quotazione pertinente.');
+  const housing=isTuscanCapital
+    ?fromTuscanCapitalRent(municipalityCode,options.areaSqm,options.florenceContract)
+    :isMilano?fromMilanRent(options.areaSqm,rents)
+    :unavailable('housing','Non esiste ancora un indicatore comunale dell’affitto verificato e riutilizzabile. Inserisci un importo reale o ricavato da una quotazione pertinente.');
 
   const utilities=water?{
     key:'utilities' as CostKey,amount:round(110+water.amountEUR),
@@ -155,9 +168,13 @@ export function cityDataCoverage(suggestions:CategorySuggestion[]):{
 }
 
 export function compareMethodWarning(first:string,second:string):string|null{
-  if([first,second].includes('F205')&&[first,second].includes('D612'))
-    return 'Attenzione: il valore dell’affitto di Firenze deriva da contratti registrati nel 2024, quello di Milano da un punto medio di indicatori OMI del 2025. Le metodologie non sono omogenee: la differenza tra i due scenari NON è un confronto statistico affidabile del costo della vita.';
-  if(first!==second && ['D612','F205'].includes(first) && ['D612','F205'].includes(second))
-    return null;
+  if(comparableTuscanRentPair(first,second))
+    return 'Gli affitti dei due capoluoghi toscani provengono dalla stessa rilevazione dei nuovi contratti registrati nel 2024 e dalla stessa tipologia contrattuale. La differenza sugli affitti è confrontabile come dato storico; il totale mensile comprende però altre ipotesi non territoriali e NON dimostra quale città convenga nel 2026.';
+  const tuscanyVsMilan=(
+    (tuscanCapitalRentRecord(first)!==null&&second==='F205') ||
+    (tuscanCapitalRentRecord(second)!==null&&first==='F205')
+  );
+  if(tuscanyVsMilan)
+    return 'Attenzione: i capoluoghi toscani usano i nuovi contratti registrati nel 2024, Milano un punto medio di indicatori OMI del 2025. I metodi immobiliari non sono omogenei; la differenza complessiva NON è una classifica affidabile del costo della vita.';
   return 'Il confronto usa importi illustrativi e può avere voci senza dati territoriali. Una differenza di scenario non dimostra che una città sia più economica.';
 }
