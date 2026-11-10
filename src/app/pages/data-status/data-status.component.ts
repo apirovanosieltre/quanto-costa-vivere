@@ -62,7 +62,7 @@ export class DataStatusComponent implements OnInit {
   }
   async load():Promise<void>{
     try {const response=await fetch('/data/municipal-2026.json'); const d=validateMunicipalDataset(await response.json());
-      if(d.published){this.mefStatus.set('Dataset pubblicato');this.mefInfo.set(`${d.report.rows} comuni importati, ${d.report.simple} aliquote semplici e ${d.report.needsReview+d.report.pending} da verificare. Acquisizione: ${d.retrievedAt??'non indicata'}.`);}
+      if(d.published){this.mefStatus.set('Dataset con revisione tecnica pubblicato');this.mefInfo.set(`${d.report.rows} comuni presenti, ${d.report.simple} con aliquota semplice calcolabile, ${d.report.needsReview} con regole da verificare e ${d.report.pending} pendenti. Fonte acquisita: ${d.retrievedAt??'non indicata'}. SHA-256: ${d.review?.sourceSha256??'non presente'}.`);}
     } catch { this.mefInfo.set('Il catalogo comunale non è raggiungibile. Nessuna aliquota è mostrata.'); }
   }
 }
