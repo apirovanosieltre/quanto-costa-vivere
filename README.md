@@ -135,7 +135,7 @@ Il sito calcola le fasce progressive solo per i profili confrontati con il CSV M
 - **Liguria**: 1,23% fino a 28.000 €, 3,18% tra 28.000 e 50.000 €, 3,23% oltre.
 - **Valle d'Aosta**: esenzione fino a 15.000 €, aliquota 1,23% sull'intero imponibile oltre.
 
-I profili verificano che il CSV corrente mantenga esattamente le fasce, aliquote e norme attese. Ogni modifica causa un calcolo non disponibile. La verifica non sostituisce un parere fiscale.
+I profili verificano l'impronta SHA-256 del CSV ufficiale MEF 2026 approvato (cc7125ce020a754bb519d2ea2803c7fc81d8f92af040623cd6e7953c2dca25be), oltre a fasce, aliquote e norme attese. Ogni modifica causa un calcolo non disponibile. La verifica non sostituisce un parere fiscale.
 
 La pagina addizionali-regionali chiede conferma che l'IRPEF nazionale netta sia dovuta, e per il Piemonte conferma dell'assenza di figli a carico. Il simulatore stipendio collega il comune alla regione tramite il codice di provincia e non mostra il netto dopo addizionali se manca uno dei due importi.
 
