@@ -1,4 +1,5 @@
-import { onRequestGet } from '../functions/api/inflation';
+import { onRequestGet as getInflation } from '../functions/api/inflation';
+import { onRequestGet as getHouseholdSpending } from '../functions/api/household-spending';
 
 /**
  * Entry point per Cloudflare Workers con Static Assets.
@@ -15,7 +16,13 @@ export default {
           headers: { Allow: 'GET' }
         });
       }
-      return onRequestGet({ request });
+      return getInflation({ request });
+    }
+    if (pathname === '/api/household-spending') {
+      if (request.method !== 'GET') {
+        return new Response('Method Not Allowed', { status: 405, headers: { Allow: 'GET' } });
+      }
+      return getHouseholdSpending();
     }
     return new Response(JSON.stringify({ error: 'API_NOT_FOUND' }), {
       status: 404,
