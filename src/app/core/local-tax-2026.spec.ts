@@ -53,7 +53,7 @@ describe('addizionale regionale 2026: scaglioni progressivi',()=>{
   it('legge Emilia-Romagna, Toscana, Liguria dalla tabella 2026',()=>{
     const configs=[
       ['REGIONE EMILIA-ROMAGNA',[1.33,1.93,2.78,3.33],[15000,28000,50000],
-        'Articolo 2 della legge regionale 20 dicembre 2006, n. 19 coordinato con la legge regionale 25 luglio 2025, n. 9.',505.9],
+        'Articolo 2 della legge regionale 20 dicembre 2006, n. 19 coordinato con la legge regionale 25 luglio 2025, n. 9.',506],
       ['REGIONE TOSCANA',[1.42,1.43,3.32,3.33],[15000,28000,50000],
         'ARTICOLO 1 LEGGE REGIONALE 28/12/2023 N.48',465.3],
       ['REGIONE LIGURIA',[1.23,3.18,3.23],[28000,50000],
