@@ -1,8 +1,8 @@
-# QuantoCostaVivere · v0.4
+# QuantoCostaVivere · v0.5
 
 Portale Angular 22, mobile-first e accessibile, per **budget domestico, IRPEF 2026, stima nazionale da RAL e inflazione ufficiale italiana**. Integra una Cloudflare Pages Function per Eurostat e una pipeline **di acquisizione + validazione** degli elenchi MEF.
 
-> Stato: codice sorgente pronto da caricare su GitHub. **Non è stato verificato un deploy reale Cloudflare né una sincronizzazione live del CSV MEF nell'ambiente di generazione.** Non si afferma che le addizionali siano già pubblicate. Nessun dato dimostrativo viene spacciato per statistica ufficiale.
+> Stato: repository GitHub con verifiche CI. CSV MEF comunale 2026 acquisito tramite GitHub Actions e revisionato tecnicamente contro lo schema ufficiale, con hash sorgente fissato e campioni verificati. **La revisione è tecnica e a campione, non un parere fiscale su tutte le 7.897 delibere.** Nessun deploy Cloudflare è stato certificato dall'ambiente di generazione.
 
 ## Funzionalità
 
@@ -10,9 +10,9 @@ Portale Angular 22, mobile-first e accessibile, per **budget domestico, IRPEF 20
 |---|---|---|
 | `/` | Operativa | Budget manuale, i valori iniziali sono demo; comune non influenza il budget |
 | `/irpef-2026` | Operativa | Imposta lorda nazionale a scaglioni |
-| `/stipendio-netto-2026` | Operativa | Stima per caso standard: fino a RAL 56.224 €, **prima di addizionali locali e altre variabili** |
+| `/stipendio-netto-2026` | Operativa | Netto nazionale e integrazione parziale di addizionali comunali revisionate e regola MEF Valle d'Aosta, **netto completo soltanto con entrambe disponibili** |
 | `/inflazione` | API integrata nel codice | Eurostat ufficiale `prc_hicp_minr`, API Cloudflare `/api/inflation`, serie reale fino a 12 mesi e fallback diretto in sviluppo; **richiede deploy e collaudo live** |
-| `/addizionali-comunali` | Pipeline + UI pronte | Nessun valore ufficiale caricato finché non viene importato e revisionato il CSV MEF |
+| `/addizionali-comunali` | Snapshot revisionato | 7.897 comuni, 3.294 aliquote semplici calcolabili, 810 da verificare e 3.793 pendenti `0*` alla data del CSV 10/11/2026 |
 | `/addizionali-regionali` | API MEF integrata | CSV regionale 2026 letto dal Worker e verificato; mostra fasce e disposizioni senza calcolare l'imposta, richiede verifica live dopo deploy |
 | `/spese-famiglie` | Dataset ISTAT 2025 | Dati reali dal comunicato ISTAT 8 ottobre 2026, solo regioni citate nella pubblicazione |
 | `/quotazioni-omi` | Strumento manuale | Ricerca nel portale ufficiale OMI e calcolo intervallo locazione da quote €/m²/mese inserite dall'utente |
@@ -101,7 +101,7 @@ node scripts/sync-mef.mjs --file ./Add_comunale_irpef2026.csv
 node scripts/sync-mef.mjs --file ./Add_comunale_irpef2026.csv --publish --reviewed
 ```
 
-La verifica produce `mef-validation-report.json` con SHA-256 del CSV e campioni distinti per stato, e `mef-candidate-2026.json` con `published:false`. La GitHub Action settimanale e avviabile manualmente (**Actions → MEF 2026 - controllo dataset → Run workflow**) conserva entrambi i file tra gli artifact, senza pubblicare il dataset. La pubblicazione revisionata sostituisce `public/data/municipal-2026.json`. Prima di fare commit, controlla **report, numero di comuni, casi pendenti, checksum e campioni casuali**. Il file vuoto iniziale (`published:false`) è intenzionale. **L'addizionale regionale non è calcolata**: le fasce MEF 2026 sono consultabili senza trasformarle in un netto complessivo. Non aggiungere tassi di una regione basandosi su un unico valore non verificato.
+La verifica produce `mef-validation-report.json` con SHA-256 del CSV e campioni distinti per stato, e `mef-candidate-2026.json` con `published:false`. È stato revisionato tecnicamente lo schema CSV 2026: 34 colonne con `FLAG_NUOVA`, aliquota unica (flag 1), aliquota + esenzione generale (flag 2), controllo incrociato di importo esente e descrizione. Note straordinarie, aliquote zero, scaglioni, esenzioni speciali e `0*` sono bloccati o pendenti. La GitHub Action settimanale e avviabile manualmente (**Actions → MEF 2026 - controllo dataset → Run workflow**) conserva entrambi i file tra gli artifact, senza pubblicare il dataset. La pubblicazione revisionata sostituisce `public/data/municipal-2026.json`, richiede un checksum **identico** a `scripts/mef-reviewed-2026.json`, i conteggi uguali e tutti i comuni campione coerenti. **Qualunque cambiamento al CSV richiede una nuova revisione prima di ripubblicare**. La revisione 10/11/2026 copre 16 campioni, tra aliquote semplici, esenzioni, casi speciali e `0*`. I casi complessi non forniscono aliquote nel JSON. Il file vuoto iniziale (`published:false`) è intenzionale. **L'addizionale regionale non è calcolata per tutte le regioni**: il simulatore supporta soltanto la regola esplicita MEF 2026 della Valle d'Aosta, con esenzione generale fino a 15.000 € e aliquota 1,23% oltre; le altre restano consultabili senza trasformarle in un netto complessivo. Non aggiungere tassi di una regione basandosi su un unico valore non verificato.
 
 Una GitHub Action `.github/workflows/mef-quality.yml` esegue ogni settimana **solo controllo QA**, senza pubblicazione non revisionata.
 
@@ -142,7 +142,7 @@ Fonti: [art. 13 TUIR](https://www.normattiva.it/atto/caricaDettaglioAtto?atto.ar
 
 ## Ancora da sviluppare
 
-1. **Calcolo regionale MEF** con modellazione e revisione legale di scaglioni, esenzioni e detrazioni per tutte le regioni e province autonome (la sola consultazione del CSV è integrata).
+1. **Calcolo regionale MEF** completo: attualmente solo la Valle d'Aosta ha un profilo di calcolo esplicito e controllato; le altre regioni con scaglioni e agevolazioni necessitano regole dedicate con test.
 2. **OMI**: condizioni di riutilizzo commerciale, estrazione periodica bulk per zone e tipologia (consultazione ufficiale e calcolatore manuale disponibili).
 3. **ISTAT SDMX**: completare tutte le regioni e aggiornare i dati annuali tramite un dataflow selezionato e verificato; oggi è disponibile uno snapshot ufficiale 2025 parziale. ISTAT limita il servizio a 5 query/minuto/IP: l'integrazione richiederà caching e controlli.
 4. **Ricerca completa comuni**, normalizzazione catastale/ISTAT, mapping regioni e confronto territoriale.
@@ -150,3 +150,4 @@ Fonti: [art. 13 TUIR](https://www.normattiva.it/atto/caricaDettaglioAtto?atto.ar
 6. **SEO, accessibilità e privacy**: test browser/axe, pagine dinamiche SEO solo con dati autentici, CMP pubblicitaria se necessaria.
 
 Il progetto non richiede un DB per l'API Eurostat. D1 può essere introdotto successivamente per storicizzare dataset e revisioni senza affidarsi a file statici.
+\n## Pubblicazione revisionata: snapshot fiscale 2026\n\n- Sorgente ufficiale MEF 10/11/2026, SHA-256: `831bcd85bb9f6e4b5b8e7eb7bc05ccbc5452d92e07d3873c187d0922c6e828be`.\n- Manifesto `scripts/mef-reviewed-2026.json`, 16 casi di confronto, report `7897` righe (`3294` semplici; `810` da verificare; `3793` pendenti).\n- Il file `public/data/municipal-2026.json` pubblica l'elenco completo con **importi calcolabili solo per le 3.294 aliquote semplici**. `published:true` certifica il controllo tecnico del tracciato e dei campioni, non una validazione legale di tutte le delibere.\n- Le pagine calcolo comunale e RAL richiedono presenza di IRPEF nazionale netta dovuta: in assenza, non è dovuta l'addizionale. Nel simulatore RAL è obbligatoria anche la conferma dell'associazione regione/comune.\n- **Non** fare un nuovo `npm run data:mef:publish` se il CSV è cambiato: il comando bloccherà la pubblicazione fino a una nuova verifica del file e del manifesto.\n- Le stime fiscali non sostituiscono il cedolino: le maggiorazioni, gli acconti, i conguagli e agevolazioni personali non sono riprodotti.\n
