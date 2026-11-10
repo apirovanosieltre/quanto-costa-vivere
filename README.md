@@ -1,4 +1,4 @@
-# QuantoCostaVivere · v0.8
+# QuantoCostaVivere · v0.9
 
 Portale Angular 22, mobile-first e accessibile, per **confronto del costo della vita tra città, budget domestico, IRPEF 2026, stima RAL e inflazione ufficiale italiana**. Integra una Cloudflare Pages Function per Eurostat e una pipeline **di acquisizione + validazione** degli elenchi MEF.
 
@@ -9,7 +9,7 @@ Portale Angular 22, mobile-first e accessibile, per **confronto del costo della 
 | Route | Stato | Note |
 |---|---|---|
 | `/` | Operativa | Budget manuale, i valori iniziali sono demo; comune non influenza il budget |
-| `/confronta-citta` | Operativa | Due comuni MEF (7.897), budget personalizzato e RAL se verificata, OMI manuale, ISTAT, paniere campione e **prezzi provinciali dei carburanti MIMIT via optenergy** |
+| `/confronta-citta` | Operativa | Due comuni MEF (7.897), budget personalizzato e RAL se verificata, **benchmark affitto OMI aggregato Milano 2025/2**, OMI manuale altrove, ISTAT, paniere campione e prezzi provinciali dei carburanti MIMIT |
 | `/irpef-2026` | Operativa | Imposta lorda nazionale a scaglioni |
 | `/stipendio-netto-2026` | Operativa | Netto nazionale con comunali semplici revisionate e regionali verificate: Lombardia, Toscana, Emilia-Romagna, Liguria, Piemonte (senza figli a carico) e Valle d'Aosta; **netto completo solo con entrambe le addizionali disponibili** |
 | `/inflazione` | API integrata nel codice | Eurostat ufficiale `prc_hicp_minr`, API Cloudflare `/api/inflation`, serie reale fino a 12 mesi e fallback diretto in sviluppo; **richiede deploy e collaudo live** |
@@ -29,7 +29,7 @@ La pagina `/confronta-citta` è una **simulazione personalizzata**, non una clas
 - Differenza mensile tra i due totali e differenza nel residuo soltanto quando ci sono tutti i valori necessari. Non eseguiamo assunzioni generiche sui consumi di una persona o sulle differenze di prezzo tra città.
 - Simulazione opzionale della **stessa RAL** nelle due città: usa il motore fiscale nazionale 2026, dati comunali MEF revisionati e profili regionali verificati. Un netto locale è mostrato soltanto quando entrambe le addizionali sono disponibili; poi l'utente può applicarlo volontariamente al budget. Per il Piemonte senza figli a carico è richiesta conferma esplicita.
 - I prezzi dei **carburanti self-service** sono mediane provinciali reali MIMIT (elaborazione optenergy), accompagnate da data, numero di distributori e quartili; la loro applicazione al budget è volontaria e richiede km e consumi dell'auto.
-- Le quotazioni **OMI** sono ricavate manualmente dall'utente per la zona, tipologia, superficie e semestre selezionati sul sito dell'Agenzia delle Entrate. Si possono applicare i valori minimo o massimo al proprio budget con un clic; non esiste importazione automatica dei prezzi.
+- Per **Milano** viene mostrato un benchmark derivato e aggregato da 40 zone OMI (2025/2, abitazioni civili stato normale, superficie lorda), senza distribuire i singoli valori della banca dati. Per gli altri comuni le quotazioni **OMI** sono ricavate manualmente dall'utente per la zona, tipologia, superficie e semestre selezionati sul sito dell'Agenzia delle Entrate. Si possono applicare i valori minimo o massimo al proprio budget con un clic; non esiste importazione automatica dei prezzi.
 - I riferimenti **ISTAT 2025** disponibili sono medie familiari per **8 regioni esplicitamente citate**, non importi delle città. Sono mostrati come informazioni di contesto, non sommati nel budget.
 - Per 6 comuni con valori esplicitamente riportati dalla sintesi dell'indagine **Codacons 2025** dell'Ufficio statistico della Regione Puglia, viene visualizzato il costo del paniere campione di 28 alimentari + 11 servizi. Non rappresenta il costo mensile di vita, né viene inserito nel budget. Le cifre arrotondate dalla pubblicazione sono indicate come approssimative.
 - Nessun login, database o raccolta dei numeri personali. Le spese restano in memoria del browser durante la sessione e non vengono condivise da URL.
@@ -40,6 +40,24 @@ Fonti:
 - Agenzia Entrate OMI: https://www1.agenziaentrate.gov.it/servizi/geopoi_omi/index.htm
 
 **Limite attuale:** non disponiamo di dati automaticamente riutilizzabili e verificati su affitti e prezzi di ogni singolo comune. Evitiamo di generare migliaia di pagine SEO vuote o inventate; il comparatore ha una singola pagina indicizzabile, con parametri per le coppie selezionate. L'espansione delle schede città richiederà dataset locali realmente pubblicabili.
+
+## Benchmark degli affitti comunali: Milano, primo dataset
+
+Il comparatore mostra un **riferimento indicativo derivato** dalle quotazioni OMI 2025/2 pubblicate come risorsa CC BY 4.0 sul portale open data del Comune di Milano:
+https://dati.comune.milano.it/dataset/ds3024-quotazioni-immobiliari-omi-locazione-semestre-2025-2
+
+- Fonte originaria: **Agenzia delle Entrate - Osservatorio Mercato Immobiliare (OMI)**. Il portale del Comune riporta anche condizioni ulteriori, e la pubblicazione della banca dati completa non è autorizzata da questo progetto.
+- `scripts/omi-milan-rent.mjs` filtra esclusivamente **Abitazioni civili, stato NORMALE, superficie LORDA (L)**. Controlla codice catastale F205, schema ufficiale, numero di zone e intervalli validi.
+- Il risultato aggrega i **limiti minimi e massimi delle quotazioni di 40 zone diverse**, tramite due mediane NON ponderate. Non è la media dei contratti, non descrive l'affitto effettivo di una specifica casa e non esprime il 25°/75° percentile dei prezzi.
+- Valori ottenuti dalla fonte e dalla pipeline al 10/11/2026: **11,75 €/m²/mese** per la mediana dei limiti minimi di zona e **15,60 €/m²/mese** per la mediana dei massimi, riferiti al secondo semestre 2025.
+- Nel comparatore si può scegliere una **superficie lorda** (iniziale 70 m² per esempio) per leggere l'intervallo derivato (con 70 m²: 822,50–1.092,00 €/mese). I due valori possono essere applicati volontariamente alla voce casa del budget. Nessun canone viene applicato automaticamente.
+- Il file `public/data/municipal-rent-benchmarks.json` contiene **solo indicatori aggregati per una città**, date, metodologia, attribuzione e checksum. Le singole quotazioni OMI, le zone e la banca dati originale **non** sono ripubblicate.
+- **Nessuna stima automatica per Arezzo, Firenze o altri comuni** in assenza di una fonte recente verificata e utilizzabile. I valori di Firenze 2013 sono disponibili come open data ma troppo vecchi per essere presentati come costi attuali.
+- Script di controllo: `node --test scripts/omi-milan-rent.test.mjs` e `node scripts/sync-milan-rent.mjs`. La pubblicazione dei futuri semestri richiede una nuova revisione esplicita di struttura, fonte e permessi di riutilizzo, non avviene silenziosamente.
+- Condizioni ufficiali da considerare prima di ulteriori forme di ridistribuzione:
+https://www.agenziaentrate.gov.it/portale/web/guest/schede/fabbricatiterreni/omi/banche-dati/quotazioni-immobiliari/condizioni-contrattuali-qi
+
+**I valori sono un confronto di ordine di grandezza, non una quotazione di una zona specifica.** Per l'affitto reale occorrono area e immobile pertinenti, epoca dei dati e annunci verificabili.
 
 ## Prezzi territoriali dei carburanti: fonte, aggiornamento e limiti
 

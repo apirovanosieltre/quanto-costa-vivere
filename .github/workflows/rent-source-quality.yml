@@ -1,0 +1,42 @@
+name: Rental OMI open data - verified derivative
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/omi-milan-rent.mjs'
+      - 'scripts/omi-milan-rent.test.mjs'
+      - 'scripts/sync-milan-rent.mjs'
+      - 'src/app/core/municipal-rents.ts'
+      - 'public/data/municipal-rent-benchmarks.json'
+      - '.github/workflows/rent-source-quality.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: milan-rent-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '24'}
+      - name: Test aggregation and strict source interpretation
+        run: node --test scripts/omi-milan-rent.test.mjs
+      - name: Verify reviewed official Milan source and generate ephemeral derived summary
+        run: node scripts/sync-milan-rent.mjs
+      - name: Verify derived snapshot has no raw zone quotes
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const d=JSON.parse(fs.readFileSync('public/data/municipal-rent-benchmarks.json','utf8'));
+          if(d.schemaVersion!==1||d.cities.length!==1)process.exit(1);
+          const m=d.cities[0];
+          if(m.municipalCode!=='F205'||m.basePeriod!=='2025/2'||
+            m.zonesCount!==40||m.areaType!=='L'||m.rawQuoteRowsPublished!==false||
+            m.sourceSha256!=='588850f7745bfcdb680fe9d66007728493a8db74e52e2c43d195cc40c24c48be'||
+            m.lowerMedian!==11.75||m.upperMedian!==15.6)process.exit(1);
+          console.log('Verified Milan 2025/2 aggregation and provenance.');
+          NODE
