@@ -1,4 +1,4 @@
-/** Parser JSON-stat 2.0 usato dall'API pubblica Eurostat. Non interpola dati mancanti. */
+/** Parser JSON-stat 2.0 per l'API ufficiale Eurostat. Non interpola dati mancanti. */
 export interface EurostatDataset {
   id: string[];
   size: number[];
@@ -6,7 +6,6 @@ export interface EurostatDataset {
   value: Record<string, number | null> | Array<number | null>;
   updated?: string;
 }
-
 export interface InflationObservation {
   period: string;
   annualRate: number;
@@ -18,45 +17,68 @@ export interface InflationObservation {
   sourceUpdatedAt: string | null;
   retrievedAt: string;
 }
-
+export interface InflationHistoryPoint { period: string; annualRate: number; }
+export interface InflationSeriesResponse extends InflationObservation {
+  history: InflationHistoryPoint[];
+}
 export const INFLATION_SOURCE_URL = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr?geo=IT&coicop18=TOTAL&unit=RCH_A&freq=M&lastTimePeriod=12&lang=EN';
 
 function entries(dataset: EurostatDataset, dimension: string): [string, number][] {
   const values = dataset.dimension[dimension]?.category?.index;
   if (Array.isArray(values)) return values.map((key, index) => [key, index]);
   if (values && typeof values === 'object') return Object.entries(values);
-  throw new Error(`Dimensione Eurostat non disponibile: ${dimension}`);
+  throw new Error('Dimensione Eurostat non disponibile: ' + dimension);
 }
 
-/** Calcola l'indice lineare JSON-stat a partire dalle posizioni di ogni dimensione. */
-export function parseLatestItalianInflation(raw: unknown, retrievedAt: string): InflationObservation {
+/**
+ * Valida le dimensioni JSON-stat e restituisce i mesi con osservazioni reali
+ * ordinati cronologicamente. Nessun riempimento per i mesi mancanti.
+ */
+export function parseItalianInflationSeries(raw: unknown, retrievedAt: string): InflationSeriesResponse {
   if (!raw || typeof raw !== 'object') throw new Error('Risposta Eurostat non valida');
-  const dataset = raw as EurostatDataset;
-  if (!Array.isArray(dataset.id) || !Array.isArray(dataset.size) || !dataset.dimension || !dataset.value || dataset.id.length !== dataset.size.length) {
+  const d = raw as EurostatDataset;
+  if (!Array.isArray(d.id) || !Array.isArray(d.size) || !d.dimension || !d.value ||
+      d.id.length !== d.size.length || new Set(d.id).size !== d.id.length) {
     throw new Error('Schema JSON-stat incompleto');
   }
   const required: Record<string, string> = { freq: 'M', unit: 'RCH_A', geo: 'IT', coicop18: 'TOTAL' };
-  const positions: number[] = dataset.id.map((key, index) => {
-    if (!Number.isInteger(dataset.size[index]) || dataset.size[index] < 1) throw new Error('Dimensioni Eurostat incoerenti');
-    if (key === 'time' || key === 'time_period') return 0;
-    if (!(key in required)) throw new Error(`Dimensione Eurostat inattesa: ${key}`);
-    const found = entries(dataset, key).find(([name]) => name === required[key]);
-    if (!found) throw new Error(`Filtro Eurostat mancante: ${key}=${required[key]}`);
-    return found[1];
+  const timeKey = d.id.includes('time') ? 'time' : 'time_period';
+  const timeIndex = d.id.indexOf(timeKey);
+  if (timeIndex < 0 || d.id.length !== 5) throw new Error('Dimensioni Eurostat inattese');
+  const positions = d.id.map((key, index) => {
+    const size = d.size[index];
+    if (!Number.isInteger(size) || size < 1) throw new Error('Dimensioni Eurostat incoerenti');
+    if (key === timeKey) return 0;
+    if (!(key in required)) throw new Error('Dimensione Eurostat inattesa: ' + key);
+    const option = entries(d, key).find(([name]) => name === required[key]);
+    if (!option || !Number.isInteger(option[1]) || option[1] < 0 || option[1] >= size) {
+      throw new Error('Filtro Eurostat mancante: ' + key);
+    }
+    return option[1];
   });
-  const timeKey = dataset.id.includes('time') ? 'time' : 'time_period';
-  const timeIndex = dataset.id.indexOf(timeKey);
-  if (timeIndex < 0) throw new Error('Serie temporale Eurostat assente');
-  const timeValues = entries(dataset, timeKey).sort((a, b) => b[0].localeCompare(a[0]));
-  for (const [period, timePosition] of timeValues) {
-    if (!/^\d{4}-\d{2}$/.test(period)) continue;
-    positions[timeIndex] = timePosition;
-    const flatIndex = positions.reduce((sum, part, i) => sum * dataset.size[i] + part, 0);
-    const value = Array.isArray(dataset.value) ? dataset.value[flatIndex] : dataset.value[String(flatIndex)];
+  const history: InflationHistoryPoint[] = [];
+  for (const [period, index] of entries(d, timeKey).sort((a, b) => a[0].localeCompare(b[0]))) {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(period) || !Number.isInteger(index) ||
+        index < 0 || index >= d.size[timeIndex]) continue;
+    positions[timeIndex] = index;
+    const flatIndex = positions.reduce((acc, part, i) => acc * d.size[i] + part, 0);
+    const value = Array.isArray(d.value) ? d.value[flatIndex] : d.value[String(flatIndex)];
     if (typeof value === 'number' && Number.isFinite(value) && value > -100 && value < 1000) {
-      return { period, annualRate: value, geography: 'IT', category: 'TOTAL', dataset: 'prc_hicp_minr',
-        source: 'Eurostat', sourceUrl: INFLATION_SOURCE_URL, sourceUpdatedAt: dataset.updated ?? null, retrievedAt };
+      history.push({ period, annualRate: value });
     }
   }
-  throw new Error('Nessun dato di inflazione disponibile nella risposta');
+  if (!history.length) throw new Error('Nessun dato ufficiale disponibile');
+  const recent = history.slice(-12);
+  const latest = recent[recent.length - 1];
+  return {
+    period: latest.period, annualRate: latest.annualRate, history: recent,
+    geography: 'IT', category: 'TOTAL', source: 'Eurostat', dataset: 'prc_hicp_minr',
+    sourceUrl: INFLATION_SOURCE_URL, sourceUpdatedAt: d.updated ?? null, retrievedAt
+  };
+}
+
+/** Compatibilita' con i calcolatori che necessitano soltanto del mese piu' recente. */
+export function parseLatestItalianInflation(raw: unknown, retrievedAt: string): InflationObservation {
+  const { history: _history, ...latest } = parseItalianInflationSeries(raw, retrievedAt);
+  return latest;
 }
