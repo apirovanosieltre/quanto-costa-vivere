@@ -20,6 +20,8 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           <a routerLink="/irpef-2026" routerLinkActive="is-active">IRPEF 2026</a>
           <a routerLink="/stipendio-netto-2026" routerLinkActive="is-active">RAL → netto</a>
           <a routerLink="/inflazione" routerLinkActive="is-active">Inflazione</a>
+          <a routerLink="/spese-famiglie" routerLinkActive="is-active">Dati ISTAT</a>
+          <a routerLink="/addizionali-regionali" routerLinkActive="is-active">Regioni</a>
           <a routerLink="/fonti-e-metodo" routerLinkActive="is-active">Fonti e metodo</a>
         </nav>
         <span class="header-note"><span class="note-dot" aria-hidden="true"></span>Chiaro, senza registrazione</span>
@@ -38,6 +40,9 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           <a routerLink="/inflazione">Inflazione</a>
           <a routerLink="/stipendio-netto-2026">Stipendio 2026</a>
           <a routerLink="/addizionali-comunali">Addizionali comunali</a>
+          <a routerLink="/addizionali-regionali">Addizionali regionali</a>
+          <a routerLink="/spese-famiglie">Spesa delle famiglie</a>
+          <a routerLink="/quotazioni-omi">Affitti OMI</a>
           <a routerLink="/fonti-e-metodo">Fonti e limiti</a>
         </nav>
         <small>© 2026 · Prototipo informativo, non consulenza fiscale.</small>
