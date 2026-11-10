@@ -87,7 +87,7 @@ const emptyBudget=():CityBudget=>({
           <input class="standalone-input" id="auto-common-income" type="number" min="0" max="100000" step="50"
             [ngModel]="commonNet()" (ngModelChange)="setCommonNet($event)" placeholder="Es. 1900">
           <button type="button" (click)="applyCommonNet()" [disabled]="commonNet()===null">Applica</button>
-        </row>
+        </div>
       </div>
     </div>
   </div>
@@ -95,7 +95,41 @@ const emptyBudget=():CityBudget=>({
   @if(autoFeedback()){<p class="compare-alert" role="status">{{autoFeedback()}}</p>}
 </section>
 
-<section class="container compare-layout" aria-label="Budget delle due città">
+<section class="container compare-glance" aria-labelledby="glance-title">
+  <div class="compare-glance-head">
+    <div>
+      <span class="eyebrow eyebrow-subtle">STEP 2 · PRIMA STIMA</span>
+      <h2 id="glance-title">Un primo confronto senza compilare tutto</h2>
+    </div>
+    <a href="#budget-due-citta">Modifica i budget delle città ↓</a>
+  </div>
+  <div class="compare-layout">
+    @for(side of sides;track side.key){
+      <div class="compare-glance-card">
+        <span class="compare-card-tag">{{side.title}}</span>
+        <h3>{{name(side.key)}}</h3>
+        @if(summary(side.key).monthlyTotal!==null){
+          <strong class="compare-glance-total">{{money(summary(side.key).monthlyTotal!)}} € <small>/mese</small></strong>
+          @if(summary(side.key).monthlyBalance!==null){
+            <p>Residuo con il netto inserito: <strong>{{money(summary(side.key).monthlyBalance!)}} €</strong></p>
+          }
+        } @else {
+          <strong class="compare-glance-unavailable">Stima parziale</strong>
+          <p>Spese note {{money(summary(side.key).knownExpenses)}} €. Mancano: {{missingCategoryLabels(side.key)}}.</p>
+        }
+        <p class="compare-tiny">{{coverage(side.key).available}} voci precompilate su 5; {{coverage(side.key).supported}} usano un indicatore o tariffa territoriale. Le altre sono proxy o ipotesi.</p>
+      </div>
+    }
+  </div>
+  @if(comparison().expenseDifference!==null && !sameCity()){
+    <p class="compare-glance-delta">Differenza di spesa tra gli scenari (seconda città meno prima):
+      <strong>{{signedMoney(comparison().expenseDifference!)}} € / mese</strong>
+    </p>
+    <p class="compare-tiny">Importo ipotetico, NON indice di quale città è realmente più economica. Le fonti immobiliari di Firenze e Milano non sono omogenee.</p>
+  }
+</section>
+
+<section id="budget-due-citta" class="container compare-layout" aria-label="Budget delle due città">
   @if(loading()){
     <div class="compare-intro" role="status">Caricamento del catalogo comunale MEF 2026…</div>
   } @else if(error()){
@@ -483,6 +517,16 @@ const emptyBudget=():CityBudget=>({
 </section>
 `,
   styles:[`
+    .compare-glance{margin-bottom:24px}
+    .compare-glance-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:13px}
+    .compare-glance-head h2{font-size:1.38rem;margin:6px 0}
+    .compare-glance-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:20px}
+    .compare-glance-card h3{margin:6px 0 14px}
+    .compare-glance-total{display:block;font-size:clamp(1.6rem,3.4vw,2.25rem);color:var(--navy);font-variant-numeric:tabular-nums}
+    .compare-glance-total small{font-size:.87rem;font-weight:500;color:var(--muted)}
+    .compare-glance-unavailable{color:#815310;font-size:1.15rem}
+    .compare-glance-delta{border:1px solid #c9dcec;background:#f0f7ff;padding:15px;border-radius:12px;font-size:.9rem;margin-top:15px}
+    .compare-glance-delta strong{margin-left:7px}
     .compare-auto-panel{margin-bottom:22px;background:#fff;border:1px solid var(--line);padding:23px;border-radius:18px}
     .compare-auto-intro{display:grid;grid-template-columns:minmax(220px,.8fr) minmax(0,1.2fr);gap:22px}
     .compare-auto-intro h2{font-size:1.25rem;margin:7px 0 11px}
