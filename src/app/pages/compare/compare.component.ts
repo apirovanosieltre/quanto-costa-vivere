@@ -172,7 +172,7 @@ const emptyBudget=():CityBudget=>({
         </div>
       }
       @if(basketDifference()!==null){
-        <p class="compare-emphasis">Differenza del paniere campione: circa {{money(Math.abs(basketDifference()!))}} €.</p>
+        <p class="compare-emphasis">Differenza del paniere campione: circa {{money(absolute(basketDifference()!))}} €.</p>
       }
       <p class="compare-tiny">{{basketSource.description}} Non è un canone né il costo di un mese di vita. Disponibile solo per le città esplicitamente citate nella fonte.</p>
       <a [href]="basketSource.url" target="_blank" rel="noopener noreferrer">Fonte: {{basketSource.organization}} ↗</a>
@@ -414,6 +414,7 @@ export class CompareComponent implements OnInit {
   summary(side:Side){return side==='left'?this.comparison().first:this.comparison().second;}
   money(value:number):string{return this.formatter.format(value);}
   percent(value:number):string{return this.formatter.format(value);}
+  absolute(value:number):number{return Math.abs(value);}
   signedMoney(value:number):string{return (value>0?'+':'')+this.money(value);}
   barWidth(side:Side,key:CostKey):number{
     const a=this.leftBudget().expenses[key]??0,b=this.rightBudget().expenses[key]??0;
