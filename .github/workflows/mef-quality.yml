@@ -24,7 +24,7 @@ jobs:
         run: node --test scripts/mef-csv.test.mjs
       - name: Scarica e verifica CSV ufficiale
         run: node scripts/sync-mef.mjs
-      - name: Ispeziona tracciato ufficiale addizionali regionali 2026
+      - name: Audit CSV comunale 2026\n        run: node scripts/audit-mef-2026.mjs\n      - name: Ispeziona tracciato ufficiale addizionali regionali 2026
         run: node scripts/inspect-mef-regional.mjs
       - name: Salva report QA e JSON candidato (non pubblicato)
         if: always()
