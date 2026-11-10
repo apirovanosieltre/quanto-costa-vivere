@@ -1,4 +1,4 @@
-# QuantoCostaVivere · v0.7
+# QuantoCostaVivere · v0.8
 
 Portale Angular 22, mobile-first e accessibile, per **confronto del costo della vita tra città, budget domestico, IRPEF 2026, stima RAL e inflazione ufficiale italiana**. Integra una Cloudflare Pages Function per Eurostat e una pipeline **di acquisizione + validazione** degli elenchi MEF.
 
@@ -9,7 +9,7 @@ Portale Angular 22, mobile-first e accessibile, per **confronto del costo della 
 | Route | Stato | Note |
 |---|---|---|
 | `/` | Operativa | Budget manuale, i valori iniziali sono demo; comune non influenza il budget |
-| `/confronta-citta` | Nuova funzionalità | Confronta due comuni del catalogo MEF (7.897): 5 voci mensili + netto, simulazione RAL verificata dove disponibile, OMI manuale, indicatori ISTAT e paniere campione Codacons 2025 |
+| `/confronta-citta` | Operativa | Due comuni MEF (7.897), budget personalizzato e RAL se verificata, OMI manuale, ISTAT, paniere campione e **prezzi provinciali dei carburanti MIMIT via optenergy** |
 | `/irpef-2026` | Operativa | Imposta lorda nazionale a scaglioni |
 | `/stipendio-netto-2026` | Operativa | Netto nazionale con comunali semplici revisionate e regionali verificate: Lombardia, Toscana, Emilia-Romagna, Liguria, Piemonte (senza figli a carico) e Valle d'Aosta; **netto completo solo con entrambe le addizionali disponibili** |
 | `/inflazione` | API integrata nel codice | Eurostat ufficiale `prc_hicp_minr`, API Cloudflare `/api/inflation`, serie reale fino a 12 mesi e fallback diretto in sviluppo; **richiede deploy e collaudo live** |
@@ -28,6 +28,7 @@ La pagina `/confronta-citta` è una **simulazione personalizzata**, non una clas
 - Due budget indipendenti: stipendio/entrate nette, casa, utenze, alimentari, trasporti e altre spese. La cifra zero è valida **solo quando inserita esplicitamente**. Campi vuoti producono un confronto parziale, mai totali o residui fasulli.
 - Differenza mensile tra i due totali e differenza nel residuo soltanto quando ci sono tutti i valori necessari. Non eseguiamo assunzioni generiche sui consumi di una persona o sulle differenze di prezzo tra città.
 - Simulazione opzionale della **stessa RAL** nelle due città: usa il motore fiscale nazionale 2026, dati comunali MEF revisionati e profili regionali verificati. Un netto locale è mostrato soltanto quando entrambe le addizionali sono disponibili; poi l'utente può applicarlo volontariamente al budget. Per il Piemonte senza figli a carico è richiesta conferma esplicita.
+- I prezzi dei **carburanti self-service** sono mediane provinciali reali MIMIT (elaborazione optenergy), accompagnate da data, numero di distributori e quartili; la loro applicazione al budget è volontaria e richiede km e consumi dell'auto.
 - Le quotazioni **OMI** sono ricavate manualmente dall'utente per la zona, tipologia, superficie e semestre selezionati sul sito dell'Agenzia delle Entrate. Si possono applicare i valori minimo o massimo al proprio budget con un clic; non esiste importazione automatica dei prezzi.
 - I riferimenti **ISTAT 2025** disponibili sono medie familiari per **8 regioni esplicitamente citate**, non importi delle città. Sono mostrati come informazioni di contesto, non sommati nel budget.
 - Per 6 comuni con valori esplicitamente riportati dalla sintesi dell'indagine **Codacons 2025** dell'Ufficio statistico della Regione Puglia, viene visualizzato il costo del paniere campione di 28 alimentari + 11 servizi. Non rappresenta il costo mensile di vita, né viene inserito nel budget. Le cifre arrotondate dalla pubblicazione sono indicate come approssimative.
@@ -39,6 +40,30 @@ Fonti:
 - Agenzia Entrate OMI: https://www1.agenziaentrate.gov.it/servizi/geopoi_omi/index.htm
 
 **Limite attuale:** non disponiamo di dati automaticamente riutilizzabili e verificati su affitti e prezzi di ogni singolo comune. Evitiamo di generare migliaia di pagine SEO vuote o inventate; il comparatore ha una singola pagina indicizzabile, con parametri per le coppie selezionate. L'espansione delle schede città richiederà dataset locali realmente pubblicabili.
+
+## Prezzi territoriali dei carburanti: fonte, aggiornamento e limiti
+
+- Fonte primaria **MIMIT**, prezzi comunicati dagli impianti di distribuzione carburanti (IODL 2.0):
+  https://www.mimit.gov.it/it/open-data/elenco-dataset/carburanti-prezzi-praticati-e-anagrafica-degli-impianti
+- Dataset **provinciale aggregato da optenergy** (CC BY 4.0): https://optenergy.it/dati/
+  CSV `carburanti-province-ultimo-anno.csv` con giorno, sigla, nome provincia, tipo di carburante, numero di impianti, mediana, primo e terzo quartile.
+- `scripts/fuel-province.mjs` valida schema, valori, date, unità EUR/l, copertura minima e congruenza statistica; `scripts/sync-fuel-province.mjs` prende **solo l'ultimo giorno effettivamente disponibile**, senza spacciare la data del download per data rilevazione.
+- Il risultato è salvato in `public/data/province-fuel-latest.json`, piccolo JSON statico con 110 province nel primo snapshot (rilevazione **8 novembre 2026**). I dati non sono riferiti al singolo comune: entrambi i comuni della stessa provincia visualizzano gli stessi dati aggregati.
+- GitHub Actions `.github/workflows/fuel-source-quality.yml` esegue controlli e aggiornamento giornalieri. In caso di sorgente non valida il nuovo JSON non viene pubblicato. Un nuovo periodo comporta un commit sul branch previsto; Cloudflare distribuisce il file con la successiva build.
+- Nel comparatore seleziona **benzina self** oppure **gasolio self**, inserisci km/mese e litri/100 km per stimare la spesa in carburante. Il prezzo mediano provinciale è osservato, **i chilometri e i consumi sono personali**. Il pulsante applica volontariamente la stima alla voce Trasporti del budget, che deve essere integrata manualmente con eventuali altre spese.
+- Uno snapshot di oltre 14 giorni è mostrato come dato storico ma non può essere applicato automaticamente al budget.
+- **Non** sono inclusi automaticamente affitti, utenze, parcheggi, pedaggi o spesa alimentare per comune, poiché non abbiamo ancora verificato una fonte riutilizzabile con tale granularità. Le quotazioni OMI restano manuali sino a verifica delle condizioni di redistribuzione.
+
+### Aggiornamento e test
+
+```bash
+node --test scripts/fuel-province.test.mjs
+node scripts/sync-fuel-province.mjs
+npm test
+npm run build
+```
+
+I dati aggregati sono distribuiti mantenendo la fonte e l'attribuzione, secondo la licenza CC BY 4.0.
 
 ## Cloudflare Workers (Git integration)
 
