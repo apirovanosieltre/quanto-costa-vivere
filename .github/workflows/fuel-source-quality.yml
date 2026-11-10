@@ -1,20 +1,61 @@
-name: Territorial fuel data - source and integrity
+name: Territorial fuel prices - validate and refresh
+
 on:
   pull_request:
     paths:
+      - 'scripts/fuel-province.mjs'
+      - 'scripts/fuel-province.test.mjs'
       - 'scripts/sync-fuel-province.mjs'
       - '.github/workflows/fuel-source-quality.yml'
+      - 'public/data/province-fuel-latest.json'
+  push:
+    branches:
+      - feature/open-territorial-prices
+    paths:
+      - 'scripts/fuel-province.mjs'
+      - 'scripts/fuel-province.test.mjs'
+      - 'scripts/sync-fuel-province.mjs'
+      - '.github/workflows/fuel-source-quality.yml'
+  schedule:
+    - cron: '17 11 * * *'
   workflow_dispatch:
+
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: fuel-snapshot-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  source-probe:
+  check:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Verify documented licensed CSV and its real schema
-        run: node scripts/sync-fuel-province.mjs --inspect
+      - name: Test parser and fail-closed validations
+        run: node --test scripts/fuel-province.test.mjs
+      - name: Fetch upstream and validate full snapshot
+        run: node scripts/sync-fuel-province.mjs
+      - name: Verify snapshot structure and minimal coverage
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs';
+          const j=JSON.parse(fs.readFileSync('public/data/province-fuel-latest.json','utf8'));
+          if(j.schemaVersion!==1||j.geography!=='province'||
+            j.provinces.length<90||j.provinces.length>120||
+            !/^[a-f0-9]{64}$/.test(j.sourceSha256))process.exit(1);
+          console.log('Validated province snapshot',j.period,j.provinces.length,j.sourceSha256);
+          NODE
+      - name: Commit only new verified public price snapshot
+        if: github.event_name != 'pull_request'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/data/province-fuel-latest.json
+          if git diff --cached --quiet; then echo 'No new source data'; exit 0; fi
+          git commit -m 'data(prices): refresh licensed provincial fuel medians'
+          git push origin HEAD:refs/heads/${{ github.ref_name }}
