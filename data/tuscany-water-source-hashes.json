@@ -4,6 +4,7 @@
   "sourceCount": 7,
   "sources": [
     {
+      "nextYearListed": false,
       "id": "acque",
       "provider": "Acque SpA",
       "cities": "Pisa",
@@ -14,6 +15,7 @@
       "missingReferenceTokens": []
     },
     {
+      "nextYearListed": false,
       "id": "asa",
       "provider": "ASA",
       "cities": "Livorno",
@@ -24,6 +26,7 @@
       "missingReferenceTokens": []
     },
     {
+      "nextYearListed": false,
       "id": "fiora",
       "provider": "Acquedotto del Fiora",
       "cities": "Grosseto, Siena",
@@ -34,6 +37,7 @@
       "missingReferenceTokens": []
     },
     {
+      "nextYearListed": false,
       "id": "gaia",
       "provider": "GAIA",
       "cities": "Massa, bacino Piana",
@@ -44,6 +48,7 @@
       "missingReferenceTokens": []
     },
     {
+      "nextYearListed": false,
       "id": "geal",
       "provider": "GEAL",
       "cities": "Lucca",
@@ -54,6 +59,7 @@
       "missingReferenceTokens": []
     },
     {
+      "nextYearListed": false,
       "id": "nuove-acque",
       "provider": "Nuove Acque",
       "cities": "Arezzo",
@@ -64,6 +70,7 @@
       "missingReferenceTokens": []
     },
     {
+      "nextYearListed": false,
       "id": "publiacqua",
       "provider": "Publiacqua",
       "cities": "Firenze, Pistoia, Prato",
