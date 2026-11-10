@@ -1,4 +1,4 @@
-# QuantoCostaVivere · v1.3
+# QuantoCostaVivere · v1.4
 
 Portale Angular 22, mobile-first e accessibile, per **confronto del costo della vita tra città, budget domestico, IRPEF 2026, stima RAL e inflazione ufficiale italiana**. Integra una Cloudflare Pages Function per Eurostat e una pipeline **di acquisizione + validazione** degli elenchi MEF.
 
@@ -65,11 +65,22 @@ La pagina principale `/confronta-citta` ora suggerisce automaticamente cinque ma
 | Componente | Comuni effettivamente coperti | Metodo | Limite |
 |---|---|---|---|
 | Trasporto pubblico urbano | Tutti e 10 i capoluoghi toscani | Abbonamento Autolinee Toscane mensile 42,20 €, annuale 342,80 € (pari a 28,57 €/mese) oppure nessun abbonamento | Prezzi per area urbana e titolo ordinario, non tutti gli spostamenti |
-| Acqua, fognatura e depurazione | Arezzo (Nuove Acque), Firenze, Prato e Pistoia (Publiacqua) | Scaglioni 2026 + quota fissa per **1 residente** e consumo annuo scelto | Non include IVA, conguagli, eventuali componenti aggiuntive o fatture condominiali |
+| Acqua, fognatura e depurazione | Tutti e 10 i capoluoghi (Nuove Acque Arezzo; Publiacqua Firenze/Pistoia/Prato; Fiora Grosseto/Siena; ASA Livorno; GEAL Lucca; GAIA Massa; Acque Pisa) | Scaglioni 2026 + quota fissa per **1 residente** e consumo annuo scelto | Non include IVA, conguagli, eventuali componenti aggiuntive o fatture condominiali |
 | TARI 2026 | **Solo Arezzo** con tariffe complete verificate | Quota comunale fissa 1,12107 €/m²/anno × superficie imponibile + quota variabile 138,77659 €/anno per 1 occupante | **Quota base, NON avviso TARI completo**: esclusi TEFA, componenti perequative, bonus, riduzioni, conguagli |
 | Elettricità | Indicatore **nazionale**, non comunale | Riferimento ARERA per il **cliente vulnerabile** tipo in Maggior Tutela, 2.000 kWh/anno e 3 kW: **665,38 €/anno** nel periodo 01/01/2026–31/12/2026 | Non è un'offerta del mercato libero né una stima della tua bolletta reale |
 | Gas / riscaldamento | Nessun costo finale locale verificato | Spesa di scenario modificabile, inizialmente 50 €/mese; ARERA pubblica **solo materia prima** ottobre 2026 a 0,945436 €/Smc | La componente materia prima non si può utilizzare come bolletta completa; non è inserita automaticamente in luogo dell'ipotesi |
-| Altri 9 capoluoghi senza TARI e 6 senza tariffa idrica verificata | **Non disponibili** | Valore mancante e fonti in revisione | Mai stimate copiando valori da un altro comune |
+| Altri 9 capoluoghi senza TARI verificata; acqua ora verificata per tutti e dieci | **Non disponibili** | Valore mancante e fonti in revisione | Mai stimate copiando valori da un altro comune |
+
+**Fonti ufficiali aggiunte per i sei capoluoghi prima scoperti:**
+- **Grosseto e Siena**: Acquedotto del Fiora, tariffario 2026 per 1 residente, con 3 fasce, quota fissa e servizi separati: https://www.fiora.it/wp-content/uploads/2026/01/AdF_tariffe_2026.pdf
+- **Livorno**: ASA, tariffa aggiornata **dal 1° marzo 2026**. Il calcolo annualizza il regime da marzo, **non** ricostruisce l'esatto anno civile 2026: https://www.asaspa.it/wp-content/uploads/2026/03/Tariffe-01_03_2026.pdf
+- **Lucca**: GEAL, tariffe **2025 confermate provvisoriamente anche per il 2026** dall'AIT; scaglioni 0–19, 20–57 e oltre 57 m³: https://www.geal-lucca.it/tariffe/ e https://www.geal-lucca.it/wp-content/uploads/2025/10/Articolazione-tariffaria-civili-a-Valori-2025-GEAL.pdf
+- **Pisa**: Acque SpA, tariffario 2026 **provvisorio** per 1 componente, fino a approvazione definitiva: https://www.acque.net/wp-content/uploads/tariffe-2026.pdf
+- **Massa**: GAIA, tariffario 2026 per **Bacino Comuni Piana**. Il bacino transitorio del Comune di Massa è confluito in quello di pianura nel 2021 secondo il bilancio GAIA 2023: https://www.gaia-spa.it/images/CONTRATTO/Tariffa%20del%20servizio%20idrico/doc-pdf/Tariffe_2026.pdf
+
+**Per 45 m³ annui, una persona, esclusi IVA e possibili oneri aggiuntivi**: Grosseto/Siena 16,23 €/mese; Livorno 16,76; Lucca 13,15; Massa 16,72; Pisa 18,40. Non sono bollette effettive.
+
+**Aggiornamenti settimanali controllati**: `.github/workflows/water-source-quality.yml` ricontrolla ogni lunedì i 7 gestori dal sito o PDF ufficiale, i dati del nucleo residente con un componente e l'eventuale comparsa di nuovi tariffari. Le impronte digitali sono in `data/tuscany-water-source-hashes.json`. Quando una fonte cambia, il bot crea **una sola PR di verifica**, anziché sovrascrivere automaticamente numeri non revisionati; il merge delle nuove tariffe richiede verifica delle fasce, dell'anno di decorrenza, dei gestori e test CI. In caso di interruzione temporanea dei siti esterni, non pubblica dati falsi e non fa fallire la CI.
 
 **Fonti esatte:**
 - TARI domestica Arezzo 2026, allegato A del Comune (delibera C.C. n. 78, 29/07/2026): https://www.comune.arezzo.it/sites/default/files/2026-08/Allegato%20A%20tariffe%20utenze%20domestiche.pdf
@@ -84,7 +95,7 @@ La pagina principale `/confronta-citta` ora suggerisce automaticamente cinque ma
 ### Interazione con il confronto
 
 - Per **una persona residente**, imposta superficie dell'immobile, superficie imponibile TARI (può differire), consumo idrico, spesa gas ipotetica, tipo di abbonamento. Tutte le tariffe hanno fonte e periodo visualizzabili.
-- La voce **Utenze** propone inizialmente un **totale di scenario**: riferimento ARERA 2026 cliente vulnerabile + ipotesi gas + acqua calcolata dai tariffari dove verificati (altrimenti **15 € puramente ipotetici**). È sempre etichettata come `mixed` e con **attendibilità bassa**, anche quando la componente acqua è supportata.
+- La voce **Utenze** propone inizialmente un **totale di scenario**: riferimento ARERA 2026 cliente vulnerabile + ipotesi gas + acqua calcolata dai tariffari per tutti i 10 capoluoghi verificati (altrove **15 € puramente ipotetici**). È sempre etichettata come `mixed` e con **attendibilità bassa**, anche quando la componente acqua è supportata.
 - La TARI base Arezzo è mostrata in €/anno e €/mese ma **non** viene inclusa inizialmente nel budget. L'utente può selezionare *Aggiungi TARI alle altre spese* oppure inserire un proprio importo annuo per altri comuni. Il modello somma la quota nella vista dei risultati **una volta sola**, lasciando invariato il campo «Altre spese» che rappresenta il budget senza TARI.
 - Il totale automatico senza TARI **non è un costo completo**; la vista avvisa esplicitamente se TARI è inclusa per una sola città. Non sostituire un importo non disponibile con 0 (salvo scelta intenzionale dell'utente).
 - I dati individuali restano sul browser, senza backend e senza condivisione da URL.
