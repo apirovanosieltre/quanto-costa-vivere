@@ -44,6 +44,7 @@ const emptyBudget=():CityBudget=>({
     <button type="button" (click)="shareCities()">Copia link alle città</button>
   </div>
   <p class="compare-micro" role="status">{{shareStatus()}}</p>
+  <p><a routerLink="/costo-vita-firenze-persona-sola">Nuovo: stima iniziale automatica per Firenze, persona sola, con fonti e attendibilità ↗</a></p>
 </section>
 
 <section class="container compare-layout" aria-label="Budget delle due città">
