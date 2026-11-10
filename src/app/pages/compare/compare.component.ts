@@ -21,6 +21,7 @@ import {
   type CategorySuggestion
 } from '../../core/automatic-city-compare';
 import {type RentContract} from '../../core/automatic-cost-florence';
+import { comparableTuscanRentPair, TUSCANY_CAPITAL_RENTS_2024 } from '../../core/tuscany-capital-rents-2024';
 import {
   COST_KEYS, COST_LABELS, EMPTY_BUDGET, compareCityBudgets,
   basketForCity, regionalFamilySpending, omiRentalRange,validMoney,
@@ -42,8 +43,10 @@ const emptyBudget=():CityBudget=>({
 <section class="page-hero container">
   <span class="eyebrow eyebrow-subtle">CONFRONTO ASSISTITO · PERSONA SOLA</span>
   <h1>Due città, <span>un budget già pronto.</span></h1>
-  <p>Parti dalle stime disponibili per una persona sola, senza riempire tutto a mano. Fonti, anni e ipotesi sono sempre visibili. Quando un costo locale non è disponibile lo segnaliamo, senza inventare un affitto.</p>
+  <p>Parti dalle stime disponibili per una persona sola: abbiamo affitti storici calcolabili per tutti e 10 i capoluoghi toscani, dalla stessa fonte regionale. Fonti, anni e ipotesi sono sempre visibili. Quando manca un dato locale, lo segnaliamo.</p>
   <div class="compare-shortcuts" aria-label="Esempi di città">
+    <button type="button" (click)="selectPair('G702','D612')">Pisa vs Firenze</button>
+    <button type="button" (click)="selectPair('G999','G702')">Prato vs Pisa</button>
     <button type="button" (click)="selectPair('D612','F205')">Firenze vs Milano</button>
     <button type="button" (click)="selectPair('F205','F839')">Milano vs Napoli</button>
     <button type="button" (click)="selectPair('A390','D612')">Arezzo vs Firenze</button>
@@ -51,6 +54,7 @@ const emptyBudget=():CityBudget=>({
     <button type="button" (click)="shareCities()">Copia link alle città</button>
   </div>
   <p class="compare-micro" role="status">{{shareStatus()}}</p>
+  <p class="compare-tiny">Capoluoghi con affitto storico calcolabile: {{tuscanyCapitalNames}}. I dati sono riferiti al 2024, non ai canoni richiesti oggi.</p>
   <p><a routerLink="/costo-vita-firenze-persona-sola">Nuovo: stima iniziale automatica per Firenze, persona sola, con fonti e attendibilità ↗</a></p>
 </section>
 
@@ -68,7 +72,7 @@ const emptyBudget=():CityBudget=>({
           [ngModel]="rentAreaSqm()" (ngModelChange)="setRentArea($event)">
       </div>
       <div>
-        <label class="field-label" for="auto-florence-contract">Contratto per Firenze</label>
+        <label class="field-label" for="auto-florence-contract">Contratto (capoluoghi toscani)</label>
         <select class="standalone-input" id="auto-florence-contract"
           [ngModel]="florenceContract()" (ngModelChange)="setFlorenceContract($event)">
           <option value="long">Ordinario oltre 3 anni</option>
@@ -121,11 +125,22 @@ const emptyBudget=():CityBudget=>({
       </div>
     }
   </div>
+  @if(comparableRents()){
+    <p class="compare-glance-delta" role="note">
+      <strong>Affitti confrontabili come dati storici (2024):</strong>
+      @if(rentDelta()!==null) {
+        nella seconda città il riferimento di affitto è
+        <strong>{{signedMoney(rentDelta()!)}} € / mese</strong>
+        rispetto alla prima, a parità di superficie e tipologia contrattuale.
+      }
+      <small>Fonte unica: Regione Toscana, Abitare in Toscana 2025, tabella 2.2. Non sono offerte di affitto del 2026.</small>
+    </p>
+  }
   @if(comparison().expenseDifference!==null && !sameCity()){
     <p class="compare-glance-delta">Differenza di spesa tra gli scenari (seconda città meno prima):
       <strong>{{signedMoney(comparison().expenseDifference!)}} € / mese</strong>
     </p>
-    <p class="compare-tiny">Importo ipotetico, NON indice di quale città è realmente più economica. Le fonti immobiliari di Firenze e Milano non sono omogenee.</p>
+    <p class="compare-tiny">Importo ipotetico, NON indice di quale città è realmente più economica. Le fonti sull'affitto sono omogenee soltanto tra i capoluoghi toscani coperti dal rapporto 2024.</p>
   }
 </section>
 
@@ -627,6 +642,15 @@ export class CompareComponent implements OnInit {
   readonly costKeys=COST_KEYS;
   readonly costLabels=COST_LABELS;
   readonly basketSource=CODACONS_BASKET_SOURCE;
+  readonly tuscanyCapitalNames=TUSCANY_CAPITAL_RENTS_2024.map(x=>x.city).join(', ');
+  readonly comparableRents=computed(()=>comparableTuscanRentPair(this.leftCode(),this.rightCode()));
+  readonly rentDelta=computed(()=>{
+    if(!this.comparableRents())return null;
+    const a=this.leftSuggestions().find(x=>x.key==='housing')?.amount;
+    const b=this.rightSuggestions().find(x=>x.key==='housing')?.amount;
+    return a!==null&&a!==undefined&&b!==null&&b!==undefined
+      ?Math.round((b-a)*100)/100:null;
+  });
   readonly florenceContract=signal<RentContract>(DEFAULT_SINGLE_PERSON_OPTIONS.florenceContract);
   readonly autoWaterM3=signal(DEFAULT_SINGLE_PERSON_OPTIONS.waterM3PerYear);
   readonly commonNet=signal<number|null>(null);
@@ -665,10 +689,10 @@ export class CompareComponent implements OnInit {
     });
   });
   readonly cityByCode=computed(()=>new Map(this.records().map(x=>[x.code,x])));
-  readonly leftCode=signal('D612');
-  readonly rightCode=signal('F205');
-  readonly leftQuery=signal('Firenze');
-  readonly rightQuery=signal('Milano');
+  readonly leftCode=signal('A390');
+  readonly rightCode=signal('D612');
+  readonly leftQuery=signal('Arezzo');
+  readonly rightQuery=signal('Firenze');
   readonly leftBudget=signal<CityBudget>(emptyBudget());
   readonly rightBudget=signal<CityBudget>(emptyBudget());
   readonly leftOmi=signal<OmiInputs>(emptyOmi());
@@ -694,10 +718,10 @@ export class CompareComponent implements OnInit {
       if(!dataset.published)throw new Error('Il catalogo MEF non è stato ancora revisionato');
       this.municipalData.set(dataset);
       this.records.set(dataset.records);
-      const da=this.route.snapshot.queryParamMap.get('da')??'D612';
-      const a=this.route.snapshot.queryParamMap.get('a')??'F205';
+      const da=this.route.snapshot.queryParamMap.get('da')??'A390';
+      const a=this.route.snapshot.queryParamMap.get('a')??'D612';
       if(this.cityByCode().has(da)&&this.cityByCode().has(a)&&da!==a)this.selectPair(da,a,false);
-      else this.selectPair('D612','F205',false);
+      else this.selectPair('A390','D612',false);
       this.refreshBothSuggestions();
     }catch{
       this.error.set('Catalogo dei comuni non disponibile. Il confronto non usa dati dimostrativi: riprova dopo il deploy e verifica lo stato dei dati.');
