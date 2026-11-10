@@ -4,6 +4,7 @@
  * NON e' un preventivo fiscale/bolletta e non pubblica valori non verificati per comune.
  */
 import { tuscanCapitalRentRecord } from './tuscany-capital-rents-2024';
+import { type CityBudget } from './city-compare';
 
 export type TransitPass = 'monthly'|'annual'|'none';
 export type CostClassification = 'local-tariff'|'national-reference'|'assumption'|'unavailable';
@@ -163,6 +164,21 @@ export function tuscanyTransit2026(code:string,pass:TransitPass):EvidenceAmount 
       ?'Costo 342,80 €/anno diviso 12 per confronto; il pagamento non avviene mensilmente. Non include tratte esterne alla validità del titolo.'
       :'Costo 42,20 € al mese solare per una persona, senza agevolazioni ISEE. L’abbonamento vale solo nell’area urbana coperta.'
   };
+}
+
+/**
+ * Derive an effective monthly budget from the ORIGINAL manually editable budget.
+ * Never mutate or persist the TARI addition inside the `other` input: avoids
+ * accidental doubling on Angular signal recomputation and on profile changes.
+ * Do not use the output of this function as the base for another application.
+ */
+export function budgetWithOptionalTari(
+  original:CityBudget, tariMonthlyEUR:number|null, enabled:boolean
+):CityBudget{
+  if(!enabled||tariMonthlyEUR===null||original.expenses.other===null)return original;
+  assert(tariMonthlyEUR,0,10000,'TARI mensile');
+  const other=round(original.expenses.other+tariMonthlyEUR);
+  return {...original,expenses:{...original.expenses,other}};
 }
 
 export function estimateEssentialCosts2026(code:string,profile:EssentialProfile):EssentialCosts{
