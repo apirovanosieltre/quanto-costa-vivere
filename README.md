@@ -16,6 +16,20 @@ Portale Angular 22, mobile-first e accessibile, per **budget domestico, IRPEF 20
 | `/stato-dati` | Operativa | Monitor di disponibilità dei dataset e provenienza |
 | `/fonti-e-metodo` | Operativa | Trasparenza e limiti |
 
+## Cloudflare Workers (Git integration)
+
+Per un progetto creato da **Workers & Pages → Workers** il deploy legge `wrangler.jsonc`.
+
+- Build command: `npm run build`
+- Deploy command: `npx wrangler deploy`
+- Output statico: `dist/quanto-costa-vivere/browser`
+- Rotte Angular: fallback SPA con `assets.not_found_handling=single-page-application`, senza `_redirects`.
+- API `/api/inflation`: entry point `worker/index.ts`, che riutilizza la funzione Eurostat.
+
+**Non inserire `/* /index.html 200` in `public/_redirects`**: il deploy Workers rileva una regola circolare e fallisce con codice 100324.
+
+Le istruzioni **Cloudflare Pages** qui sotto sono un'alternativa per un progetto creato specificamente come Pages, con Pages Functions.
+
 ## Esecuzione Angular
 
 Richiede Node **>= 22.22.3** o una release di Node 24 compatibile con Angular 22.
