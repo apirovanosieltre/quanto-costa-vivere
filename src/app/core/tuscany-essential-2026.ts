@@ -157,7 +157,8 @@ export function waterMonthly2026ForCity(cityCode:string,annualM3:number):Evidenc
   const third=Math.max(annualM3-tariff.secondEnd,0);
   const annual=round(tariff.fixedAnnual+first*tariff.tiers[0]+second*tariff.tiers[1]+third*tariff.tiers[2]);
   return {
-    monthlyEUR:round(annual/12),annualEUR:annual,classification:'local-tariff',
+    // Divide annual euros in cents first: avoids 16.225 rounding down from binary floating point.
+    monthlyEUR:Math.round(annual*100/12)/100,annualEUR:annual,classification:'local-tariff',
     title:'Acqua, fognatura e depurazione',geography:tariff.provider+' · utenza residente 1 componente',
     period:'Tariffe 2026',sourceUrl:tariff.sourceUrl,
     note:`Scaglioni e quota fissa per ${annualM3} m³/anno ipotizzati. Esclusi IVA, componenti eventuali, conguagli, differenze per utenze condominiali e altri oneri; non è una bolletta finale. Per Livorno si annualizza la tariffa dal 01/03/2026, non la spesa esatta dell'anno civile 2026. Per Lucca il gestore conferma le tariffe 2025 anche nel 2026, salvo successive approvazioni.`
