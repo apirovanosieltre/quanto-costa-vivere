@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-10T14:58:06.024Z",
+  "methodology": "Mediana non ponderata dei limiti minimi/massimi per zone OMI residenziali omogenee: non è il canone medio di mercato.",
+  "cities": [
+    {
+      "schemaVersion": 1,
+      "municipalCode": "F205",
+      "city": "Milano",
+      "geography": "city_unweighted_zone_aggregate",
+      "basePeriod": "2025/2",
+      "createdAt": "2026-11-10T14:58:06.024Z",
+      "sourcePublisher": "Comune di Milano, fonte originaria Agenzia delle Entrate - OMI",
+      "sourceUrl": "https://dati.comune.milano.it/dataset/ds3024-quotazioni-immobiliari-omi-locazione-semestre-2025-2",
+      "sourceCsvUrl": "https://dati.comune.milano.it/dataset/cac75735-6fee-4e46-813f-dc1a43c02b8e/resource/2b37b0fc-e7b5-4ba2-bd8b-073c987f19bf/download/quotazioni_omi_locazione_2025_2.csv",
+      "sourceLicense": "CC BY 4.0",
+      "type": "Abitazioni civili",
+      "maintenance": "NORMALE",
+      "areaType": "L",
+      "unit": "EUR/m²/month",
+      "zonesCount": 40,
+      "lowerMedian": 11.75,
+      "upperMedian": 15.6,
+      "caveat": "Mediana non ponderata dei limiti minimi e massimi OMI di zona. Non è un canone medio di mercato e non rappresenta una specifica zona o un immobile.",
+      "rawQuoteRowsPublished": false,
+      "sourceSha256": "588850f7745bfcdb680fe9d66007728493a8db74e52e2c43d195cc40c24c48be"
+    }
+  ]
+}
