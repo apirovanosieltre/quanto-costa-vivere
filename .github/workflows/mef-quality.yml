@@ -1,5 +1,10 @@
 name: MEF 2026 - controllo dataset
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/mef-quality.yml'
   workflow_dispatch:
   schedule:
     # Ogni lunedi, 06:15 UTC. Controllo senza pubblicazione automatica.
