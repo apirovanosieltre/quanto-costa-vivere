@@ -3,7 +3,15 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'scripts/**'
+      - 'scripts/mef-csv.mjs'
+      - 'scripts/mef-csv.test.mjs'
+      - 'scripts/sync-mef.mjs'
+      - 'scripts/audit-mef-2026.mjs'
+      - 'scripts/inspect-mef-regional.mjs'
+      - 'scripts/mef-reviewed-2026.json'
+      - 'src/app/core/mef-regional.ts'
+      - 'src/app/core/local-tax-2026.ts'
+      - 'public/data/municipal-2026.json'
       - '.github/workflows/mef-quality.yml'
   workflow_dispatch:
   schedule:
@@ -11,6 +19,9 @@ on:
     - cron: '15 6 * * 1'
 permissions:
   contents: read
+concurrency:
+  group: mef-2026-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   inspect:
     runs-on: ubuntu-latest
@@ -27,7 +38,16 @@ jobs:
       - name: Audit CSV comunale 2026
         run: node scripts/audit-mef-2026.mjs
       - name: Ispeziona tracciato ufficiale addizionali regionali 2026
-        run: node scripts/inspect-mef-regional.mjs
+        run: |
+          set +e
+          node scripts/inspect-mef-regional.mjs
+          status=$?
+          set -e
+          if [ "$status" -eq 2 ]; then
+            echo "::warning::MEF regionale temporaneamente non raggiungibile; controllo non eseguito. Nessun dato sostitutivo viene pubblicato."
+            exit 0
+          fi
+          exit "$status"
       - name: Salva report QA e JSON candidato (non pubblicato)
         if: always()
         uses: actions/upload-artifact@v4
