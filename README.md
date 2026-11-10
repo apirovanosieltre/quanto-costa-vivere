@@ -1,4 +1,4 @@
-# QuantoCostaVivere · v1.1
+# QuantoCostaVivere · v1.2
 
 Portale Angular 22, mobile-first e accessibile, per **confronto del costo della vita tra città, budget domestico, IRPEF 2026, stima RAL e inflazione ufficiale italiana**. Integra una Cloudflare Pages Function per Eurostat e una pipeline **di acquisizione + validazione** degli elenchi MEF.
 
@@ -10,7 +10,7 @@ Portale Angular 22, mobile-first e accessibile, per **confronto del costo della 
 |---|---|---|
 | `/` | Operativa | Budget manuale, i valori iniziali sono demo; comune non influenza il budget |
 | `/costo-vita-firenze-persona-sola` | Pilota automatico | Scenario per una persona, fonti Regione Toscana 2024, Publiacqua 2026, Autolinee Toscane, ISTAT 2025 + ipotesi editoriali esplicite | 
-| `/confronta-citta` | Operativa | Due comuni MEF (7.897), **suggerimenti automatici per persona sola** (affitti Firenze e Milano soltanto, altri comuni con casa non disponibile), budget personalizzato, RAL se verificata, OMI manuale, ISTAT e carburanti MIMIT |
+| `/confronta-citta` | Operativa | Due comuni MEF (7.897), **suggerimenti automatici per persona sola** (affitti storici dei 10 capoluoghi toscani e indicatore OMI aggregato Milano; casa non disponibile per gli altri comuni), budget personalizzato, RAL se verificata, OMI manuale, ISTAT e carburanti MIMIT |
 | `/irpef-2026` | Operativa | Imposta lorda nazionale a scaglioni |
 | `/stipendio-netto-2026` | Operativa | Netto nazionale con comunali semplici revisionate e regionali verificate: Lombardia, Toscana, Emilia-Romagna, Liguria, Piemonte (senza figli a carico) e Valle d'Aosta; **netto completo solo con entrambe le addizionali disponibili** |
 | `/inflazione` | API integrata nel codice | Eurostat ufficiale `prc_hicp_minr`, API Cloudflare `/api/inflation`, serie reale fino a 12 mesi e fallback diretto in sviluppo; **richiede deploy e collaudo live** |
@@ -42,19 +42,44 @@ Fonti:
 
 **Limite attuale:** non disponiamo di dati automaticamente riutilizzabili e verificati su affitti e prezzi di ogni singolo comune. Evitiamo di generare migliaia di pagine SEO vuote o inventate; il comparatore ha una singola pagina indicizzabile, con parametri per le coppie selezionate. L'espansione delle schede città richiederà dataset locali realmente pubblicabili.
 
-## Confronto assistito Firenze–Milano per persona sola
+## Confronto assistito per persona sola, capoluoghi toscani e Milano
 
 La pagina principale `/confronta-citta` ora suggerisce automaticamente cinque macro-categorie di spesa per una **persona sola in affitto**, con superficie comune di riferimento (55 m², modificabile). Il risultato è un *budget di scenario*, non un costo della vita ufficiale né una classifica delle città.
 
-- **Firenze**: affitto da contratti registrati 2024 (Regione Toscana), quota idrica Publiacqua 2026 con consumo iniziale 45 m³/anno, trasporto urbano Autolinee Toscane (42,20 €), alimentari da proxy nazionale ISTAT e scenari dichiarati per le altre spese.
+- **Dieci capoluoghi toscani**: affitto da nuovi contratti registrati 2024 nel rapporto Regione Toscana «Abitare in Toscana 2025» (tabella 2.2, pagina 35), con un unico metodo per i capoluoghi Arezzo, Firenze, Grosseto, Livorno, Lucca, Massa, Pisa, Pistoia, Prato e Siena. Soltanto per Firenze: quota idrica Publiacqua 2026 con consumo iniziale 45 m³/anno e trasporto urbano Autolinee Toscane (42,20 €). Per alimentari rimane un proxy nazionale ISTAT e per altre spese ipotesi dichiarate.
 - **Milano**: intervallo OMI 2025/2 già revisionato e pubblicato come indicatore comunale aggregato. Per il budget usiamo il **punto medio dei due limiti aggregati** soltanto come scelta di scenario, non un affitto mediano. Trasporto urbano mensile ordinario ATM **39 €**; alimentari ISTAT e bollette/altre spese restano proxy o ipotesi. Fonte ATM: https://www.atm.it/it/ViaggiaConNoi/Abbonamenti/Pagine/Tipologie.aspx
-- **Altri comuni**: affitto sconosciuto e lasciato `null`, mai 0 o stimato da dati di altre città. Sono proposte le ipotesi nazionali per utenze, alimentari, mobilità e altri costi, sempre con indicazione di bassa attendibilità. I totali non sono considerati completi finché l'affitto non viene inserito dall'utente.
+- **Altri comuni**, inclusi quelli non capoluogo nelle province toscane: affitto sconosciuto e lasciato `null`, mai 0 o stimato da dati di altre città. Sono proposte le ipotesi nazionali per utenze, alimentari, mobilità e altri costi, sempre con indicazione di bassa attendibilità. I totali non sono considerati completi finché l'affitto non viene inserito dall'utente.
 - Ogni macro-categoria espone nel pannello **Origine dei suggerimenti**: importo proposto, fonte, periodo, ambito territoriale, tipo e attendibilità. I valori modificati manualmente **non vengono sovrascritti** dai cambiamenti di superficie o fonte; il pulsante *Ripristina suggerimenti* li reimposta esplicitamente.
-- Modifica superficie, contratto di Firenze, consumo d'acqua e inserisci, facoltativamente, lo stesso reddito netto per i due comuni. Le simulazioni fiscali e le schede di dettaglio OMI/carburanti restano accessibili più in basso.
-- Il riepilogo ad apertura pagina mostra il totale o segnala l'importo mancante. Per Firenze vs Milano avvisa esplicitamente che **le fonti sugli affitti non sono metodologicamente omogenee** (contratti 2024 vs indicatori OMI 2025/2). Non usarlo per dedurre la convenienza generale di una città.
+- Modifica superficie, tipologia di contratto nei capoluoghi toscani, consumo d'acqua a Firenze e inserisci, facoltativamente, lo stesso reddito netto per i due comuni. Le simulazioni fiscali e le schede di dettaglio OMI/carburanti restano accessibili più in basso.
+- Il riepilogo ad apertura pagina mostra il totale o segnala l'importo mancante. Tra i dieci capoluoghi toscani presenta un **delta dell'affitto storico direttamente confrontabile** (stesso report, tipologia di contratto e superficie). Per Firenze vs Milano avvisa che **le fonti sugli affitti non sono metodologicamente omogenee** (contratti 2024 vs indicatori OMI 2025/2). Non usarlo per dedurre la convenienza generale di una città.
 - Test automatici `src/app/core/automatic-city-compare.spec.ts` validano valori, fonte, copertura, affitti mancanti, scenario con metrature diverse e messaggi di comparabilità.
 
 **Principio UX:** l'utente comincia da importi suggeriti e decide se correggerli, anziché compilare tutte le categorie. Il sito non spaccia ipotesi nazionali per prezzi realmente osservati in città.
+
+## Estensione 2024: canoni registrati nei 10 capoluoghi toscani
+
+**Fonte istituzionale unica:** Regione Toscana, Osservatorio Sociale Regionale, `Abitare in Toscana 2025`, rapporto pubblicato **aprile 2026**. La **tabella 2.2, pagina 35**, pubblica per ogni città capoluogo il canone medio `€/m²/ANNO` dei **nuovi contratti registrati nel 2024**, per tipologia contrattuale.
+
+Documento originale: https://www.regione.toscana.it/documents/d/guest/abitare-in-toscana2025_v3_interattivo
+
+| Comune capoluogo | Ordinario oltre 3 anni | Canone concordato | Ordinario transitorio |
+|---|---:|---:|---:|
+| Arezzo (A390) | 66 | 69 | 76 |
+| Firenze (D612) | 160 | 99 | 244 |
+| Grosseto (E202) | 69 | 83 | 116 |
+| Livorno (E625) | 87 | 69 | 105 |
+| Lucca (E715) | 82 | 76 | 123 |
+| Massa (F023, riga provincia «Massa Carrara») | 74 | 79 | 168 |
+| Pisa (G702) | 105 | 88 | 136 |
+| Pistoia (G713) | 63 | 75 | 88 |
+| Prato (G999) | 101 | 78 | 107 |
+| Siena (I726) | 98 | 92 | 102 |
+
+Unità: **€/m² all'anno**, non al mese. Calcolo mensile: `canone annuo/m² × superficie dichiarata / 12`. Esempio **55 m²**, ordinario oltre 3 anni: Arezzo **302,50 €/mese** e Firenze **733,33 €/mese** (delta **430,83 €/mese**). Queste non sono offerte attuali o tariffe per case equivalenti, ma indicatori storici del campione 2024. Il rapporto sottolinea che non distingue qualità, posizione e caratteristiche degli immobili.
+
+Il dato è **valido solo per i dieci comuni capoluogo elencati**, non per gli altri comuni nelle rispettive province. La colonna si chiama «Provincia» nel documento ma il testo specifica «città capoluogo»; la riga «Massa Carrara» viene associata al comune capoluogo **Massa**, non a Carrara. La compatibilità fra capoluoghi toscani riguarda **solo la componente affitto del 2024**; utenze, alimentari e trasporti possono ancora essere ipotesi o dati non comparabili. I metodi di Milano e Toscana **non sono omogenei**, per cui non si può presentare una graduatoria nazionale.
+
+Il file `src/app/core/tuscany-capital-rents-2024.ts` contiene soltanto i valori riassuntivi della tabella, con attribuzione puntuale. I test `tuscany-capital-rents-2024.spec.ts` verificano i dieci codici catastali, ogni cifra, il calcolo mensile e che i comuni non coperti **non** ricevano affitti inventati.
 
 ## Firenze, una persona: pilota di stima automatica verificabile
 
