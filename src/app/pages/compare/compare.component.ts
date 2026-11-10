@@ -3,6 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { validateMunicipalDataset, type MunicipalRecord } from '../../core/municipal-data';
 import { taxRegionFromProvince } from '../../core/italian-territories';
+import { estimateSalary2026 } from '../../core/salary-2026';
+import { estimateLocalTaxes2026 } from '../../core/local-tax-2026';
+import { type RegionalMefDataset } from '../../core/mef-regional';
+import { type MunicipalDataset } from '../../core/municipal-data';
 import {
   COST_KEYS, COST_LABELS, EMPTY_BUDGET, compareCityBudgets,
   basketForCity, regionalFamilySpending, omiRentalRange,validMoney,
@@ -142,6 +146,63 @@ const emptyBudget=():CityBudget=>({
   }
 </section>
 
+<section class="container compare-salary" aria-labelledby="compare-salary-title">
+  <h2 id="compare-salary-title">Stessa RAL, due comuni: cambia anche il netto?</h2>
+  <p>Simula lo stesso stipendio lordo annuo nelle due città. Il risultato netto viene presentato <strong>solo se</strong> le addizionali 2026 comunali e regionali sono entrambe verificabili. Il calcolo è riferito al lavoratore dipendente privato standard, senza familiari a carico né altri redditi.</p>
+  <div class="compare-salary-controls">
+    <div>
+      <label class="field-label" for="compare-ral">RAL (€ / anno, opzionale)</label>
+      <input class="standalone-input" id="compare-ral" type="number" min="1" max="56224" step="500"
+        [ngModel]="grossSalary()" (ngModelChange)="setSalary($event)" placeholder="Es. 30000">
+    </div>
+    <div>
+      <label class="field-label" for="compare-contributions">Contributi INPS del dipendente (%)</label>
+      <input class="standalone-input" id="compare-contributions" type="number" min="0" max="20" step=".01"
+        [ngModel]="salaryContribution()" (ngModelChange)="setContribution($event)">
+    </div>
+    <div>
+      <label class="field-label" for="compare-installments">Mensilità</label>
+      <select class="standalone-input" id="compare-installments" [ngModel]="monthlyPaychecks()"
+        (ngModelChange)="setPaychecks($event)">
+        <option [ngValue]="12">12</option><option [ngValue]="13">13</option><option [ngValue]="14">14</option>
+      </select>
+    </div>
+  </div>
+  @if(nameRegion(city('left')?.province??'')==='PIEMONTE' || nameRegion(city('right')?.province??'')==='PIEMONTE') {
+    <label class="compare-flag">
+      <input type="checkbox" [ngModel]="noDependentChildren()" (ngModelChange)="noDependentChildren.set(!!$event)">
+      <span>Confermo di non avere figli a carico, necessari per escludere le detrazioni regionali previste in Piemonte.</span>
+    </label>
+  }
+  @if(salaryResult();as salary){
+    @if(salary.supported){
+      <p class="compare-tiny">Netto nazionale stimato prima delle addizionali: {{money(salary.monthlyBeforeLocalTaxes)}} € per mensilità, con le ipotesi indicate.</p>
+      <div class="compare-layout">
+        @for(side of sides;track side.key){
+          <div class="compare-omi-card">
+            <h3>{{name(side.key)}}</h3>
+            @if(cityTax(side.key);as local){
+              @if(local.complete){
+                <p>Comunale: <strong>{{money(local.municipal.amount!)}} € / anno</strong></p>
+                <p>Regionale: <strong>{{money(local.regional.amount!)}} € / anno</strong></p>
+                <p class="compare-emphasis">Netto medio stimato: {{money(local.monthlyAverageAfterLocal!)}} € / mensilità</p>
+                <button type="button" class="compare-use-net" (click)="applyEstimatedNet(side.key)">Usa questo netto nel budget</button>
+              } @else {
+                <p class="compare-tiny">Netto locale non calcolabile.</p>
+                <p class="compare-tiny">Comunale: {{local.municipal.note}}</p>
+                <p class="compare-tiny">Regionale: {{local.regional.note}}</p>
+              }
+            } @else {<p class="compare-tiny">Seleziona un comune valido.</p>}
+          </div>
+        }
+      </div>
+    } @else {<p class="compare-alert">{{salary.reason}}</p>}
+  } @else {
+    <p class="compare-tiny">Inserisci una RAL per abilitare il confronto fiscale. I netti dei due budget sopra restano liberamente modificabili.</p>
+  }
+  <p class="compare-tiny">Le addizionali dipendono dal domicilio fiscale e dalla capienza IRPEF, non dal luogo di lavoro. La stima è una media aritmetica annua e non riproduce i conguagli del cedolino. <a routerLink="/stipendio-netto-2026">Dettaglio delle ipotesi fiscali ↗</a></p>
+</section>
+
 <section class="container compare-reference">
   <h2>Dati territoriali: cosa sappiamo davvero</h2>
   <p>I riferimenti seguenti sono rilevazioni statistiche documentate. <strong>Non vengono utilizzati come importi predefiniti nel tuo budget</strong>, perché non descrivono la stessa famiglia o lo stesso immobile.</p>
@@ -258,7 +319,14 @@ const emptyBudget=():CityBudget=>({
     .compare-city-result p{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;font-size:.85rem;margin:0 0 8px}
     .compare-city-result p:last-child{margin-bottom:0}
     .compare-balance{border-top:1px solid #c6d8ec;padding-top:12px;color:var(--navy)}
-    .compare-results,.compare-reference,.compare-omi,.compare-footer{margin-top:48px}
+    .compare-results,.compare-reference,.compare-omi,.compare-footer,.compare-salary{margin-top:48px}
+    .compare-salary{background:#fff;border:1px solid var(--line);border-radius:18px;padding:26px}
+    .compare-salary-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;margin:18px 0}
+    .compare-salary-controls .field-label{display:block;margin-bottom:7px}
+    .compare-salary-controls .standalone-input{width:100%;padding:11px;border:1px solid #bfcddd;border-radius:9px;min-height:44px;background:#fff}
+    .compare-salary .compare-omi-card{background:#f4f8fc}
+    .compare-flag{display:flex;align-items:flex-start;gap:9px;margin:14px 0}
+    .compare-use-net{background:var(--blue);color:#fff;border:0;border-radius:10px;padding:12px 15px;font-weight:750}
     .compare-results>h2,.compare-reference>h2{margin-bottom:14px}
     .compare-result-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
     .compare-kpi{display:flex;flex-direction:column;gap:8px}
@@ -288,7 +356,8 @@ const emptyBudget=():CityBudget=>({
     .compare-footer{border-top:1px solid var(--line);padding-top:25px}
     .compare-alert{padding:15px;border-radius:10px;background:#fff1dc;color:#815310}
     @media(max-width:800px){
-      .compare-layout,.compare-result-cards{grid-template-columns:1fr}
+      .compare-layout,.compare-result-cards,.compare-salary-controls{grid-template-columns:1fr}
+      .compare-salary{padding:18px}
       .compare-city-card,.compare-reference-card,.compare-omi-card,.compare-intro,.compare-kpi{padding:18px}
       .compare-bar-line{grid-template-columns:70px 1fr 72px;gap:8px}
     }
@@ -303,6 +372,19 @@ export class CompareComponent implements OnInit {
   readonly error=signal('');
   readonly shareStatus=signal('');
   readonly records=signal<MunicipalRecord[]>([]);
+  readonly municipalData=signal<MunicipalDataset|null>(null);
+  readonly regionalTaxData=signal<RegionalMefDataset|null>(null);
+  readonly grossSalary=signal<number|null>(null);
+  readonly monthlyPaychecks=signal<12|13|14>(13);
+  readonly salaryContribution=signal(9.19);
+  readonly noDependentChildren=signal(false);
+  readonly salaryResult=computed(()=>{
+    const ral=this.grossSalary();
+    return ral===null?null:estimateSalary2026({
+      grossYearlySalary:ral,installments:this.monthlyPaychecks(),
+      employeeSocialSecurityRatePct:this.salaryContribution()
+    });
+  });
   readonly cityByCode=computed(()=>new Map(this.records().map(x=>[x.code,x])));
   readonly leftCode=signal('F205');
   readonly rightCode=signal('F839');
@@ -321,13 +403,14 @@ export class CompareComponent implements OnInit {
   });
   private readonly formatter=new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
   constructor(private readonly route:ActivatedRoute,private readonly router:Router){}
-  ngOnInit():void{void this.loadMunicipalities();}
+  ngOnInit():void{void this.loadMunicipalities();void this.loadRegionalTaxes();}
   async loadMunicipalities():Promise<void>{
     try{
       const response=await fetch('/data/municipal-2026.json',{cache:'no-cache'});
       if(!response.ok)throw new Error('Il catalogo comunale non risponde');
       const dataset=validateMunicipalDataset(await response.json());
       if(!dataset.published)throw new Error('Il catalogo MEF non è stato ancora revisionato');
+      this.municipalData.set(dataset);
       this.records.set(dataset.records);
       const da=this.route.snapshot.queryParamMap.get('da')??'F205';
       const a=this.route.snapshot.queryParamMap.get('a')??'F839';
@@ -336,6 +419,46 @@ export class CompareComponent implements OnInit {
     }catch{
       this.error.set('Catalogo dei comuni non disponibile. Il confronto non usa dati dimostrativi: riprova dopo il deploy e verifica lo stato dei dati.');
     }finally{this.loading.set(false);}
+  }
+  private async loadRegionalTaxes():Promise<void>{
+    try{
+      const response=await fetch('/api/regional-rates');
+      if(!response.ok)throw new Error('MEF non disponibile');
+      const raw:unknown=await response.json();
+      if(raw&&typeof raw==='object'){
+        const d=raw as RegionalMefDataset;
+        if(d.year===2026&&Array.isArray(d.records))this.regionalTaxData.set(d);
+      }
+    }catch{/* I netti locali vengono lasciati non calcolabili. */}
+  }
+  setSalary(value:unknown):void{this.grossSalary.set(validMoney(value,56224));}
+  setContribution(value:unknown):void{
+    const n=validMoney(value,20);
+    if(n!==null)this.salaryContribution.set(n);
+  }
+  setPaychecks(value:unknown):void{
+    const n=Number(value);
+    if(n===12||n===13||n===14)this.monthlyPaychecks.set(n);
+  }
+  cityTax(side:Side){
+    const city=this.city(side),salary=this.salaryResult();
+    if(!city||!salary||!salary.supported)return null;
+    return estimateLocalTaxes2026({
+      municipal:city,municipalDataset:this.municipalData(),
+      regionalDataset:this.regionalTaxData(),
+      region:taxRegionFromProvince(city.province)??'',
+      taxableIncome:salary.taxableIncome,
+      nationalIrpefDue:salary.nationalIrpefAfterDeductions,
+      yearlyBeforeLocal:salary.yearlyBeforeLocalTaxes,
+      installments:this.monthlyPaychecks(),
+      noDependentChildrenConfirmed:this.noDependentChildren()
+    });
+  }
+  applyEstimatedNet(side:Side):void{
+    const local=this.cityTax(side);
+    if(local?.complete&&local.monthlyAverageAfterLocal!==null){
+      this.setNet(side,local.monthlyAverageAfterLocal);
+    }
   }
   city(side:Side):MunicipalRecord|null{return this.cityByCode().get(side==='left'?this.leftCode():this.rightCode())??null;}
   displayCity(city:MunicipalRecord):string {
