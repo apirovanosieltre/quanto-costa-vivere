@@ -21,6 +21,8 @@ describe('MEF addizionali regionali, CSV 2026',()=>{
     expect(result.records[0].disposition).toContain('Esenzione fino');
     expect(result.calculable).toBe(false);
     expect(result.source).toContain('MEF');
+    expect(result.sourceSha256).toBeUndefined();
+    expect(parseRegionalMefCsv(valid,'2026-11-10T10:00:00Z','a'.repeat(64)).sourceSha256).toBe('a'.repeat(64));
   });
   it('blocca tracciati modificati',()=>{
     expect(()=>parseRegionalMefCsv(valid.replace('ALIQUOTA','PERCENTUALE'),'x')).toThrow();
