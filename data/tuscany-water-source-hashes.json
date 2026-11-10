@@ -5,6 +5,7 @@
   "sources": [
     {
       "nextYearListed": false,
+      "listingDigest": "ae25bdb7e92f0f01751161f55a66eb3884417d235b105faa25b4ed435b872bbe",
       "id": "acque",
       "provider": "Acque SpA",
       "cities": "Pisa",
@@ -16,6 +17,7 @@
     },
     {
       "nextYearListed": false,
+      "listingDigest": "7f44571ac35c5106a00f786db2fa341e88f80e8e90900f1d3b8b08a261b3972c",
       "id": "asa",
       "provider": "ASA",
       "cities": "Livorno",
@@ -27,6 +29,7 @@
     },
     {
       "nextYearListed": false,
+      "listingDigest": "c90581c2b9623d1dca7e7e0e41981d48f856ed5ee77f3b681ffdbfb073de3723",
       "id": "fiora",
       "provider": "Acquedotto del Fiora",
       "cities": "Grosseto, Siena",
@@ -38,6 +41,7 @@
     },
     {
       "nextYearListed": false,
+      "listingDigest": "c9a84974b7fb3f3495cd8336e012495dd8a490c563fe3f7fe22e3acf64a34f03",
       "id": "gaia",
       "provider": "GAIA",
       "cities": "Massa, bacino Piana",
@@ -49,6 +53,7 @@
     },
     {
       "nextYearListed": false,
+      "listingDigest": "6e32990d38df0e32be385b857c85c0316573a0b8db16cfd8640366c0697fcc2e",
       "id": "geal",
       "provider": "GEAL",
       "cities": "Lucca",
@@ -60,6 +65,7 @@
     },
     {
       "nextYearListed": false,
+      "listingDigest": "8b7318f1a2e064e848cc9145d65fbbf671698daa2aafb4f3ce1c30e2c86954eb",
       "id": "nuove-acque",
       "provider": "Nuove Acque",
       "cities": "Arezzo",
@@ -71,6 +77,7 @@
     },
     {
       "nextYearListed": false,
+      "listingDigest": null,
       "id": "publiacqua",
       "provider": "Publiacqua",
       "cities": "Firenze, Pistoia, Prato",
