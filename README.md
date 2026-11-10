@@ -11,9 +11,9 @@ Portale Angular 22, mobile-first e accessibile, per **budget domestico, IRPEF 20
 | `/` | Operativa | Budget manuale, i valori iniziali sono demo; comune non influenza il budget |
 | `/irpef-2026` | Operativa | Imposta lorda nazionale a scaglioni |
 | `/stipendio-netto-2026` | Operativa | Stima per caso standard: fino a RAL 56.224 €, **prima di addizionali locali e altre variabili** |
-| `/inflazione` | API integrata nel codice | Eurostat ufficiale `prc_hicp_minr`, API Cloudflare `/api/inflation` e fallback diretto in sviluppo; **richiede deploy e collaudo live** |
+| `/inflazione` | API integrata nel codice | Eurostat ufficiale `prc_hicp_minr`, API Cloudflare `/api/inflation`, serie reale fino a 12 mesi e fallback diretto in sviluppo; **richiede deploy e collaudo live** |
 | `/addizionali-comunali` | Pipeline + UI pronte | Nessun valore ufficiale caricato finché non viene importato e revisionato il CSV MEF |
-| `/stato-dati` | Operativa | Monitor di disponibilità dei dataset e provenienza |
+| `/stato-dati` | Operativa | Verifica live dell'API Eurostat, disponibilità dataset MEF e provenienza |
 | `/fonti-e-metodo` | Operativa | Trasparenza e limiti |
 
 ## Cloudflare Workers (Git integration)
@@ -57,7 +57,7 @@ npm run test:mef
 - La Pages Function usa cache edge di 6 ore, limita a 10 secondi l'attesa Eurostat e restituisce **HTTP 503 con nessun dato fittizio** quando la fonte non risponde.
 - Nessuna chiave API, D1 o servizio commerciale richiesto per l'inflazione.
 
-Endpoint dopo il deploy: `https://<dominio>/api/inflation` (JSON con `period`, `annualRate`, `sourceUpdatedAt`, `retrievedAt`, `sourceUrl`).
+Endpoint dopo il deploy: `https://costovita.cicioweb.app/api/inflation` (JSON con `period`, `annualRate`, `history` [fino a 12 mesi effettivi], `sourceUpdatedAt`, `retrievedAt`, `sourceUrl`). Se Eurostat non è raggiungibile, risponde 503 senza dati simulati. Il percorso `/stato-dati` verifica l'API ad ogni apertura, non si basa su uno stato hardcoded.
 
 ## Fonte Eurostat: integrazione reale del codice
 
@@ -98,7 +98,7 @@ node scripts/sync-mef.mjs --file ./Add_comunale_irpef2026.csv
 node scripts/sync-mef.mjs --file ./Add_comunale_irpef2026.csv --publish --reviewed
 ```
 
-La pubblicazione sostituisce `public/data/municipal-2026.json`. Prima di fare commit, controlla **report, numero di comuni, casi pendenti e campioni casuali**. Il file vuoto iniziale (`published:false`) è intenzionale. **L'addizionale regionale NON è implementata**; non è lecito mostrare un netto complessivo. Non aggiungere tassi di una regione basandosi su un unico valore non verificato.
+La verifica produce `mef-validation-report.json` con SHA-256 del CSV e campioni distinti per stato, e `mef-candidate-2026.json` con `published:false`. La GitHub Action settimanale e avviabile manualmente (**Actions → MEF 2026 - controllo dataset → Run workflow**) conserva entrambi i file tra gli artifact, senza pubblicare il dataset. La pubblicazione revisionata sostituisce `public/data/municipal-2026.json`. Prima di fare commit, controlla **report, numero di comuni, casi pendenti, checksum e campioni casuali**. Il file vuoto iniziale (`published:false`) è intenzionale. **L'addizionale regionale NON è implementata**; non è lecito mostrare un netto complessivo. Non aggiungere tassi di una regione basandosi su un unico valore non verificato.
 
 Una GitHub Action `.github/workflows/mef-quality.yml` esegue ogni settimana **solo controllo QA**, senza pubblicazione non revisionata.
 
@@ -114,7 +114,7 @@ Fonti: [art. 13 TUIR](https://www.normattiva.it/atto/caricaDettaglioAtto?atto.ar
 
 1. **Regionali MEF** con scaglioni, esenzioni e test per le 19 regioni + province autonome.
 2. **OMI**: condizioni di riutilizzo commerciale, estrazione periodica per zone e tipologia.
-3. **Statistiche ISTAT specifiche** su spese familiari, prezzi locali disponibili e copertura geografica. La prima integrazione live è Eurostat (dati armonizzati prodotti dai Paesi UE).
+3. **Statistiche ISTAT specifiche** su spese familiari, prezzi locali disponibili e copertura geografica. La prima integrazione live è Eurostat (dati armonizzati prodotti dai Paesi UE). ISTAT limita il web service SDMX a 5 query/minuto/IP; un'eventuale integrazione futura dovrà usare caching e un dataset specifico con dimensioni verificate.
 4. **Ricerca completa comuni**, normalizzazione catastale/ISTAT, mapping regioni e confronto territoriale.
 5. **Stipendio netto effettivo**, includendo trattamento integrativo, casi contrattuali, addizionali e agevolazioni.
 6. **SEO, accessibilità e privacy**: test browser/axe, pagine dinamiche SEO solo con dati autentici, CMP pubblicitaria se necessaria.
