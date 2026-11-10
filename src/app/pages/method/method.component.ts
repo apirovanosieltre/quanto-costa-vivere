@@ -22,7 +22,7 @@ import { RouterLink } from '@angular/router';
       <section class="method-card" aria-labelledby="missing-data-title">
         <div class="method-symbol method-symbol-amber" aria-hidden="true">!</div>
         <h2 id="missing-data-title">Cosa non è ancora disponibile</h2>
-        <p>Il confronto tra due comuni è disponibile con le tue cifre, ma non esiste ancora un catalogo completo di prezzi locali automatici. La stima della RAL integra le addizionali comunali semplici e sei profili regionali verificati; negli altri casi il risultato locale resta parziale. Per OMI puoi consultare la mappa ufficiale e riportare manualmente i valori per zona; non abbiamo una banca dati immobiliare importata. Il comune selezionato nel budget non altera ancora il risultato.</p>
+        <p>Il confronto tra due comuni è disponibile con le tue cifre, ma non esiste ancora un catalogo completo di prezzi locali automatici. La stima della RAL integra le addizionali comunali semplici e sei profili regionali verificati; negli altri casi il risultato locale resta parziale. Per OMI puoi consultare la mappa ufficiale e riportare manualmente i valori per zona; non abbiamo una banca dati immobiliare importata. Per i carburanti sono disponibili prezzi provinciali aggregati, non valori per singolo comune. Il comune selezionato nel budget non altera ancora il risultato.</p>
       </section>
     </div>
     <section class="container sources-section" aria-labelledby="sources-title">
@@ -40,6 +40,7 @@ import { RouterLink } from '@angular/router';
             <tr><td><a href="https://ec.europa.eu/eurostat/web/hicp/information-data" target="_blank" rel="noopener noreferrer">Eurostat ↗</a></td><td>IPCA: variazione prezzi annuale dell'Italia, API prc_hicp_minr</td><td><span class="status-tag ready">API predisposta</span></td></tr>
             <tr><td><a href="https://www.istat.it/comunicato-stampa/spese-per-consumi-delle-famiglie-anno-2025/" target="_blank" rel="noopener noreferrer">ISTAT ↗</a></td><td>Spesa delle famiglie, anno 2025: dati nazionali e subset regionale</td><td><span class="status-tag ready">Dataset pubblico versionato</span></td></tr>
             <tr><td><a href="https://press.regione.puglia.it/web/ufficio-statistico/-/codacons.-i-prezzi-di-beni-e-servizi-nelle-principali-citta-italiane.-anno-2025" target="_blank" rel="noopener noreferrer">CODACONS · Regione Puglia ↗</a></td><td>Paniere campione 2025 per sei città citate; non spesa mensile</td><td><span class="status-tag ready">Campione pubblicato</span></td></tr>
+            <tr><td><a href="https://optenergy.it/dati/" target="_blank" rel="noopener noreferrer">optenergy / MIMIT ↗</a></td><td>Mediane giornaliere di benzina e gasolio self per provincia, aggregazioni optenergy su dati aperti MIMIT (CC BY 4.0), con numero di impianti e quartili. Non prezzi comunali.</td><td><span class="status-tag ready">Snapshot provinciale aggiornabile</span></td></tr>
             <tr><td><a href="https://www1.agenziaentrate.gov.it/servizi/geopoi_omi/index.htm" target="_blank" rel="noopener noreferrer">Agenzia delle Entrate ↗</a></td><td>Quotazioni OMI per zone immobiliari</td><td><span class="status-tag ready">Consultazione e stima manuale</span></td></tr>
           </tbody>
         </table>
