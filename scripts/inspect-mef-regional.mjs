@@ -5,6 +5,7 @@ import { parseCsv, detectDelimiter } from './mef-csv.mjs';
 const SOURCE_URL = 'https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/download/download.php?anno=2026&tipo=reg';
 const args = process.argv.slice(2);
 const filePosition = args.indexOf('--file');
+class TemporarySourceError extends Error {}
 
 try {
   let bytes;
@@ -12,9 +13,20 @@ try {
     if (!args[filePosition+1]) throw new Error('Specificare --file percorso.csv');
     bytes = await fs.readFile(args[filePosition+1]);
   } else {
-    const response = await fetch(SOURCE_URL, { signal: AbortSignal.timeout(20000) });
+    let response;
+    try {
+      response = await fetch(SOURCE_URL, { signal: AbortSignal.timeout(20000) });
+    } catch (error) {
+      throw new TemporarySourceError('Sorgente MEF regionale temporaneamente non raggiungibile: ' + error.message);
+    }
+    if ([403,408,429].includes(response.status) || response.status >= 500)
+      throw new TemporarySourceError('MEF regionale temporaneamente non raggiungibile: HTTP ' + response.status);
     if (!response.ok) throw new Error('MEF regioni: HTTP ' + response.status);
-    bytes = Buffer.from(await response.arrayBuffer());
+    try {
+      bytes = Buffer.from(await response.arrayBuffer());
+    } catch (error) {
+      throw new TemporarySourceError('Lettura CSV MEF regionale interrotta: ' + error.message);
+    }
   }
   if (bytes.length < 200 || bytes.length > 3_000_000) throw new Error('Dimensioni CSV inattese');
   let source;
@@ -52,5 +64,7 @@ try {
   console.log('MEF regional CSV QA:', JSON.stringify({rowCount:report.rowCount,columnCount:report.columnCount,headers:report.headers,firstRows:report.firstRows,regions:report.regions,sha256:report.sha256},null,2));
 } catch (e) {
   console.error('Importazione MEF regionale non validata:',e.message);
-  process.exitCode = 1;
+  // Codice 2 = fonte temporaneamente indisponibile (avviso, non QA falsamente negativa).
+  // Codice 1 = dato o schema non valido (errore di validazione reale).
+  process.exitCode = e instanceof TemporarySourceError ? 2 : 1;
 }
