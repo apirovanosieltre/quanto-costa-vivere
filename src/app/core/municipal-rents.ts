@@ -26,6 +26,7 @@ export interface MunicipalRentDataset {
   methodology:string;
   cities:MunicipalRentBenchmark[];
 }
+export const REVIEWED_MILAN_RENT_SHA256='588850f7745bfcdb680fe9d66007728493a8db74e52e2c43d195cc40c24c48be';
 const DATASET_URL='https://dati.comune.milano.it/dataset/ds3024-quotazioni-immobiliari-omi-locazione-semestre-2025-2';
 export function parseMunicipalRentData(raw:unknown):MunicipalRentDataset {
   if(!raw||typeof raw!=='object')throw new Error('Dataset degli affitti assente');
@@ -37,7 +38,7 @@ export function parseMunicipalRentData(raw:unknown):MunicipalRentDataset {
      r.geography!=='city_unweighted_zone_aggregate'||r.areaType!=='L'||
      r.unit!=='EUR/m²/month'||r.type!=='Abitazioni civili'||r.maintenance!=='NORMALE'||
      r.sourceLicense!=='CC BY 4.0'||r.sourceUrl!==DATASET_URL||
-     !/^[a-f0-9]{64}$/.test(r.sourceSha256)||r.rawQuoteRowsPublished!==false||
+     r.sourceSha256!==REVIEWED_MILAN_RENT_SHA256||r.rawQuoteRowsPublished!==false||
      !Number.isInteger(r.zonesCount)||r.zonesCount<20||
      !Number.isFinite(r.lowerMedian)||!Number.isFinite(r.upperMedian)||
      r.lowerMedian<=0||r.upperMedian<r.lowerMedian||r.upperMedian>150) {
