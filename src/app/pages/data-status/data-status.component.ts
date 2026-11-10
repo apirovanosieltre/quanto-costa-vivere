@@ -6,7 +6,7 @@ import { validateMunicipalDataset } from '../../core/municipal-data';
 <section class="page-hero container"><a routerLink="/" class="back-link">← Torna al budget</a><span class="eyebrow eyebrow-subtle">TRASPARENZA DEI DATI</span><h1>Fonti ufficiali e <span>copertura reale.</span></h1><p>Una fonte individuata non significa dato disponibile. Qui rendiamo visibili le integrazioni e gli aggiornamenti.</p></section>
 <section class="container data-layout" style="padding-bottom:4rem" aria-label="Stato fonti">
 <div class="form-panel"><h2>Integrazioni tecniche</h2>
-  <article class="status-item"><span class="status-tag ready">API collegata, da verificare nel deploy</span><h3>Eurostat · inflazione italiana</h3><p>Cloudflare Pages Function <code>/api/inflation</code> e parser JSON-stat, cache di 6 ore. <strong>Il collegamento live non è stato verificato in produzione.</strong> Se non ci sono dati la pagina mostra un errore, non un valore fittizio.</p><a routerLink="/inflazione">Apri indicatore →</a></article>
+  <article class="status-item"><span class="status-tag" [class.ready]="eurostatOk()" [class.planned]="!eurostatOk()">{{eurostatStatus()}}</span><h3>Eurostat · inflazione italiana</h3><p>{{eurostatInfo()}} Il backend restituisce fino a 12 rilevazioni mensili, con cache edge di 6 ore. Se Eurostat non risponde, non mostriamo valori di esempio.</p><a routerLink="/inflazione">Apri indicatore →</a></article>
   <article class="status-item"><span class="status-tag planned">{{mefStatus()}}</span><h3>MEF · addizionali comunali</h3><p>{{mefInfo()}}</p><a routerLink="/addizionali-comunali">Consulta stato e comuni →</a></article>
   <article class="status-item"><span class="status-tag planned">Solo fonte censita</span><h3>MEF · addizionali regionali</h3><p>Non importate né usate nel calcolo del netto. Gli scaglioni richiedono validazione separata.</p></article>
   <article class="status-item"><span class="status-tag planned">Non integrata</span><h3>OMI · quotazioni immobiliari</h3><p>Da verificare la modalità di download, le condizioni d'uso e la granularità prima di pubblicare dati sugli affitti.</p></article>
@@ -17,9 +17,29 @@ import { validateMunicipalDataset } from '../../core/municipal-data';
 </div></section>`})
 export class DataStatusComponent implements OnInit {
   readonly sources=OFFICIAL_SOURCES;
+  readonly eurostatOk=signal(false);
+  readonly eurostatStatus=signal('Verifica API in corso');
+  readonly eurostatInfo=signal('Controllo la disponibilità della fonte Eurostat.');
   readonly mefStatus=signal('In attesa di importazione');
   readonly mefInfo=signal('Script di acquisizione e controlli pronti. Il dataset non è ancora stato importato e verificato.');
-  ngOnInit():void{void this.load();}
+  ngOnInit():void{void this.load();void this.checkEurostat();}
+  async checkEurostat():Promise<void>{
+    try {
+      const response=await fetch('/api/inflation',{cache:'no-cache'});
+      if (!response.ok) throw new Error('API HTTP ' + response.status);
+      const data:unknown=await response.json();
+      if(!data || typeof data!=='object' || !('period' in data) || !('annualRate' in data) || !('history' in data) ||
+        typeof data.period!=='string' || !Number.isFinite(data.annualRate) || !Array.isArray(data.history) || !data.history.length) {
+        throw new Error('Formato non valido');
+      }
+      this.eurostatOk.set(true);
+      this.eurostatStatus.set('API disponibile');
+      this.eurostatInfo.set('Collegamento verificato. Ultimo mese pubblicato: '+data.period+'.');
+    } catch {
+      this.eurostatStatus.set('API non raggiungibile');
+      this.eurostatInfo.set('L’API /api/inflation non risponde con dati ufficiali validi. Verifica il deploy Workers e riprova.');
+    }
+  }
   async load():Promise<void>{
     try {const response=await fetch('/data/municipal-2026.json'); const d=validateMunicipalDataset(await response.json());
       if(d.published){this.mefStatus.set('Dataset pubblicato');this.mefInfo.set(`${d.report.rows} comuni importati, ${d.report.simple} aliquote semplici e ${d.report.needsReview+d.report.pending} da verificare. Acquisizione: ${d.retrievedAt??'non indicata'}.`);}

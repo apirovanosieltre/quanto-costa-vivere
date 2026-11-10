@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { join, dirname, resolve } from 'node:path';
 import { normalizeMunicipalCsv } from './mef-csv.mjs';
@@ -27,7 +28,18 @@ try {
   console.log('MEF 2026 - QA:',JSON.stringify(summary,null,2));
   if(summary.simple<500) throw new Error('Numero di aliquote semplici troppo basso: controllare parser manualmente');
   const reportFile=join(root,'mef-validation-report.json');
-  await fs.writeFile(reportFile,JSON.stringify({generatedAt:parsed.retrievedAt,sourceUrl:official,report:summary,examples:parsed.records.slice(0,20)},null,2));
+  const sha256=createHash('sha256').update(buffer).digest('hex');
+  const samples={
+    simple:parsed.records.filter(r=>r.status==='simple').slice(0,10),
+    needsReview:parsed.records.filter(r=>r.status==='needs-review').slice(0,10),
+    pending:parsed.records.filter(r=>r.status==='pending').slice(0,10)
+  };
+  await fs.writeFile(reportFile,JSON.stringify({
+    generatedAt:parsed.retrievedAt,sourceUrl:official,sourceSha256:sha256,
+    sourceBytes:buffer.byteLength,report:summary,samples
+  },null,2));
+  // Anteprima JSON da esaminare. Rimane unpublished finche' un responsabile non valida i dati.
+  await fs.writeFile(join(root,'mef-candidate-2026.json'),JSON.stringify(parsed,null,2));
   if(publish){
     if(!args.includes('--reviewed')) throw new Error('Per pubblicare serve --reviewed dopo un controllo manuale sul CSV e sul report');
     parsed.published=true;

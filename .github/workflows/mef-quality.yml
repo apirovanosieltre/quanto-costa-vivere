@@ -1,5 +1,10 @@
 name: MEF 2026 - controllo dataset
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/**'
+      - '.github/workflows/mef-quality.yml'
   workflow_dispatch:
   schedule:
     # Ogni lunedi, 06:15 UTC. Controllo senza pubblicazione automatica.
@@ -19,10 +24,12 @@ jobs:
         run: node --test scripts/mef-csv.test.mjs
       - name: Scarica e verifica CSV ufficiale
         run: node scripts/sync-mef.mjs
-      - name: Salva report QA per revisione
+      - name: Salva report QA e JSON candidato (non pubblicato)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mef-report
-          path: mef-validation-report.json
+          path: |
+            mef-validation-report.json
+            mef-candidate-2026.json
           if-no-files-found: ignore
