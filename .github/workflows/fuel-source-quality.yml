@@ -1,0 +1,20 @@
+name: Territorial fuel data - source and integrity
+on:
+  pull_request:
+    paths:
+      - 'scripts/sync-fuel-province.mjs'
+      - '.github/workflows/fuel-source-quality.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify documented licensed CSV and its real schema
+        run: node scripts/sync-fuel-province.mjs --inspect
