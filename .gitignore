@@ -1,0 +1,12 @@
+/node_modules
+/dist
+/.angular
+/coverage
+/.vscode/*
+!/.vscode/extensions.json
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+/mef-validation-report.json

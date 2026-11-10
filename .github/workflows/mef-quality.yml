@@ -1,0 +1,28 @@
+name: MEF 2026 - controllo dataset
+on:
+  workflow_dispatch:
+  schedule:
+    # Ogni lunedi, 06:15 UTC. Controllo senza pubblicazione automatica.
+    - cron: '15 6 * * 1'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Test parser MEF
+        run: node --test scripts/mef-csv.test.mjs
+      - name: Scarica e verifica CSV ufficiale
+        run: node scripts/sync-mef.mjs
+      - name: Salva report QA per revisione
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mef-report
+          path: mef-validation-report.json
+          if-no-files-found: ignore

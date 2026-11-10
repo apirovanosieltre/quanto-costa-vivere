@@ -1,0 +1,35 @@
+{
+  "name": "quanto-costa-vivere",
+  "version": "0.3.0",
+  "private": true,
+  "scripts": {
+    "start": "ng serve",
+    "build": "ng build --configuration production",
+    "build:dev": "ng build --configuration development",
+    "test": "ng test --watch=false",
+    "test:mef": "node --test scripts/mef-csv.test.mjs",
+    "data:mef:check": "node scripts/sync-mef.mjs",
+    "data:mef:publish": "node scripts/sync-mef.mjs --publish --reviewed"
+  },
+  "dependencies": {
+    "@angular/common": "^22.2.5",
+    "@angular/compiler": "^22.2.5",
+    "@angular/core": "^22.2.5",
+    "@angular/forms": "^22.2.5",
+    "@angular/platform-browser": "^22.2.5",
+    "@angular/router": "^22.2.5",
+    "rxjs": "^7.8.2",
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
+    "@angular/build": "^22.2.5",
+    "@angular/cli": "^22.2.5",
+    "@angular/compiler-cli": "^22.2.5",
+    "typescript": "~6.0.0",
+    "vitest": "^4.0.0",
+    "jsdom": "^27.0.0"
+  },
+  "engines": {
+    "node": ">=22.22.3"
+  }
+}
