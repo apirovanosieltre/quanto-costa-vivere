@@ -1,4 +1,4 @@
-# QuantoCostaVivere · v1.0
+# QuantoCostaVivere · v1.1
 
 Portale Angular 22, mobile-first e accessibile, per **confronto del costo della vita tra città, budget domestico, IRPEF 2026, stima RAL e inflazione ufficiale italiana**. Integra una Cloudflare Pages Function per Eurostat e una pipeline **di acquisizione + validazione** degli elenchi MEF.
 
@@ -10,7 +10,7 @@ Portale Angular 22, mobile-first e accessibile, per **confronto del costo della 
 |---|---|---|
 | `/` | Operativa | Budget manuale, i valori iniziali sono demo; comune non influenza il budget |
 | `/costo-vita-firenze-persona-sola` | Pilota automatico | Scenario per una persona, fonti Regione Toscana 2024, Publiacqua 2026, Autolinee Toscane, ISTAT 2025 + ipotesi editoriali esplicite | 
-| `/confronta-citta` | Operativa | Due comuni MEF (7.897), budget personalizzato e RAL se verificata, **benchmark affitto OMI aggregato Milano 2025/2**, OMI manuale altrove, ISTAT, paniere campione e prezzi provinciali dei carburanti MIMIT |
+| `/confronta-citta` | Operativa | Due comuni MEF (7.897), **suggerimenti automatici per persona sola** (affitti Firenze e Milano soltanto, altri comuni con casa non disponibile), budget personalizzato, RAL se verificata, OMI manuale, ISTAT e carburanti MIMIT |
 | `/irpef-2026` | Operativa | Imposta lorda nazionale a scaglioni |
 | `/stipendio-netto-2026` | Operativa | Netto nazionale con comunali semplici revisionate e regionali verificate: Lombardia, Toscana, Emilia-Romagna, Liguria, Piemonte (senza figli a carico) e Valle d'Aosta; **netto completo solo con entrambe le addizionali disponibili** |
 | `/inflazione` | API integrata nel codice | Eurostat ufficiale `prc_hicp_minr`, API Cloudflare `/api/inflation`, serie reale fino a 12 mesi e fallback diretto in sviluppo; **richiede deploy e collaudo live** |
@@ -41,6 +41,20 @@ Fonti:
 - Agenzia Entrate OMI: https://www1.agenziaentrate.gov.it/servizi/geopoi_omi/index.htm
 
 **Limite attuale:** non disponiamo di dati automaticamente riutilizzabili e verificati su affitti e prezzi di ogni singolo comune. Evitiamo di generare migliaia di pagine SEO vuote o inventate; il comparatore ha una singola pagina indicizzabile, con parametri per le coppie selezionate. L'espansione delle schede città richiederà dataset locali realmente pubblicabili.
+
+## Confronto assistito Firenze–Milano per persona sola
+
+La pagina principale `/confronta-citta` ora suggerisce automaticamente cinque macro-categorie di spesa per una **persona sola in affitto**, con superficie comune di riferimento (55 m², modificabile). Il risultato è un *budget di scenario*, non un costo della vita ufficiale né una classifica delle città.
+
+- **Firenze**: affitto da contratti registrati 2024 (Regione Toscana), quota idrica Publiacqua 2026 con consumo iniziale 45 m³/anno, trasporto urbano Autolinee Toscane (42,20 €), alimentari da proxy nazionale ISTAT e scenari dichiarati per le altre spese.
+- **Milano**: intervallo OMI 2025/2 già revisionato e pubblicato come indicatore comunale aggregato. Per il budget usiamo il **punto medio dei due limiti aggregati** soltanto come scelta di scenario, non un affitto mediano. Trasporto urbano mensile ordinario ATM **39 €**; alimentari ISTAT e bollette/altre spese restano proxy o ipotesi. Fonte ATM: https://www.atm.it/it/ViaggiaConNoi/Abbonamenti/Pagine/Tipologie.aspx
+- **Altri comuni**: affitto sconosciuto e lasciato `null`, mai 0 o stimato da dati di altre città. Sono proposte le ipotesi nazionali per utenze, alimentari, mobilità e altri costi, sempre con indicazione di bassa attendibilità. I totali non sono considerati completi finché l'affitto non viene inserito dall'utente.
+- Ogni macro-categoria espone nel pannello **Origine dei suggerimenti**: importo proposto, fonte, periodo, ambito territoriale, tipo e attendibilità. I valori modificati manualmente **non vengono sovrascritti** dai cambiamenti di superficie o fonte; il pulsante *Ripristina suggerimenti* li reimposta esplicitamente.
+- Modifica superficie, contratto di Firenze, consumo d'acqua e inserisci, facoltativamente, lo stesso reddito netto per i due comuni. Le simulazioni fiscali e le schede di dettaglio OMI/carburanti restano accessibili più in basso.
+- Il riepilogo ad apertura pagina mostra il totale o segnala l'importo mancante. Per Firenze vs Milano avvisa esplicitamente che **le fonti sugli affitti non sono metodologicamente omogenee** (contratti 2024 vs indicatori OMI 2025/2). Non usarlo per dedurre la convenienza generale di una città.
+- Test automatici `src/app/core/automatic-city-compare.spec.ts` validano valori, fonte, copertura, affitti mancanti, scenario con metrature diverse e messaggi di comparabilità.
+
+**Principio UX:** l'utente comincia da importi suggeriti e decide se correggerli, anziché compilare tutte le categorie. Il sito non spaccia ipotesi nazionali per prezzi realmente osservati in città.
 
 ## Firenze, una persona: pilota di stima automatica verificabile
 
