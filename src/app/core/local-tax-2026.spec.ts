@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { estimateMunicipal2026, estimateRegional2026, estimateLocalTaxes2026, progressiveTax, REGIONAL_PROFILES_2026 } from './local-tax-2026';
 import { taxRegionFromProvince, isValidMunicipalRegion } from './italian-territories';
-import { REGIONAL_MEF_PAGE_URL, type RegionalMefDataset, type RegionalMefRecord } from './mef-regional';
+import { REGIONAL_MEF_PAGE_URL, REVIEWED_REGIONAL_CSV_SHA256_2026, type RegionalMefDataset, type RegionalMefRecord } from './mef-regional';
 import type { MunicipalDataset, MunicipalRecord } from './municipal-data';
 
 const municipal:MunicipalRecord={code:'A008',municipality:'ABBATEGGIO',province:'PE',status:'simple',ratePct:0.5,exemptionThreshold:null,reason:''};
@@ -14,7 +14,7 @@ const dataset:MunicipalDataset={
 };
 const base=(records:RegionalMefRecord[]):RegionalMefDataset=>({
   year:2026,source:'MEF - Dipartimento delle Finanze',sourceUrl:REGIONAL_MEF_PAGE_URL,
-  retrievedAt:'2026-11-10',calculable:false,records
+  retrievedAt:'2026-11-10',sourceSha256:REVIEWED_REGIONAL_CSV_SHA256_2026,calculable:false,records
 });
 const lombardia=base([
   {region:'REGIONE LOMBARDIA',ratePct:1.23,bandLabel:'fino a 15000.00 euro'},
@@ -80,6 +80,7 @@ describe('addizionale regionale 2026: scaglioni progressivi',()=>{
     expect(estimateRegional2026('REGIONE LOMBARDIA',{...lombardia,records:lombardia.records.slice(0,3)},30000,5000).amount).toBeNull();
     expect(estimateRegional2026('REGIONE LOMBARDIA',{...lombardia,records:[...lombardia.records.slice(0,3),{...lombardia.records[3],ratePct:3.3}]},30000,5000).amount).toBeNull();
     expect(estimateRegional2026('REGIONE LOMBARDIA',{...lombardia,sourceUrl:'https://example.com'},30000,5000).amount).toBeNull();
+    expect(estimateRegional2026('REGIONE LOMBARDIA',{...lombardia,sourceSha256:'b'.repeat(64)},30000,5000).amount).toBeNull();
     expect(estimateRegional2026('REGIONE LOMBARDIA',{...lombardia,records:[{...lombardia.records[0],disposition:'Nuova esenzione'},...lombardia.records.slice(1)]},30000,5000).amount).toBeNull();
     expect(progressiveTax(10000,[28000,15000],[1,2,3])).toBeNull();
   });
