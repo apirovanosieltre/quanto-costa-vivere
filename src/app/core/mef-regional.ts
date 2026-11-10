@@ -3,6 +3,9 @@
  * Le disposizioni possono includere esenzioni, detrazioni e condizioni speciali.
  */
 export const REGIONAL_MEF_CSV_URL='https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/download/download.php?anno=2026&tipo=reg';
+/** Impronta verificata sulla fonte ufficiale MEF 2026 il 10/11/2026.
+ * Ogni aggiornamento del CSV sospende le stime fino a una nuova revisione. */
+export const REVIEWED_REGIONAL_CSV_SHA256_2026='cc7125ce020a754bb519d2ea2803c7fc81d8f92af040623cd6e7953c2dca25be';
 export const REGIONAL_MEF_PAGE_URL='https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/addregirpef/download/tabella.htm';
 
 export interface RegionalMefRecord {
@@ -19,6 +22,7 @@ export interface RegionalMefDataset {
   source: 'MEF - Dipartimento delle Finanze';
   sourceUrl: string;
   retrievedAt: string;
+  sourceSha256?: string;
   calculable: false;
   records: RegionalMefRecord[];
 }
@@ -45,7 +49,7 @@ export function parseCsvTable(raw:string, separator:string):string[][] {
   row.push(field.trim());if(row.some(Boolean))rows.push(row);
   return rows;
 }
-export function parseRegionalMefCsv(raw:string,retrievedAt:string):RegionalMefDataset {
+export function parseRegionalMefCsv(raw:string,retrievedAt:string,sourceSha256?:string):RegionalMefDataset {
   const headers=['ANNO','REGIONE','NUMERO','DATA PUBBLICAZIONE','DISPOSIZIONE','NORME','NOTE','ALIQUOTA','FASCIA'];
   if (raw.length < 100 || raw.length > 3_000_000 || /<html|<!doctype/i.test(raw.slice(0,500))) throw new Error('Risposta CSV MEF regionale non valida');
   const separator=[';',',','\t'].sort((a,b)=>raw.split('\n',1)[0].split(b).length-raw.split('\n',1)[0].split(a).length)[0];
@@ -72,5 +76,5 @@ export function parseRegionalMefCsv(raw:string,retrievedAt:string):RegionalMefDa
   }
   if(!new Set(records.map(x=>x.region)).size)throw new Error('Regioni assenti');
   return {year:2026,source:'MEF - Dipartimento delle Finanze',sourceUrl:REGIONAL_MEF_PAGE_URL,
-    retrievedAt,calculable:false,records};
+    retrievedAt,...(sourceSha256?{sourceSha256}:{}),calculable:false,records};
 }
