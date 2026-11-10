@@ -18,6 +18,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
         <nav class="nav-links" aria-label="Navigazione principale">
           <a routerLink="/" routerLinkActive="is-active" [routerLinkActiveOptions]="{exact:true}">Budget</a>
           <a routerLink="/confronta-citta" routerLinkActive="is-active">Confronta città</a>
+          <a routerLink="/costo-vita-firenze-persona-sola" routerLinkActive="is-active">Stima Firenze</a>
           <a routerLink="/irpef-2026" routerLinkActive="is-active">IRPEF 2026</a>
           <a routerLink="/stipendio-netto-2026" routerLinkActive="is-active">RAL → netto</a>
           <a routerLink="/inflazione" routerLinkActive="is-active">Inflazione</a>
@@ -41,6 +42,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           <a routerLink="/inflazione">Inflazione</a>
           <a routerLink="/stipendio-netto-2026">Stipendio 2026</a>
           <a routerLink="/confronta-citta">Confronta città</a>
+          <a routerLink="/costo-vita-firenze-persona-sola">Costo della vita a Firenze</a>
           <a routerLink="/addizionali-comunali">Addizionali comunali</a>
           <a routerLink="/addizionali-regionali">Addizionali regionali</a>
           <a routerLink="/spese-famiglie">Spesa delle famiglie</a>
