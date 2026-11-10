@@ -16,3 +16,5 @@ jobs:
       - run: npm run build
       - run: npm test
       - run: npm run test:mef
+      - name: Audit official MEF municipal CSV for review
+        run: node scripts/audit-mef-2026.mjs
