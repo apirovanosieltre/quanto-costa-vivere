@@ -44,7 +44,7 @@ describe('2026: costi essenziali 1 persona nei 10 capoluoghi toscani',()=>{
       ['A390',15.19,'nuoveacque.it'],
       ['D612',13.63,'publiacqua.it'],
       ['E202',16.23,'fiora.it'], // Grosseto, AdF
-      ['E625',16.76,'asaspa.it'], // Livorno: tariffa in vigore dal 01/03/2026
+      ['E625',16.77,'asaspa.it'], // Livorno: tariffa in vigore dal 01/03/2026
       ['E715',13.15,'geal-lucca.it'], // Lucca: tariffa 2025 mantenuta nel 2026
       ['F023',16.72,'gaia-spa.it'], // Massa, bacino Piana
       ['G702',18.40,'acque.net'], // Pisa
