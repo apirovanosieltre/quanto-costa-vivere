@@ -1,0 +1,127 @@
+{
+  "taxYear": 2026,
+  "sourceSha256": "831bcd85bb9f6e4b5b8e7eb7bc05ccbc5452d92e07d3873c187d0922c6e828be",
+  "reviewedAt": "2026-11-10",
+  "expectedRows": 7897,
+  "expectedCounts": {
+    "rows": 7897,
+    "simple": 3294,
+    "needsReview": 810,
+    "pending": 3793
+  },
+  "notes": "Revisione tecnica: struttura 34 colonne, classificazione flag 1/2, esenzioni corrispondenti a IMPORTO_ESENTE, note eccezionali escluse, aliquota 0 esclusa, casi 0* pendenti. Non è una verifica legale delle singole delibere.",
+  "samples": [
+    {
+      "code": "A008",
+      "municipality": "ABBATEGGIO",
+      "status": "simple",
+      "ratePct": 0.5,
+      "exemptionThreshold": null
+    },
+    {
+      "code": "A006",
+      "municipality": "ABBADIA SAN SALVATORE",
+      "status": "simple",
+      "ratePct": 0.6,
+      "exemptionThreshold": 12000
+    },
+    {
+      "code": "A007",
+      "municipality": "ABBASANTA",
+      "status": "simple",
+      "ratePct": 0.25,
+      "exemptionThreshold": 15000
+    },
+    {
+      "code": "A025",
+      "municipality": "ACI BONACCORSI",
+      "status": "simple",
+      "ratePct": 0.75,
+      "exemptionThreshold": 7500
+    },
+    {
+      "code": "A028",
+      "municipality": "ACIREALE",
+      "status": "simple",
+      "ratePct": 0.8,
+      "exemptionThreshold": null
+    },
+    {
+      "code": "A040",
+      "municipality": "ACQUAPENDENTE",
+      "status": "simple",
+      "ratePct": 0.7,
+      "exemptionThreshold": null
+    },
+    {
+      "code": "M376",
+      "municipality": "ABETONE CUTIGLIANO",
+      "status": "simple",
+      "ratePct": 0.8,
+      "exemptionThreshold": null
+    },
+    {
+      "code": "M200",
+      "municipality": "ZUGLIO",
+      "status": "simple",
+      "ratePct": 0.5,
+      "exemptionThreshold": null
+    },
+    {
+      "code": "C153",
+      "municipality": "CASTELLEONE",
+      "status": "simple",
+      "ratePct": 0.75,
+      "exemptionThreshold": 15000
+    },
+    {
+      "code": "A014",
+      "municipality": "ACATE",
+      "status": "needs-review",
+      "ratePct": null,
+      "exemptionThreshold": null
+    },
+    {
+      "code": "A113",
+      "municipality": "AISONE",
+      "status": "needs-review",
+      "ratePct": null,
+      "exemptionThreshold": null
+    },
+    {
+      "code": "A390",
+      "municipality": "AREZZO",
+      "status": "pending",
+      "ratePct": null,
+      "exemptionThreshold": null
+    },
+    {
+      "code": "F205",
+      "municipality": "MILANO",
+      "status": "pending",
+      "ratePct": null,
+      "exemptionThreshold": null
+    },
+    {
+      "code": "H501",
+      "municipality": "ROMA",
+      "status": "pending",
+      "ratePct": null,
+      "exemptionThreshold": null
+    },
+    {
+      "code": "D612",
+      "municipality": "FIRENZE",
+      "status": "pending",
+      "ratePct": null,
+      "exemptionThreshold": null
+    },
+    {
+      "code": "L219",
+      "municipality": "TORINO",
+      "status": "pending",
+      "ratePct": null,
+      "exemptionThreshold": null
+    }
+  ]
+}
