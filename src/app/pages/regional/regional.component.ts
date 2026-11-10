@@ -2,6 +2,7 @@ import { Component, computed, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { REGIONAL_MEF_PAGE_URL, type RegionalMefDataset } from '../../core/mef-regional';
+import { estimateRegional2026 } from '../../core/local-tax-2026';
 
 @Component({
   selector:'app-regional',
@@ -30,6 +31,50 @@ import { REGIONAL_MEF_PAGE_URL, type RegionalMefDataset } from '../../core/mef-r
         </select>
       </div>
       <p class="field-hint">{{ selected().length }} righe del CSV ufficiale per questo territorio.</p>
+      <section class="data-detail" aria-label="Calcolo dettagliato addizionale regionale" style="margin:1.25rem 0">
+        <h3>Calcola l'addizionale regionale</h3>
+        <p class="field-hint">Disponibile per le fasce validate di Lombardia, Toscana, Emilia-Romagna, Liguria, Piemonte e per la regola di Valle d'Aosta. Negli altri territori è mostrata la fonte senza inventare un calcolo.</p>
+        <label class="field-label" for="regional-income">Imponibile IRPEF annuo (€)</label>
+        <input id="regional-income" class="standalone-input" type="number" min="0" max="100000000"
+          [ngModel]="income()" (ngModelChange)="setIncome($event)">
+        <label style="display:flex;gap:.5rem;align-items:flex-start;margin:1rem 0">
+          <input type="checkbox" [ngModel]="irpefDue()" (ngModelChange)="irpefDue.set(!!$event)">
+          <span>Confermo che, dopo le detrazioni, risulta dovuta IRPEF nazionale netta per questo anno.</span>
+        </label>
+        @if(region()==='REGIONE PIEMONTE'){
+          <label style="display:flex;gap:.5rem;align-items:flex-start;margin:1rem 0">
+            <input type="checkbox" [ngModel]="noChildren()" (ngModelChange)="noChildren.set(!!$event)">
+            <span>Confermo l'assenza di figli fiscalmente a carico. Il calcolo non comprende le detrazioni regionali per figli.</span>
+          </label>
+        }
+        @if(irpefDue()){
+          @if(regionalEstimate().amount !== null) {
+            <p><strong>Addizionale annua stimata: {{money(regionalEstimate().amount!)}} €</strong></p>
+            @if(regionalEstimate().bands; as bands){
+              <div style="overflow-x:auto">
+                <table style="width:100%;border-collapse:collapse;text-align:left">
+                  <thead><tr><th scope="col">Fascia</th><th scope="col">Quota reddito</th><th scope="col">Aliquota</th><th scope="col">Imposta</th></tr></thead>
+                  <tbody>
+                    @for(band of bands;track $index){
+                      <tr>
+                        <th scope="row" style="padding:.5rem">{{money(band.from)}} – {{band.to===null?'oltre':money(band.to)}} €</th>
+                        <td style="padding:.5rem">{{money(band.taxableSlice)}} €</td>
+                        <td style="padding:.5rem">{{rate(band.ratePct)}}%</td>
+                        <td style="padding:.5rem">{{money(band.tax)}} €</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+            <p class="field-hint">{{regionalEstimate().note}}</p>
+          } @else {
+            <p class="data-error" role="status">{{regionalEstimate().note}}</p>
+          }
+        } @else {
+          <p class="field-hint">Se non è dovuta IRPEF netta, non è dovuta l'addizionale. Conferma il requisito per attivare la stima delle fasce.</p>
+        }
+      </section>
       @for (record of selected(); track $index) {
         <article class="data-detail" style="margin-top:1rem">
           <h3>{{ record.bandLabel }}</h3>
@@ -43,7 +88,7 @@ import { REGIONAL_MEF_PAGE_URL, type RegionalMefDataset } from '../../core/mef-r
       }
       <div class="data-notice" role="note">
         <span class="notice-icon" aria-hidden="true">!</span>
-        <p><strong>Non è un calcolo dell'imposta.</strong> Le aliquote indicate nelle righe possono essere modificate da condizioni nel testo. Non vanno applicate automaticamente all'intero reddito, né sommate come percentuali.</p>
+        <p><strong>Attenzione alle eccezioni.</strong> Il calcolo usa soltanto profili regionali esplicitamente verificati. Le fasce con disposizioni speciali non modellate restano consultabili ma non calcolabili automaticamente.</p>
       </div>
     }
     <a [href]="source" target="_blank" rel="noopener noreferrer">Verifica l'elenco generale MEF 2026 ↗</a>
@@ -52,7 +97,7 @@ import { REGIONAL_MEF_PAGE_URL, type RegionalMefDataset } from '../../core/mef-r
     <h2>Come leggere le fasce</h2>
     <p>Ogni riga è riportata dal CSV ufficiale con aliquota, etichetta di fascia e disposizioni. Lo stesso valore percentuale non garantisce lo stesso risultato fiscale.</p>
     <p>Per esempio, un'aliquota unica può prevedere esenzione totale per redditi inferiori a una soglia, indicata nel testo delle disposizioni.</p>
-    <p>La <a routerLink="/stipendio-netto-2026">stima dello stipendio netto</a> rimane nazionale e non include ancora le addizionali regionali.</p>
+    <p>Il <a routerLink="/stipendio-netto-2026">simulatore stipendio</a> combina le addizionali regionali calcolabili con quelle comunali revisionate, verificando anche la corrispondenza territoriale.</p>
   </div>
 </section>`
 })
@@ -62,10 +107,16 @@ export class RegionalComponent implements OnInit {
   readonly error=signal('');
   readonly data=signal<RegionalMefDataset|null>(null);
   readonly region=signal('');
+  readonly income=signal(30000);
+  readonly irpefDue=signal(false);
+  readonly noChildren=signal(false);
+  readonly regionalEstimate=computed(()=>estimateRegional2026(this.region(),this.data(),this.income(),this.irpefDue()?1:0,{noDependentChildrenConfirmed:this.noChildren()}));
   readonly regions=computed(()=>[...new Set((this.data()?.records??[]).map(r=>r.region))].sort((a,b)=>a.localeCompare(b,'it')));
   readonly selected=computed(()=>(this.data()?.records??[]).filter(r=>r.region===this.region()));
   private readonly format=new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
   rate(value:number):string{return this.format.format(value);}
+  money(value:number):string{return this.format.format(value);}
+  setIncome(value:unknown):void{const n=Number(value);this.income.set(Number.isFinite(n)?Math.max(0,Math.min(n,100000000)):0);}
   ngOnInit():void {void this.load();}
   private async load():Promise<void>{
     try {
