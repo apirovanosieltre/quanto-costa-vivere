@@ -83,7 +83,7 @@ const emptyBudget=():CityBudget=>({
       </div>
       <div>
         <label class="field-label" for="auto-common-income">Stesso netto mensile nelle due città (facoltativo)</label>
-        <row gap={2}>
+        <div class="compare-auto-inline">
           <input class="standalone-input" id="auto-common-income" type="number" min="0" max="100000" step="50"
             [ngModel]="commonNet()" (ngModelChange)="setCommonNet($event)" placeholder="Es. 1900">
           <button type="button" (click)="applyCommonNet()" [disabled]="commonNet()===null">Applica</button>
@@ -491,6 +491,8 @@ const emptyBudget=():CityBudget=>({
     .compare-auto-controls>div{min-width:0}
     .compare-auto-controls .standalone-input{width:100%;min-height:44px;background:#fff;border:1px solid #bfcddd;border-radius:9px;padding:10px}
     .compare-auto-controls .field-label{display:block;margin-bottom:6px;font-size:.8rem}
+    .compare-auto-inline{display:flex;align-items:center;gap:8px}
+    .compare-auto-inline input{flex:1;min-width:0}
     .compare-auto-controls button{background:#1d4b8a;color:#fff;border:0;border-radius:8px;padding:9px 12px;font-weight:700}
     .compare-auto-controls button:disabled{opacity:.5;cursor:not-allowed}
     .compare-evidence{border:1px solid #d8e3ef;border-radius:10px;margin:16px 0;background:#f8fbfe}
