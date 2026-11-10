@@ -21,7 +21,11 @@ import {
   type CategorySuggestion
 } from '../../core/automatic-city-compare';
 import {type RentContract} from '../../core/automatic-cost-florence';
-import { comparableTuscanRentPair, TUSCANY_CAPITAL_RENTS_2024 } from '../../core/tuscany-capital-rents-2024';
+import { comparableTuscanRentPair, tuscanCapitalRentRecord, TUSCANY_CAPITAL_RENTS_2024 } from '../../core/tuscany-capital-rents-2024';
+import {
+  estimateEssentialCosts2026, DEFAULT_ESSENTIAL_PROFILE, TUSCANY_ESSENTIAL_SOURCES,
+  GAS_ARERA_COMMODITY_OCT_2026, type TransitPass
+} from '../../core/tuscany-essential-2026';
 import {
   COST_KEYS, COST_LABELS, EMPTY_BUDGET, compareCityBudgets,
   basketForCity, regionalFamilySpending, omiRentalRange,validMoney,
@@ -653,6 +657,15 @@ export class CompareComponent implements OnInit {
   });
   readonly florenceContract=signal<RentContract>(DEFAULT_SINGLE_PERSON_OPTIONS.florenceContract);
   readonly autoWaterM3=signal(DEFAULT_SINGLE_PERSON_OPTIONS.waterM3PerYear);
+  readonly tariAreaSqm=signal(DEFAULT_ESSENTIAL_PROFILE.tariAreaSqm);
+  readonly gasMonthlyScenario=signal(DEFAULT_ESSENTIAL_PROFILE.gasMonthlyScenarioEUR);
+  readonly transitPass=signal<TransitPass>(DEFAULT_ESSENTIAL_PROFILE.transitPass);
+  readonly tariManualLeft=signal<number|null>(null);
+  readonly tariManualRight=signal<number|null>(null);
+  readonly tariIncludedLeft=signal(false);
+  readonly tariIncludedRight=signal(false);
+  readonly essentialSourceUrls=TUSCANY_ESSENTIAL_SOURCES;
+  readonly gasRawReference=GAS_ARERA_COMMODITY_OCT_2026;
   readonly commonNet=signal<number|null>(null);
   readonly autoFeedback=signal('');
   readonly editedLeft=signal<Partial<Record<CostKey,boolean>>>({});
@@ -698,10 +711,12 @@ export class CompareComponent implements OnInit {
   readonly leftOmi=signal<OmiInputs>(emptyOmi());
   readonly rightOmi=signal<OmiInputs>(emptyOmi());
 
+  readonly leftEssentials=computed(()=>this.makeEssentials('left'));
+  readonly rightEssentials=computed(()=>this.makeEssentials('right'));
   readonly leftSuggestions=computed(()=>this.makeSuggestions('left'));
   readonly rightSuggestions=computed(()=>this.makeSuggestions('right'));
   readonly comparisonWarning=computed(()=>compareMethodWarning(this.leftCode(),this.rightCode()));
-  readonly comparison=computed(()=>compareCityBudgets(this.leftBudget(),this.rightBudget()));
+  readonly comparison=computed(()=>compareCityBudgets(this.effectiveBudget('left'),this.effectiveBudget('right')));
   readonly sameCity=computed(()=>this.leftCode()===this.rightCode());
   readonly basketDifference=computed(()=>{
     const a=this.basket('left'),b=this.basket('right');
@@ -847,12 +862,76 @@ export class CompareComponent implements OnInit {
   query(side:Side):string{return side==='left'?this.leftQuery():this.rightQuery();}
   private edited(side:Side){return side==='left'?this.editedLeft:this.editedRight;}
   isEdited(side:Side,key:CostKey):boolean{return this.edited(side)()[key]===true;}
+  private makeEssentials(side:Side){
+    const code=side==='left'?this.leftCode():this.rightCode();
+    if(!tuscanCapitalRentRecord(code))return null;
+    return estimateEssentialCosts2026(code,{
+      tariAreaSqm:this.tariAreaSqm(),waterM3Year:this.autoWaterM3(),
+      gasMonthlyScenarioEUR:this.gasMonthlyScenario(),transitPass:this.transitPass()
+    });
+  }
+  essentialsFor(side:Side){return side==='left'?this.leftEssentials():this.rightEssentials();}
+  private tariManualSignal(side:Side){return side==='left'?this.tariManualLeft:this.tariManualRight;}
+  private tariIncludedSignal(side:Side){return side==='left'?this.tariIncludedLeft:this.tariIncludedRight;}
+  tariManual(side:Side):number|null{return this.tariManualSignal(side)();}
+  tariIncluded(side:Side):boolean{return this.tariIncludedSignal(side)();}
+  tariMonthly(side:Side):number|null{
+    const manual=this.tariManual(side);
+    if(manual!==null)return Math.round(manual/12*100)/100;
+    return this.essentialsFor(side)?.tari.monthlyEUR??null;
+  }
+  effectiveBudget(side:Side):CityBudget{
+    const base=this.budget(side);
+    const extra=this.tariIncluded(side)?this.tariMonthly(side):null;
+    if(extra===null||base.expenses.other===null)return base;
+    return {...base,expenses:{...base.expenses,
+      other:Math.round((base.expenses.other+extra)*100)/100}};
+  }
+  setTariManual(side:Side,value:unknown):void{
+    if(value===''||value===null){
+      this.tariManualSignal(side).set(null);return;
+    }
+    const num=validMoney(value,10000);
+    if(num===null){this.autoFeedback.set('Importo TARI annuo non valido (0–10.000 €).');return;}
+    this.tariManualSignal(side).set(num);
+    this.autoFeedback.set('');
+  }
+  setTariIncluded(side:Side,value:boolean):void{
+    if(value&&this.tariMonthly(side)===null){
+      this.autoFeedback.set('La quota TARI per questa città non è disponibile: inserisci prima un importo annuo documentato.');
+      this.tariIncludedSignal(side).set(false);return;
+    }
+    this.tariIncludedSignal(side).set(value);
+    this.autoFeedback.set('');
+  }
+  private resetTariSide(side:Side):void{
+    this.tariManualSignal(side).set(null);
+    this.tariIncludedSignal(side).set(false);
+  }
+  setTariArea(value:unknown):void{
+    const num=validMoney(value,300);
+    if(num===null||num<15){this.autoFeedback.set('La superficie TARI deve essere tra 15 e 300 m².');return;}
+    this.tariAreaSqm.set(num);this.autoFeedback.set('');
+  }
+  setGasScenario(value:unknown):void{
+    const n=validMoney(value,1000);
+    if(n===null){this.autoFeedback.set('Spesa gas ipotizzata non valida (0–1.000 €).');return;}
+    this.gasMonthlyScenario.set(n);this.autoFeedback.set('');
+    this.refreshBothSuggestions();
+  }
+  setTransitPass(value:unknown):void{
+    if(value==='monthly'||value==='annual'||value==='none'){
+      this.transitPass.set(value);this.autoFeedback.set('');
+      this.refreshBothSuggestions();
+    }
+  }
   private makeSuggestions(side:Side):CategorySuggestion[]{
     const code=side==='left'?this.leftCode():this.rightCode();
     if(!this.cityByCode().has(code))return [];
     return suggestSinglePersonCosts(code,this.rentalData(),{
       areaSqm:this.rentAreaSqm()??DEFAULT_SINGLE_PERSON_OPTIONS.areaSqm,
-      waterM3PerYear:this.autoWaterM3(),florenceContract:this.florenceContract()
+      waterM3PerYear:this.autoWaterM3(),florenceContract:this.florenceContract(),
+      gasMonthlyScenarioEUR:this.gasMonthlyScenario(),transitPass:this.transitPass()
     });
   }
   suggestionsFor(side:Side):CategorySuggestion[]{
@@ -915,8 +994,8 @@ export class CompareComponent implements OnInit {
     this.autoFeedback.set('Stesso netto applicato a entrambe le città.');
   }
   onSearch(side:Side,value:string):void{
-    if(side==='left'){this.leftQuery.set(value);this.leftCode.set('');this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());this.editedLeft.set({});}
-    else{this.rightQuery.set(value);this.rightCode.set('');this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());this.editedRight.set({});}
+    if(side==='left'){this.leftQuery.set(value);this.leftCode.set('');this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());this.editedLeft.set({});this.resetTariSide('left');}
+    else{this.rightQuery.set(value);this.rightCode.set('');this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());this.editedRight.set({});this.resetTariSide('right');}
     this.shareStatus.set('');
   }
   matches(side:Side):MunicipalRecord[]{
@@ -931,10 +1010,10 @@ export class CompareComponent implements OnInit {
     const city=this.cityByCode().get(code);
     if(!city||code===(side==='left'?this.rightCode():this.leftCode()))return;
     if(side==='left'){
-      if(this.leftCode()!==code){this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());this.editedLeft.set({});}
+      if(this.leftCode()!==code){this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());this.editedLeft.set({});this.resetTariSide('left');}
       this.leftCode.set(code);this.leftQuery.set(this.displayCity(city));
     }else{
-      if(this.rightCode()!==code){this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());this.editedRight.set({});}
+      if(this.rightCode()!==code){this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());this.editedRight.set({});this.resetTariSide('right');}
       this.rightCode.set(code);this.rightQuery.set(this.displayCity(city));
     }
     this.refreshSideSuggestions(side);
@@ -943,8 +1022,8 @@ export class CompareComponent implements OnInit {
   selectPair(first:string,second:string,update=true):void{
     const a=this.cityByCode().get(first),b=this.cityByCode().get(second);
     if(!a||!b||first===second)return;
-    if(this.leftCode()!==first){this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());this.editedLeft.set({});}
-    if(this.rightCode()!==second){this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());this.editedRight.set({});}
+    if(this.leftCode()!==first){this.leftBudget.set(emptyBudget());this.leftOmi.set(emptyOmi());this.editedLeft.set({});this.resetTariSide('left');}
+    if(this.rightCode()!==second){this.rightBudget.set(emptyBudget());this.rightOmi.set(emptyOmi());this.editedRight.set({});this.resetTariSide('right');}
     this.leftCode.set(first);this.rightCode.set(second);
     this.leftQuery.set(this.displayCity(a));this.rightQuery.set(this.displayCity(b));
     this.refreshBothSuggestions();
@@ -955,12 +1034,16 @@ export class CompareComponent implements OnInit {
     if(!this.cityByCode().has(a)||!this.cityByCode().has(b))return;
     const leftBudget=this.leftBudget(),rightBudget=this.rightBudget(),leftOmi=this.leftOmi(),rightOmi=this.rightOmi();
     const leftEdited=this.editedLeft(),rightEdited=this.editedRight();
+    const leftTariManual=this.tariManualLeft(),rightTariManual=this.tariManualRight();
+    const leftTariIncluded=this.tariIncludedLeft(),rightTariIncluded=this.tariIncludedRight();
     this.leftCode.set(b);this.rightCode.set(a);
     this.leftQuery.set(this.displayCity(this.cityByCode().get(b)!));
     this.rightQuery.set(this.displayCity(this.cityByCode().get(a)!));
     this.leftBudget.set(rightBudget);this.rightBudget.set(leftBudget);
     this.leftOmi.set(rightOmi);this.rightOmi.set(leftOmi);
     this.editedLeft.set(rightEdited);this.editedRight.set(leftEdited);
+    this.tariManualLeft.set(rightTariManual);this.tariManualRight.set(leftTariManual);
+    this.tariIncludedLeft.set(rightTariIncluded);this.tariIncludedRight.set(leftTariIncluded);
     this.updateUrl();
   }
   private updateUrl():void{
@@ -992,10 +1075,11 @@ export class CompareComponent implements OnInit {
   absolute(value:number):number{return Math.abs(value);}
   signedMoney(value:number):string{return (value>0?'+':'')+this.money(value);}
   barWidth(side:Side,key:CostKey):number{
-    const a=this.leftBudget().expenses[key]??0,b=this.rightBudget().expenses[key]??0;
-    const max=Math.max(a,b);
+    const left=this.effectiveBudget('left').expenses[key]??0;
+    const right=this.effectiveBudget('right').expenses[key]??0;
+    const max=Math.max(left,right);
     if(max===0)return 0;
-    return Math.max(0,Math.min(100,(this.budget(side).expenses[key]??0)/max*100));
+    return Math.max(0,Math.min(100,(this.effectiveBudget(side).expenses[key]??0)/max*100));
   }
   istatReference(side:Side){const c=this.city(side);return c?regionalFamilySpending(c.province):null;}
   basket(side:Side){return basketForCity(side==='left'?this.leftCode():this.rightCode());}
