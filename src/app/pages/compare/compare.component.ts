@@ -4,6 +4,10 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { validateMunicipalDataset, type MunicipalRecord } from '../../core/municipal-data';
 import { taxRegionFromProvince } from '../../core/italian-territories';
 import {
+  parseMunicipalRentData, benchmarkForMunicipality, rentalRangeForArea,
+  type MunicipalRentDataset
+} from '../../core/municipal-rents';
+import {
   parseFuelSnapshot, isFuelRecent, fuelForProvince, monthlyFuelCost,
   type ProvinceFuelSnapshot, type FuelType
 } from '../../core/province-fuel';
@@ -308,6 +312,47 @@ const emptyBudget=():CityBudget=>({
     Il file viene aggiornato con controlli di qualità; la data mostrata è quella della rilevazione, non della visita alla pagina.</p>
 </section>
 
+<section class="container compare-fuel" aria-labelledby="rents-open-data-title">
+  <h2 id="rents-open-data-title">Affitti da dati territoriali documentati</h2>
+  <p>Primi riferimenti automatici dove esiste una fonte pubblica utilizzabile. Non è un prezzo di mercato garantito: la zona, lo stato dell'immobile, il periodo e il tipo di superficie possono cambiare molto il canone.</p>
+  @if(rentalLoading()){
+    <p role="status">Caricamento dei benchmark pubblicati…</p>
+  } @else if(rentalData()){
+    <label class="field-label" for="rent-area">Superficie lorda dell'abitazione (m²)</label>
+    <input class="standalone-input" style="width:160px;max-width:100%;padding:10px;border:1px solid #bfcddd;border-radius:9px"
+      id="rent-area" type="number" min="15" max="500" step="5"
+      [ngModel]="rentAreaSqm()" (ngModelChange)="setRentArea($event)">
+    <p class="compare-tiny">Valore iniziale di 70 m² scelto solo per l'esempio: modificalo in base alla casa che stai valutando. Confrontiamo esclusivamente superfici lorde (L) equivalenti.</p>
+    <div class="compare-layout">
+      @for(side of sides;track side.key){
+        <article class="compare-omi-card">
+          <h3>{{name(side.key)}}</h3>
+          @if(rentBenchmark(side.key);as benchmark){
+            <p class="compare-tiny">Milano, OMI {{benchmark.basePeriod}} · {{benchmark.zonesCount}} zone residenziali · {{benchmark.type}}, stato {{benchmark.maintenance}}, superficie {{benchmark.areaType}}.</p>
+            @if(estimatedRent(side.key);as rent){
+              <p>Intervallo indicativo derivato: <strong>{{money(rent.min)}} – {{money(rent.max)}} € / mese</strong></p>
+              <p class="compare-tiny">Calcolo: {{money(benchmark.lowerMedian)}} – {{money(benchmark.upperMedian)}} €/m²/mese × {{money(rentAreaSqm()!)}} m². Mediana non ponderata dei limiti di zona, non canone medio o contratto reale.</p>
+              <div class="compare-shortcuts">
+                <button type="button" (click)="applyRent(side.key,'min')">Usa il limite inferiore nell'affitto</button>
+                <button type="button" (click)="applyRent(side.key,'max')">Usa il limite superiore nell'affitto</button>
+              </div>
+            } @else {
+              <p class="compare-tiny">Inserisci una superficie valida tra 15 e 500 m².</p>
+            }
+          } @else {
+            <p class="compare-tiny">Nessun benchmark comunale revisionato e pubblicabile per questa città. Non sostituiamo con la media regionale o con un affitto inventato.</p>
+          }
+        </article>
+      }
+    </div>
+    <p class="compare-tiny">Fonte: <a href="https://dati.comune.milano.it/dataset/ds3024-quotazioni-immobiliari-omi-locazione-semestre-2025-2" target="_blank" rel="noopener noreferrer">Comune di Milano, dataset OMI 2025/2 (CC BY 4.0)</a>;
+      fonte originaria: Agenzia delle Entrate - OMI. Abbiamo elaborato soltanto due indicatori aggregati, senza ripubblicare le righe della banca dati. Questo dato è storico e non garantisce il canone di oggi.
+      <a href="https://www.agenziaentrate.gov.it/portale/web/guest/schede/fabbricatiterreni/omi/banche-dati/quotazioni-immobiliari/condizioni-contrattuali-qi" target="_blank" rel="noopener noreferrer">Condizioni d'uso OMI</a>.</p>
+  } @else {
+    <p class="compare-alert" role="status">{{rentalError()}}</p>
+  }
+</section>
+
 <section class="container compare-omi" aria-label="Verifica degli affitti con OMI">
   <div class="compare-omi-head">
     <div>
@@ -445,6 +490,10 @@ export class CompareComponent implements OnInit {
   readonly loading=signal(true);
   readonly error=signal('');
   readonly shareStatus=signal('');
+  readonly rentalData=signal<MunicipalRentDataset|null>(null);
+  readonly rentalLoading=signal(true);
+  readonly rentalError=signal('Benchmark affitti non disponibile.');
+  readonly rentAreaSqm=signal<number|null>(70);
   readonly fuelData=signal<ProvinceFuelSnapshot|null>(null);
   readonly fuelLoading=signal(true);
   readonly fuelError=signal('Dataset provinciale non disponibile.');
@@ -487,7 +536,7 @@ export class CompareComponent implements OnInit {
   });
   private readonly formatter=new Intl.NumberFormat('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
   constructor(private readonly route:ActivatedRoute,private readonly router:Router){}
-  ngOnInit():void{void this.loadMunicipalities();void this.loadRegionalTaxes();void this.loadFuelSnapshot();}
+  ngOnInit():void{void this.loadMunicipalities();void this.loadRegionalTaxes();void this.loadFuelSnapshot();void this.loadRentalData();}
   async loadMunicipalities():Promise<void>{
     try{
       const response=await fetch('/data/municipal-2026.json',{cache:'no-cache'});
@@ -503,6 +552,30 @@ export class CompareComponent implements OnInit {
     }catch{
       this.error.set('Catalogo dei comuni non disponibile. Il confronto non usa dati dimostrativi: riprova dopo il deploy e verifica lo stato dei dati.');
     }finally{this.loading.set(false);}
+  }
+  private async loadRentalData():Promise<void>{
+    try{
+      const response=await fetch('/data/municipal-rent-benchmarks.json',{cache:'no-cache'});
+      if(!response.ok)throw Error('HTTP '+response.status);
+      this.rentalData.set(parseMunicipalRentData(await response.json()));
+    }catch{
+      this.rentalError.set('Le quotazioni immobiliari aggregate non sono disponibili. Puoi sempre inserire l’affitto manualmente.');
+    }finally{this.rentalLoading.set(false);}
+  }
+  setRentArea(value:unknown):void{
+    const area=validMoney(value,500);
+    this.rentAreaSqm.set(area!==null&&area>=15?area:null);
+  }
+  rentBenchmark(side:Side){
+    return benchmarkForMunicipality(this.rentalData(),side==='left'?this.leftCode():this.rightCode());
+  }
+  estimatedRent(side:Side):{min:number;max:number}|null{
+    const benchmark=this.rentBenchmark(side),area=this.rentAreaSqm();
+    return benchmark!==null&&area!==null?rentalRangeForArea(benchmark,area):null;
+  }
+  applyRent(side:Side,bound:'min'|'max'):void{
+    const result=this.estimatedRent(side);
+    if(result!==null)this.setCost(side,'housing',result[bound]);
   }
   private async loadFuelSnapshot():Promise<void>{
     try{
