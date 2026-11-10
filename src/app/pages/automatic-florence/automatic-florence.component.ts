@@ -96,7 +96,7 @@ type NumericKey=EditableKey|'areaSqm'|'waterCubicMetersPerYear';
       @if(result().monthlyBalanceEUR!==null) {
         <div class="auto-balance">
           <span>Saldo ipotetico con il tuo netto</span>
-          <strong [class.is-negative]="result().monthlyBalanceEUR!<0">{{money(result().monthlyBalanceEUR!)}} € / mese</strong>
+          <strong [class.is-negative]="result().monthlyBalanceEUR! < 0">{{money(result().monthlyBalanceEUR!)}} € / mese</strong>
         </div>
       }
     </div>
