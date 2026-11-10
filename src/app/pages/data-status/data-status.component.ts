@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { OFFICIAL_SOURCES } from '../../core/official-sources';
 import { validateMunicipalDataset } from '../../core/municipal-data';
+import { REVIEWED_REGIONAL_CSV_SHA256_2026 } from '../../core/mef-regional';
 @Component({selector:'app-data-status',standalone:true,imports:[RouterLink],template:`
 <section class="page-hero container"><a routerLink="/" class="back-link">← Torna al budget</a><span class="eyebrow eyebrow-subtle">TRASPARENZA DEI DATI</span><h1>Fonti ufficiali e <span>copertura reale.</span></h1><p>Una fonte individuata non significa dato disponibile. Qui rendiamo visibili le integrazioni e gli aggiornamenti.</p></section>
 <section class="container data-layout" style="padding-bottom:4rem" aria-label="Stato fonti">
@@ -50,11 +51,14 @@ export class DataStatusComponent implements OnInit {
       if(!r.ok)throw new Error('Risposta non OK');
       const v:unknown=await r.json();
       if(!v || typeof v!=='object')throw new Error('Dati non validi');
-      const dataset=v as {year?:number;records?:unknown[];calculable?:boolean};
+      const dataset=v as {year?:number;records?:unknown[];calculable?:boolean;sourceSha256?:string};
       if(dataset.year!==2026||dataset.calculable!==false||!Array.isArray(dataset.records)||dataset.records.length<10)throw new Error('Formato non valido');
-      this.regionalOk.set(true);
-      this.regionalStatus.set('CSV MEF disponibile');
-      this.regionalInfo.set(dataset.records.length+' righe ufficiali disponibili nell’API.');
+      const reviewed=dataset.sourceSha256===REVIEWED_REGIONAL_CSV_SHA256_2026;
+      this.regionalOk.set(reviewed);
+      this.regionalStatus.set(reviewed?'CSV MEF validato per il calcolo':'Fonte aggiornata: revisione necessaria');
+      this.regionalInfo.set(dataset.records.length+' righe MEF disponibili; '+
+        (reviewed?'checksum della fonte coerente con la revisione del 10/11/2026.':
+          'checksum diverso dalla versione revisionata, calcoli regionali sospesi.'));
     }catch{
       this.regionalStatus.set('API regionale non raggiungibile');
       this.regionalInfo.set('Il CSV non è attualmente disponibile tramite il Worker; consulta direttamente il MEF.');
