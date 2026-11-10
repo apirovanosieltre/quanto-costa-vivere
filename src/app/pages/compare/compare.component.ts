@@ -23,7 +23,7 @@ import {
 import {type RentContract} from '../../core/automatic-cost-florence';
 import { comparableTuscanRentPair, tuscanCapitalRentRecord, TUSCANY_CAPITAL_RENTS_2024 } from '../../core/tuscany-capital-rents-2024';
 import {
-  estimateEssentialCosts2026, DEFAULT_ESSENTIAL_PROFILE, TUSCANY_ESSENTIAL_SOURCES,
+  estimateEssentialCosts2026, budgetWithOptionalTari, DEFAULT_ESSENTIAL_PROFILE, TUSCANY_ESSENTIAL_SOURCES,
   GAS_ARERA_COMMODITY_OCT_2026, type TransitPass
 } from '../../core/tuscany-essential-2026';
 import {
@@ -997,15 +997,15 @@ export class CompareComponent implements OnInit {
     return this.essentialsFor(side)?.tari.monthlyEUR??null;
   }
   effectiveBudget(side:Side):CityBudget{
-    const base=this.budget(side);
-    const extra=this.tariIncluded(side)?this.tariMonthly(side):null;
-    if(extra===null||base.expenses.other===null)return base;
-    return {...base,expenses:{...base.expenses,
-      other:Math.round((base.expenses.other+extra)*100)/100}};
+    return budgetWithOptionalTari(this.budget(side),this.tariMonthly(side),this.tariIncluded(side));
   }
   setTariManual(side:Side,value:unknown):void{
     if(value===''||value===null){
-      this.tariManualSignal(side).set(null);return;
+      this.tariManualSignal(side).set(null);
+      if(this.essentialsFor(side)?.tari.monthlyEUR===null||!this.essentialsFor(side))
+        this.tariIncludedSignal(side).set(false);
+      this.autoFeedback.set('');
+      return;
     }
     const num=validMoney(value,10000);
     if(num===null){this.autoFeedback.set('Importo TARI annuo non valido (0–10.000 €).');return;}
