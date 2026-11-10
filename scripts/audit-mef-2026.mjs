@@ -1,0 +1,24 @@
+
+import fs from 'node:fs/promises';
+import { parseCsv, detectDelimiter, normalizeMunicipalRow } from './mef-csv.mjs';
+
+const url='https://www1.finanze.gov.it/finanze2/dipartimentopolitichefiscali/fiscalitalocale/nuova_addcomirpef/download/download.php?anno=2026';
+const r=await fetch(url,{signal:AbortSignal.timeout(30000)});
+if(!r.ok) throw Error('MEF HTTP '+r.status);
+const bytes=Buffer.from(await r.arrayBuffer());
+let source;
+try{source=new TextDecoder('utf-8',{fatal:true}).decode(bytes);}
+catch{source=new TextDecoder('windows-1252').decode(bytes);}
+if(source.includes('<html'))throw Error('HTML instead of CSV');
+const rows=parseCsv(source,detectDelimiter(source));
+const head=rows[0];
+const records=rows.map((r,i)=>({r,i,n:normalizeMunicipalRow(r)})).filter(x=>x.n);
+const simple=records.filter(x=>x.n.status==='simple');
+const flagCount={};
+for(const {r} of records)flagCount[r[32]]=(flagCount[r[32]]??0)+1;
+console.log('CSV audit headers',JSON.stringify(head));
+console.log('CSV audit total',records.length,'flags',JSON.stringify(flagCount));
+console.log('CSV audit representative simple FIRST',JSON.stringify(simple.slice(0,12).map(({r,n,i})=>({i,name:n.municipality,code:n.code,flag:r[32],threshold:r[33],values:r.slice(7,20),normalized:n}))));
+const target=['F205','A390','H501','D612','G273','L219'];
+console.log('CSV audit reference city rows',JSON.stringify(records.filter(x=>target.includes(x.n.code)).map(({r,n,i})=>({i,name:n.municipality,code:n.code,flag:r[32],values:r.slice(7,34),normalized:n}))));
+console.log('CSV audit simple OTHER',JSON.stringify(simple.slice(-8).map(({r,n,i})=>({i,name:n.municipality,code:n.code,flag:r[32],values:r.slice(7,18),normalized:n}))));
