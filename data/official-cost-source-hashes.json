@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceCount": 11,
+  "sourceCount": 12,
   "sources": [
     {
       "id": "arera-electric-reference-2026",
@@ -59,6 +59,18 @@
       "published": "30 luglio 2026",
       "sha256": "242a876791c74fbdde5f65e9d4beecbc140706a2630721745e0de91daff1c7af",
       "indexDigest": "ea61275204f7cdc19be0499d936cd722f480dab2f3d19f4ae03b34094ac39f4e",
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "id": "lucca-taric-2026",
+      "topic": "TARIC Lucca · 1 residente, scaglioni svuotamenti",
+      "url": "https://www.comune.lucca.it/app/uploads/2025/05/Allegato-C-tariffe-TARIC-2026.pdf",
+      "year": "2026",
+      "kind": "pdf",
+      "published": "11 giugno 2026",
+      "sha256": "c1ca506a2df88c14cdc99f8c486485c8581575c30cf33c5f9631589e693ce6c7",
+      "indexDigest": "f9a2d63662d23ec5d8293dad383293693ce34f924fdfcbc33d4c8c9f5bc78301",
       "referenceTokensPresent": true,
       "missingReferenceTokens": []
     },
