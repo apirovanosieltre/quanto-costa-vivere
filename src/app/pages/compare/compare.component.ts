@@ -147,7 +147,7 @@ const emptyBudget=():CityBudget=>({
       </article>
     }
   </div>
-  <p class="compare-tiny"><strong>Comparabilità:</strong> {{comparisonReliability().comparableHistoricalRent?'i dati storici dell’affitto utilizzano la stessa fonte regionale e tipologia.':'gli affitti non sono necessariamente comparabili per metodologia.'}} Il totale è sempre una simulazione, non un indice ufficiale dei prezzi urbani.</p>
+  <p class="compare-tiny"><strong>Comparabilità:</strong> {{comparisonReliability().comparableHistoricalRent?'gli affitti storici suggeriti utilizzano la stessa fonte regionale e tipologia.':'le cifre dell’affitto non sono garantite comparabili per fonte, periodo o modifiche manuali.'}} Il totale è sempre una simulazione, non un indice ufficiale dei prezzi urbani.</p>
   @if(tariIncluded('left')!==tariIncluded('right')){
     <p class="compare-alert" role="note">TARI inclusa soltanto in una delle due città: il totale confronta voci diverse.</p>
   }
@@ -1104,6 +1104,7 @@ export class CompareComponent implements OnInit {
       suggestions:this.suggestionsFor(side),
       expenses:this.effectiveBudget(side).expenses,
       tariIncluded:this.tariIncluded(side),
+      manualEdited:this.edited(side)(),
       tariVerifiedOrPersonal:this.tariManual(side)!==null||
         (tari!==null&&tari!==undefined&&tari.monthlyEUR!==null)
     };
