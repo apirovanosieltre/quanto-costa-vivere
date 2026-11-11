@@ -299,7 +299,7 @@ const emptyBudget=():CityBudget=>({
             <label class="compare-tari-choice">
               <input type="checkbox" [ngModel]="tariIncluded(side.key)" (ngModelChange)="setTariIncluded(side.key,!!$event)"
                 [disabled]="tariMonthly(side.key)===null">
-              <span>Aggiungi {{tariMonthly(side.key)===null?'TARI':money(tariMonthly(side.key)!)+' €/mese'}} alle «Altre spese» del budget</span>
+              <span>Aggiungi {{tariMonthly(side.key)===null?'TARI':(detail.tari.classification==='assumption'&&tariManual(side.key)===null?'la stima TARI (NON ufficiale) di ':'la TARI di ')+money(tariMonthly(side.key)!)+' €/mese'}} alle «Altre spese» del budget</span>
             </label>
             @if(tariIncluded(side.key)){
               <p class="compare-tiny">Inclusa una sola volta nel totale. La cifra nel campo «Altre spese» resta quella senza TARI.</p>
