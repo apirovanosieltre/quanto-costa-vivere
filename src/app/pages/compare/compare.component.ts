@@ -21,6 +21,10 @@ import {
   type CategorySuggestion
 } from '../../core/automatic-city-compare';
 import {type RentContract} from '../../core/automatic-cost-florence';
+import {
+  assessReliability,assessComparisonReliability,
+  type ReliabilityInput
+} from '../../core/comparison-reliability';
 import { comparableTuscanRentPair, tuscanCapitalRentRecord, TUSCANY_CAPITAL_RENTS_2024 } from '../../core/tuscany-capital-rents-2024';
 import {
   estimateEssentialCosts2026, budgetWithOptionalTari, DEFAULT_ESSENTIAL_PROFILE, TUSCANY_ESSENTIAL_SOURCES,
@@ -120,6 +124,34 @@ const emptyBudget=():CityBudget=>({
   </div>
   <p class="compare-tiny">I suggerimenti non sono tutti prezzi locali: gli alimentari derivano da un proxy nazionale ISTAT e varie bollette sono ipotesi di pianificazione. <a routerLink="/costo-vita-firenze-persona-sola">Vedi anche il modello dettagliato per Firenze ↗</a></p>
   @if(autoFeedback()){<p class="compare-alert" role="status">{{autoFeedback()}}</p>}
+</section>
+
+<section class="container compare-quality" aria-labelledby="quality-title">
+  <div class="compare-glance-head">
+    <div>
+      <span class="eyebrow eyebrow-subtle">CONTROLLO QUALITÀ DEI DATI</span>
+      <h2 id="quality-title">Quanto è completo il confronto?</h2>
+    </div>
+  </div>
+  <div class="compare-layout">
+    @for(side of sides;track side.key){
+      <article class="compare-quality-item">
+        <h3>{{name(side.key)}}</h3>
+        <p><strong>{{reliability(side.key).status==='parziale'?'Scenario parziale':'Scenario compilato'}}</strong></p>
+        <p class="compare-tiny">Sono presenti {{reliability(side.key).nationalOrAssumedCount}} voci da ipotesi o proxy nazionali. La presenza di cinque importi non implica che il costo reale sia stato misurato.</p>
+        <ul>
+          @for(issue of reliability(side.key).risks;track issue){
+            <li>{{issue}}</li>
+          }
+        </ul>
+      </article>
+    }
+  </div>
+  <p class="compare-tiny"><strong>Comparabilità:</strong> {{comparisonReliability().comparableHistoricalRent?'gli affitti storici suggeriti utilizzano la stessa fonte regionale e tipologia.':'le cifre dell’affitto non sono garantite comparabili per fonte, periodo o modifiche manuali.'}} Il totale è sempre una simulazione, non un indice ufficiale dei prezzi urbani.</p>
+  @if(tariIncluded('left')!==tariIncluded('right')){
+    <p class="compare-alert" role="note">TARI inclusa soltanto in una delle due città: il totale confronta voci diverse.</p>
+  }
+  <p class="compare-tiny">Ultimi periodi noti: contratti affitto Toscana 2024, benchmark OMI Milano 2025/2, utenze e trasporti 2026, ISTAT spese 2025. Il monitoraggio delle fonti non equivale a un aggiornamento automatico dei valori.</p>
 </section>
 
 <section class="container compare-glance" aria-labelledby="glance-title">
@@ -652,6 +684,11 @@ const emptyBudget=():CityBudget=>({
     .compare-essential-line>.standalone-input{display:block;margin:9px 0;width:100%}
     .compare-tari-choice{display:flex;align-items:flex-start;gap:10px;margin:12px 0;font-weight:650;font-size:.8rem}
     .compare-tari-choice input{width:19px;height:19px;flex-shrink:0}
+    .compare-quality{margin-bottom:26px}
+    .compare-quality-item{background:#fff;border:1px solid var(--line);border-radius:15px;padding:17px}
+    .compare-quality-item h3{margin:0 0 8px}
+    .compare-quality-item ul{padding-left:18px;font-size:.79rem;line-height:1.55;margin:10px 0}
+    .compare-quality-item li+li{margin-top:8px}
     .compare-glance{margin-bottom:24px}
     .compare-glance-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:13px}
     .compare-glance-head h2{font-size:1.38rem;margin:6px 0}
@@ -832,6 +869,11 @@ export class CompareComponent implements OnInit {
   readonly leftSuggestions=computed(()=>this.makeSuggestions('left'));
   readonly rightSuggestions=computed(()=>this.makeSuggestions('right'));
   readonly comparisonWarning=computed(()=>compareMethodWarning(this.leftCode(),this.rightCode()));
+  readonly reliabilityLeft=computed(()=>assessReliability(this.reliabilityInput('left')));
+  readonly reliabilityRight=computed(()=>assessReliability(this.reliabilityInput('right')));
+  readonly comparisonReliability=computed(()=>assessComparisonReliability(
+    this.reliabilityInput('left'),this.reliabilityInput('right')
+  ));
   readonly comparison=computed(()=>compareCityBudgets(this.effectiveBudget('left'),this.effectiveBudget('right')));
   readonly sameCity=computed(()=>this.leftCode()===this.rightCode());
   readonly basketDifference=computed(()=>{
@@ -1054,6 +1096,20 @@ export class CompareComponent implements OnInit {
     return side==='left'?this.leftSuggestions():this.rightSuggestions();
   }
   coverage(side:Side){return cityDataCoverage(this.suggestionsFor(side));}
+  private reliabilityInput(side:Side):ReliabilityInput {
+    const code=side==='left'?this.leftCode():this.rightCode();
+    const tari=this.essentialsFor(side)?.tari;
+    return {
+      cityCode:code,
+      suggestions:this.suggestionsFor(side),
+      expenses:this.effectiveBudget(side).expenses,
+      tariIncluded:this.tariIncluded(side),
+      manualEdited:this.edited(side)(),
+      tariVerifiedOrPersonal:this.tariManual(side)!==null||
+        (tari!==null&&tari!==undefined&&tari.monthlyEUR!==null)
+    };
+  }
+  reliability(side:Side){return side==='left'?this.reliabilityLeft():this.reliabilityRight();}
   missingCategoryLabels(side:Side):string{
     const missing=COST_KEYS.filter(k=>this.budget(side).expenses[k]===null);
     return missing.length?missing.map(k=>COST_LABELS[k]).join(', '):'nessun importo mancante';

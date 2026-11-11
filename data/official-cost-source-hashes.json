@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "sourceCount": 7,
+  "sources": [
+    {
+      "id": "arera-electric-reference-2026",
+      "topic": "Energia: riferimento ARERA vulnerabili, NON mercato libero",
+      "url": "https://www.arera.it/comunicati-stampa/dettaglio/elettricit%C3%A0-maggior-tutela-373-nel-iv-trimestre-2026-per-i-clienti-vulnerabili",
+      "year": "2026",
+      "kind": "html",
+      "published": "29 settembre 2026",
+      "sha256": "a63c079e0b911cb628571aa709b43629623e6f71efed27bdf71e07174ac16af4",
+      "indexDigest": null,
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "id": "arera-gas-commodity-2026",
+      "topic": "Gas: sola componente materia prima CMEMm (NON bolletta)",
+      "url": "https://www.arera.it/comunicati-stampa/dettaglio/gas-valore-materia-prima-vulnerabilita-ottobre-2026",
+      "year": "2026",
+      "kind": "html",
+      "published": "ottobre 2026",
+      "sha256": "fd0c3f69084ca476fd6e8becd2931048a740c027b60ad0d1ae710934c0ae80c7",
+      "indexDigest": null,
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "id": "arezzo-tari-2026",
+      "topic": "TARI Arezzo · quota fissa/variabile 1 componente",
+      "url": "https://www.comune.arezzo.it/sites/default/files/2026-08/Allegato%20A%20tariffe%20utenze%20domestiche.pdf",
+      "year": "2026",
+      "kind": "pdf",
+      "published": "29 luglio 2026",
+      "sha256": "be40aabe7d1bdeaead8bcf1880ac8c0f5aa1fc353163f2088960b15b510a0e27",
+      "indexDigest": "b168f7a87f451ac29eebc7a431d0b18db859d98738f1dd4a1365b75b42622c1a",
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "id": "istat-household-spending-2025",
+      "topic": "ISTAT: consumi famiglie 2025, proxy alimentari",
+      "url": "https://www.istat.it/comunicato-stampa/spese-per-consumi-delle-famiglie-anno-2025/",
+      "year": "2025",
+      "kind": "html",
+      "published": "8 ottobre 2026",
+      "sha256": "df03d35043a60765d34d772ece39e570261c5894a3d7902ccd89de73937b5f2f",
+      "indexDigest": null,
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "id": "tuscany-bus-month",
+      "topic": "Autolinee Toscane · abbonamento mensile",
+      "url": "https://www.at-bus.it/it/ticket/abbonamenti-urbani/abbonamento-urbano-capoluogo-mensile",
+      "year": "2026",
+      "kind": "html",
+      "published": "controllo novembre 2026",
+      "sha256": "7f999daab3b395f0c036e6350dd319dea214ac91b6bf80a3c06cb50b8378eb7a",
+      "indexDigest": null,
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "id": "tuscany-bus-year",
+      "topic": "Autolinee Toscane · abbonamento annuale",
+      "url": "https://www.at-bus.it/it/ticket/abbonamenti-urbani/abbonamento-urbano-capoluogo-annuale",
+      "year": "2026",
+      "kind": "html",
+      "published": "controllo novembre 2026",
+      "sha256": "b70699711b7ed3c223f73ce7f2d933a6c5f76993fb8f4678fbb8988de7ca8795",
+      "indexDigest": null,
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "id": "tuscany-rents-2024",
+      "topic": "Affitti storico 2024 · 10 capoluoghi",
+      "url": "https://www.regione.toscana.it/documents/d/guest/abitare-in-toscana2025_v3_interattivo",
+      "year": "2024",
+      "kind": "pdf",
+      "published": "aprile 2026",
+      "sha256": "b657c6c8023a5287c10238adef0c8c52179328a170229dc07c2f7607900ded89",
+      "indexDigest": null,
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    }
+  ]
+}
