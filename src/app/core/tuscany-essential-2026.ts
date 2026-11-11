@@ -4,6 +4,7 @@
  * NON e' un preventivo fiscale/bolletta e non pubblica valori non verificati per comune.
  */
 import { tuscanCapitalRentRecord } from './tuscany-capital-rents-2024';
+import { tariSingle2026BaseAnnual,tariSingle2026Record,tariNotAvailableReason } from './tuscany-tari-2026';
 import { type CityBudget } from './city-compare';
 
 export type TransitPass = 'monthly'|'annual'|'none';
@@ -165,22 +166,22 @@ export function waterMonthly2026ForCity(cityCode:string,annualM3:number):Evidenc
   };
 }
 
-/** Quota TARI comunale base 2026 Arezzo (1 residente), esclusi TEFA, componenti perequative
- * ARERA, bonus, eventuali riduzioni, variazioni e arrotondamenti del tributo.
- * 55m² e 1 occupante: 55*1.12107 + 138.77659 = 200.43544 €/anno (quota base).
+/** Base tariff formula for VERIFIED municipality, one RESIDENT.
+ * Excludes provincial TEFA, ARERA equalization and reductions.
  */
 export function tariBaseMonthly2026ForCity(cityCode:string,areaSqm:number):EvidenceAmount {
   assert(areaSqm,15,300,'superficie TARI');
-  if(cityCode!=='A390')return missing('TARI, quota comunale base','2026',
-    'Per questo comune non abbiamo ancora trascritto e controllato entrambe le quote TARI 2026. Non usiamo la tariffa di Arezzo per altre città.');
-  const annual=round(areaSqm*1.12107+138.77659);
+  const rate=tariSingle2026Record(cityCode);
+  const annual=rate?tariSingle2026BaseAnnual(cityCode,areaSqm):null;
+  if(!rate||annual===null)return missing('TARI/TARIC, quota base','2026',
+    tariNotAvailableReason(cityCode));
   return {
-    monthlyEUR:round(annual/12),annualEUR:annual,
-    classification:'local-tariff',period:'Delibera C.C. 78 del 29/07/2026',
+    monthlyEUR:Math.round(annual*100/12)/100,annualEUR:annual,
+    classification:'local-tariff',period:'Tariffe comunali 2026, utenza residente un componente',
     title:'TARI, sola quota comunale base',
-    geography:'Arezzo, utenza domestica 1 occupante',
-    sourceUrl:TUSCANY_ESSENTIAL_SOURCES.arezzoTari,
-    note:`Superficie imponibile ${areaSqm} m² × 1,12107 €/m²/anno + quota variabile 138,77659 €/anno. NON include TEFA, componenti perequative, eventuali riduzioni o bonus: non è l'importo complessivo dell'avviso.`
+    geography:rate.city+', utenza domestica residente 1 occupante',
+    sourceUrl:rate.sourceUrl,
+    note:`Superficie imponibile ${areaSqm} m² × ${rate.fixedEURPerSqm.toLocaleString('it-IT')} €/m²/anno + quota variabile ${rate.variableEURPerYear.toLocaleString('it-IT')} €/anno. ${rate.methodologyNote} Esclusi TEFA, componenti perequative, eventuali riduzioni, bonus o conguagli; NON equivale all'avviso completo.`
   };
 }
 
