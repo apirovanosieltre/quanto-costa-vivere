@@ -5,6 +5,7 @@
  * il valore rimane null e il totale completo è deliberatamente impossibile.
  */
 import { type CostKey } from './city-compare';
+import {type HomeEnergyInput} from './energy-household-2026';
 import { foodProxySolo2025, ISTAT_SOLO_REFERENCE,
   type RentContract } from './automatic-cost-florence';
 import {
@@ -19,6 +20,14 @@ import {
 
 export type SuggestionKind = 'observed'|'derived'|'tariff'|'proxy'|'scenario'|'mixed'|'unavailable';
 export type Confidence = 'alta'|'media'|'bassa'|'non disponibile';
+export type RentBaseline='contracts2024'|'asking2026';
+/** Prezzi richiesti negli annunci, COMUNE (non provincia), ottobre 2026.
+ * Non equivalgono ai canoni stipulati. Snapshot editoriale, no scraping. */
+export const TUSCANY_ASKING_RENTS_OCT_2026:Readonly<Record<string,number>>={
+  A390:9.3,D612:21.4,E202:10.1,E625:12.0,E715:11.2,
+  F023:14.6,G702:13.8,G713:9.7,G999:12.1,I726:13.1
+};
+export const ASKING_RENTS_SOURCE_2026='https://www.idealista.it/sala-stampa/report-prezzo-immobile/affitto/toscana/report/';
 export interface CategorySuggestion {
   key:CostKey;
   amount:number|null;
@@ -38,6 +47,8 @@ export interface SinglePersonOptions {
   waterM3PerYear:number;
   transitPass?:TransitPass;
   gasMonthlyScenarioEUR?:number;
+  energyProfile?:HomeEnergyInput;
+  rentBaseline?:RentBaseline;
 }
 export const DEFAULT_SINGLE_PERSON_OPTIONS:SinglePersonOptions={
   areaSqm:55, florenceContract:'long',waterM3PerYear:45,
@@ -62,8 +73,20 @@ const unavailable=(key:CostKey,explanation:string):CategorySuggestion=>({
 });
 
 function fromTuscanCapitalRent(
-  code:string,area:number,contract:RentContract
+  code:string,area:number,contract:RentContract,rentBaseline:RentBaseline='contracts2024'
 ):CategorySuggestion{
+  if(rentBaseline==='asking2026'){
+    const rate=TUSCANY_ASKING_RENTS_OCT_2026[code];
+    if(rate===undefined)return unavailable('housing','Non esiste una rilevazione comunale recente verificata.');
+    return {
+      key:'housing',amount:round(area*rate),kind:'derived',confidence:'bassa',
+      geography:'Comune capoluogo; annunci, NON provincia',
+      date:'Prezzi richiesti negli annunci, ottobre 2026',
+      explanation:'Indicatore di annunci: '+rate+' €/m²/mese × '+area+' m². Non è il canone di un contratto e può riflettere immobili non equivalenti per zona, stato o durata. Nessun confronto diretto con i contratti registrati 2024.',
+      sourceName:'idealista, report affitti richiesti ottobre 2026',
+      sourceUrl:ASKING_RENTS_SOURCE_2026
+    };
+  }
   const record=tuscanCapitalRentRecord(code);
   const monthly=tuscanCapitalMonthlyRent2024(code,area,contract);
   if(!record||monthly===null)
@@ -113,10 +136,11 @@ export function suggestSinglePersonCosts(
     tariAreaSqm:options.areaSqm,
     waterM3Year:options.waterM3PerYear,
     transitPass:options.transitPass??'monthly',
-    gasMonthlyScenarioEUR:options.gasMonthlyScenarioEUR??50
+    gasMonthlyScenarioEUR:options.gasMonthlyScenarioEUR??50,
+    energyProfile:options.energyProfile
   }):null;
   const housing=isTuscanCapital
-    ?fromTuscanCapitalRent(municipalityCode,options.areaSqm,options.florenceContract)
+    ?fromTuscanCapitalRent(municipalityCode,options.areaSqm,options.florenceContract,options.rentBaseline)
     :isMilano?fromMilanRent(options.areaSqm,rents)
     :unavailable('housing','Non esiste ancora un indicatore comunale dell’affitto verificato e riutilizzabile. Inserisci un importo reale o ricavato da una quotazione pertinente.');
 
@@ -126,7 +150,7 @@ export function suggestSinglePersonCosts(
     geography:essentials.water.monthlyEUR!==null
       ?essentials.water.geography+' + ARERA Italia + ipotesi gas'
       :'ARERA Italia + ipotesi acqua e gas (nessuna tariffa idrica comunale)',
-    date:'Luce: riferimento ARERA 2026; acqua: tariffe 2026 solo dove verificate; gas: scenario',
+    date:options.energyProfile?'Luce e gas: modello consumi e campione ottobre 2026; acqua 2026':'Luce: riferimento ARERA 2026; acqua: tariffe 2026 solo dove verificate; gas: scenario',
     explanation:essentials.utilitiesAssumptions+
       ' Dettagli e collegamenti alle fonti sono visibili nel pannello «TARI, acqua ed energia».',
     sourceName:essentials.water.monthlyEUR!==null?'Gestore idrico locale + ARERA':'ARERA + ipotesi senza tariffa locale',
@@ -178,7 +202,9 @@ export function cityDataCoverage(suggestions:CategorySuggestion[]):{
   };
 }
 
-export function compareMethodWarning(first:string,second:string):string|null{
+export function compareMethodWarning(first:string,second:string,rentBaseline:RentBaseline='contracts2024'):string|null{
+  if(comparableTuscanRentPair(first,second)&&rentBaseline==='asking2026')
+    return 'Prezzi richiesti negli annunci di ottobre 2026 dalla stessa fonte, ma gli immobili disponibili nelle due città non sono necessariamente equivalenti. Non sono i canoni di contratti stipulati.';
   if(comparableTuscanRentPair(first,second))
     return 'Gli affitti dei due capoluoghi toscani provengono dalla stessa rilevazione dei nuovi contratti registrati nel 2024 e dalla stessa tipologia contrattuale. La differenza sugli affitti è confrontabile come dato storico; il totale mensile comprende però altre ipotesi non territoriali e NON dimostra quale città convenga nel 2026.';
   const tuscanyVsMilan=(
