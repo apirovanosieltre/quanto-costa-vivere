@@ -43,6 +43,14 @@ describe('Comparison quality warnings: never advertise an official city-wide acc
   q.cityCode='F205';
   expect(assessComparisonReliability(p,q).comparableHistoricalRent).toBe(false);
  });
+ it('does not label manually changed rent as a historical municipal observation',()=>{
+  const p=profile(),q=profile('D612');
+  p.manualEdited={housing:true};
+  const a=assessReliability(p);
+  expect(a.historicalRent).toBe(false);
+  expect(a.risks.join(' ')).toContain('Affitto personalizzato');
+  expect(assessComparisonReliability(p,q).comparableHistoricalRent).toBe(false);
+ });
  it('warns if TARI is included for only one city',()=>{
   const p=profile(),q=profile('D612');
   p.tariIncluded=true;
