@@ -98,6 +98,14 @@ const emptyBudget=():CityBudget=>({
         <input class="standalone-input" id="auto-tari-area" type="number" min="15" max="300" step="5"
           [ngModel]="tariAreaSqm()" (ngModelChange)="setTariArea($event)">
       </div>
+      @if(leftCode()==='E715'||rightCode()==='E715'){
+        <div>
+          <label class="field-label" for="auto-lucca-emptyings">Lucca TARIC: svuotamenti annui dell'indifferenziato (bidone 25 L)</label>
+          <input class="standalone-input" id="auto-lucca-emptyings" type="number" min="6" max="52" step="1"
+            [ngModel]="luccaEmptyingsYear()" (ngModelChange)="setLuccaEmptyings($event)">
+          <p class="compare-tiny">12 svuotamenti = tariffa standard 2026. Da 6 a 11 è prevista una riduzione, oltre 12 un incremento. Il totale resta al netto di IVA e componenti ulteriori.</p>
+        </div>
+      }
       <div>
         <label class="field-label" for="auto-pass">Abbonamento urbano (10 capoluoghi toscani)</label>
         <select class="standalone-input" id="auto-pass" [ngModel]="transitPass()" (ngModelChange)="setTransitPass($event)">
@@ -256,7 +264,7 @@ const emptyBudget=():CityBudget=>({
             @if(detail.tari.monthlyEUR!==null){
               <span>{{money(detail.tari.monthlyEUR!)}} €/mese ({{money(detail.tari.annualEUR!)}} €/anno)</span>
               <p>{{detail.tari.note}}</p>
-              <a [href]="detail.tari.sourceUrl" target="_blank" rel="noopener noreferrer">Documento ufficiale TARI ↗</a>
+              <a [href]="detail.tari.sourceUrl" target="_blank" rel="noopener noreferrer">Documento ufficiale TARI/TARIC ↗</a>
             } @else {
               <span>Tariffa 2026 non verificata</span>
               <p>{{detail.tari.note}} Puoi inserire manualmente l'importo annuo di TARI/TARIC dell'avviso effettivo, se lo conosci.</p>
@@ -273,7 +281,7 @@ const emptyBudget=():CityBudget=>({
             @if(tariIncluded(side.key)){
               <p class="compare-tiny">Inclusa una sola volta nel totale. La cifra nel campo «Altre spese» resta quella senza TARI.</p>
             } @else {
-              <p class="compare-tiny">TARI non inclusa nel totale automatico. Le quote base verificate di Arezzo, Livorno, Pisa, Pistoia e Siena escludono TEFA, perequazione, riduzioni e bonus; per Lucca è necessaria una simulazione TARIC distinta.</p>
+              <p class="compare-tiny">TARI non inclusa nel totale automatico. Le quote base TARI verificate di Arezzo, Livorno, Pisa, Pistoia e Siena escludono TEFA, perequazione, riduzioni e bonus. Lucca usa un modello TARIC distinto con svuotamenti: il suo importo non include IVA e oneri ulteriori.</p>
             }
           </div>
         } @else {
@@ -811,6 +819,7 @@ export class CompareComponent implements OnInit {
   readonly florenceContract=signal<RentContract>(DEFAULT_SINGLE_PERSON_OPTIONS.florenceContract);
   readonly autoWaterM3=signal(DEFAULT_SINGLE_PERSON_OPTIONS.waterM3PerYear);
   readonly tariAreaSqm=signal(DEFAULT_ESSENTIAL_PROFILE.tariAreaSqm);
+  readonly luccaEmptyingsYear=signal(DEFAULT_ESSENTIAL_PROFILE.luccaEmptyingsYear??12);
   readonly gasMonthlyScenario=signal(DEFAULT_ESSENTIAL_PROFILE.gasMonthlyScenarioEUR);
   readonly transitPass=signal<TransitPass>(DEFAULT_ESSENTIAL_PROFILE.transitPass);
   readonly tariManualLeft=signal<number|null>(null);
@@ -1024,7 +1033,8 @@ export class CompareComponent implements OnInit {
     const code=side==='left'?this.leftCode():this.rightCode();
     if(!tuscanCapitalRentRecord(code))return null;
     return estimateEssentialCosts2026(code,{
-      tariAreaSqm:this.tariAreaSqm(),waterM3Year:this.autoWaterM3(),
+      tariAreaSqm:this.tariAreaSqm(),luccaEmptyingsYear:this.luccaEmptyingsYear(),
+      waterM3Year:this.autoWaterM3(),
       gasMonthlyScenarioEUR:this.gasMonthlyScenario(),transitPass:this.transitPass()
     });
   }
@@ -1070,6 +1080,15 @@ export class CompareComponent implements OnInit {
     const num=validMoney(value,300);
     if(num===null||num<15){this.autoFeedback.set('La superficie TARI deve essere tra 15 e 300 m².');return;}
     this.tariAreaSqm.set(num);this.autoFeedback.set('');
+  }
+  setLuccaEmptyings(value:unknown):void{
+    const amount=Number(value);
+    if(!Number.isInteger(amount)||amount<6||amount>52){
+      this.autoFeedback.set('Per Lucca gli svuotamenti annui dell’indifferenziato devono essere da 6 a 52.');
+      return;
+    }
+    this.luccaEmptyingsYear.set(amount);
+    this.autoFeedback.set('');
   }
   setGasScenario(value:unknown):void{
     const n=validMoney(value,1000);
