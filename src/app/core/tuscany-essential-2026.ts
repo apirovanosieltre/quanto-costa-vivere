@@ -4,7 +4,7 @@
  * NON e' un preventivo fiscale/bolletta e non pubblica valori non verificati per comune.
  */
 import { tuscanCapitalRentRecord } from './tuscany-capital-rents-2024';
-import { tariSingle2026BaseAnnual,tariSingle2026Record,tariNotAvailableReason } from './tuscany-tari-2026';
+import { tariSingle2026BaseAnnual,tariSingle2026Record,tariNotAvailableReason,luccaTaric2026Annual,LUCCA_TARIC_2026 } from './tuscany-tari-2026';
 import { type CityBudget } from './city-compare';
 
 export type TransitPass = 'monthly'|'annual'|'none';
@@ -22,6 +22,8 @@ export interface EvidenceAmount {
 export interface EssentialProfile {
   /** Superficie TARI imponibile ipotizzata. Non necessariamente identica ai m² OMI. */
   tariAreaSqm:number;
+  /** Lucca TARIC: annual residual waste 25L emptyings; 12 = 2026 standard scenario. */
+  luccaEmptyingsYear?:number;
   waterM3Year:number;
   /** L'utente puo' correggere la cifra: NON e' un prezzo del gas del comune. */
   gasMonthlyScenarioEUR:number;
@@ -29,6 +31,7 @@ export interface EssentialProfile {
 }
 export const DEFAULT_ESSENTIAL_PROFILE:EssentialProfile={
   tariAreaSqm:55,
+  luccaEmptyingsYear:12,
   waterM3Year:45,
   gasMonthlyScenarioEUR:50,
   transitPass:'monthly'
@@ -169,8 +172,22 @@ export function waterMonthly2026ForCity(cityCode:string,annualM3:number):Evidenc
 /** Base tariff formula for VERIFIED municipality, one RESIDENT.
  * Excludes provincial TEFA, ARERA equalization and reductions.
  */
-export function tariBaseMonthly2026ForCity(cityCode:string,areaSqm:number):EvidenceAmount {
+export function tariBaseMonthly2026ForCity(cityCode:string,areaSqm:number,luccaEmptyingsYear:number=12):EvidenceAmount {
   assert(areaSqm,15,300,'superficie TARI');
+  if(cityCode==='E715'){
+    const annual=luccaTaric2026Annual(areaSqm,luccaEmptyingsYear);
+    if(annual===null)return missing('TARIC Lucca 2026','2026',
+      'Numero di svuotamenti non valido: per un residente il tariffario 2026 descrive 6–52 svuotamenti annui.');
+    const t=LUCCA_TARIC_2026;
+    return {
+      monthlyEUR:Math.round(annual*100/12)/100,annualEUR:annual,
+      classification:'local-tariff',period:'Misure TARIC Lucca 2026, delibera C.C. 52/2026',
+      title:'TARIC Lucca, scenario 1 residente',
+      geography:'Lucca · domestica un componente · bidone 25 litri',
+      sourceUrl:t.sourceUrl,
+      note:`TARIC 2026: tariffa corrispettiva e non TARI ordinaria: ${areaSqm} m² × ${t.fixedEURPerSqm.toLocaleString('it-IT')} €/m²/anno + ${t.variableStandardEURPerYear.toLocaleString('it-IT')} €/anno per ${t.standardEmptyings} svuotamenti standard, con correttivo per ${luccaEmptyingsYear} svuotamenti. Riduzione ${t.rebatePerReducedEmptyingEUR.toLocaleString('it-IT')} € per svuotamento sotto lo standard (minimo ${t.minEmptyings}) oppure aumento ${t.surchargePerExtraEmptyingEUR.toLocaleString('it-IT')} € sopra (fino a ${t.maxEmptyings}). Esclusi IVA e oneri ulteriori, bonus, agevolazioni e conguagli. Non è la fattura finale.`
+    };
+  }
   const rate=tariSingle2026Record(cityCode);
   const annual=rate?tariSingle2026BaseAnnual(cityCode,areaSqm):null;
   if(!rate||annual===null)return missing('TARI/TARIC, quota base','2026',
@@ -260,7 +277,7 @@ export function estimateEssentialCosts2026(code:string,profile:EssentialProfile)
   const waterPart=water.monthlyEUR??15;
   return {
     cityCode:code,coveredCapital,
-    tari:tariBaseMonthly2026ForCity(code,profile.tariAreaSqm),
+    tari:tariBaseMonthly2026ForCity(code,profile.tariAreaSqm,profile.luccaEmptyingsYear??12),
     water,electricity,gas,
     transit:tuscanyTransit2026(code,profile.transitPass),
     utilitiesScenarioMonthly:round(electricity.monthlyEUR!+waterPart+gas.monthlyEUR!),

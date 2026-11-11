@@ -4,8 +4,40 @@
  * riduzioni, bonus sociali, conguagli e periodi di occupazione diversi.
  *
  * Solo dati verificati nella tabella 2026 del comune/gestore concessionario.
- * NB Lucca usa TARIC puntuale (NON TARI): non applicare il modello a due quote.
+ * Lucca uses separate published TARIC 2026: never treat its per-emptying
+ * adjustments as if they were a conventional annual fixed/variable TARI.
  */
+/**
+ * Distinct tariff framework: Lucca uses TARIC (correlative tariff, not TARI).
+ * From Comune di Lucca, Consiglio Comunale n.52 of 11/06/2026, Allegato C,
+ * Prospetto 5, page 10: one resident QF=1.17070 EUR/m²/year and
+ * QV=57.42675 EUR/household/year under 12 STANDARD 25-litre residual-waste
+ * emptyings. Prospetto 6, page 12: reduction of 1.457 EUR for each
+ * emptying BELOW 12 (min. 6); surcharge of 0.457 EUR for each ABOVE 12
+ * (up to 52). The resulting sum excludes VAT and additional charges.
+ */
+export const LUCCA_TARIC_2026={
+  code:'E715',city:'Lucca',
+  fixedEURPerSqm:1.17070,
+  variableStandardEURPerYear:57.42675,
+  standardEmptyings:12,minEmptyings:6,maxEmptyings:52,
+  rebatePerReducedEmptyingEUR:1.457,
+  surchargePerExtraEmptyingEUR:0.457,
+  sourceUrl:'https://www.comune.lucca.it/app/uploads/2025/05/Allegato-C-tariffe-TARIC-2026.pdf',
+  sourceName:'Comune di Lucca, delibera C.C. 52/2026, Allegato C, prospetti 5 e 6, pagine 10 e 12'
+} as const;
+
+export function luccaTaric2026Annual(areaSqm:number,emptyings:number=LUCCA_TARIC_2026.standardEmptyings):number|null{
+  const t=LUCCA_TARIC_2026;
+  if(!Number.isFinite(areaSqm)||areaSqm<15||areaSqm>300||
+     !Number.isInteger(emptyings)||emptyings<t.minEmptyings||emptyings>t.maxEmptyings)return null;
+  const emptyingAdjustment=emptyings<t.standardEmptyings
+    ?-(t.standardEmptyings-emptyings)*t.rebatePerReducedEmptyingEUR
+    :(emptyings-t.standardEmptyings)*t.surchargePerExtraEmptyingEUR;
+  const base=areaSqm*t.fixedEURPerSqm+t.variableStandardEURPerYear+emptyingAdjustment;
+  return Math.round((base+Number.EPSILON)*100)/100;
+}
+
 export interface TuscanyTariSingle2026 {
   code:string;
   city:string;
@@ -59,7 +91,7 @@ export function tariSingle2026BaseAnnual(code:string,areaSqm:number):number|null
 }
 export function tariNotAvailableReason(code:string):string{
   if(code==='E715')
-    return 'Lucca applica la TARIC, una tariffa corrispettiva puntuale basata anche sui conferimenti. Non e una TARI standard: serve un modello dedicato prima di ottenere un totale affidabile.';
+    return 'Lucca usa TARIC 2026: seleziona il numero di svuotamenti dell’indifferenziato; il valore è una base stimata, non la fattura comprensiva di IVA.';
   if(['D612','E202','F023','G999'].includes(code))
     return 'Delibera tariffaria 2026 individuata, ma la coppia di quote per un solo residente non e ancora verificata in un allegato ufficiale leggibile. Nessuna cifra viene inventata.';
   return 'Tariffa comunale 2026 per un residente non verificata: inserire l importo dell avviso se disponibile.';

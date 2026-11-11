@@ -1,4 +1,4 @@
-# QuantoCostaVivere · v1.7
+# QuantoCostaVivere · v1.8
 
 Portale Angular 22, mobile-first e accessibile, per **confronto del costo della vita tra città, budget domestico, IRPEF 2026, stima RAL e inflazione ufficiale italiana**. Integra una Cloudflare Pages Function per Eurostat e una pipeline **di acquisizione + validazione** degli elenchi MEF.
 
@@ -115,6 +115,15 @@ monitor non prova che il deploy Cloudflare sia già aggiornato.
 Non generiamo una percentuale di attendibilità inventata. I controlli mostrano
 categorie mancanti, provenienza, anni e limiti in forma verificabile.
 
+## Lucca: calcolo TARIC 2026 da tabella ufficiale, modello distinto dalla TARI
+
+Il Comune di Lucca pubblica nell'[Allegato C alla delibera C.C. 52/2026](https://www.comune.lucca.it/app/uploads/2025/05/Allegato-C-tariffe-TARIC-2026.pdf) due prospetti utili:
+- **Prospetto 5, pagina 10**: per un componente residente, **quota fissa 1,17070 €/m²/anno** e **quota variabile standard 57,42675 €/anno**;
+- **Prospetto 6, pagina 12**: 12 svuotamenti dell'indifferenziato da 25 L standard; minimo 6. Riduzione **1,457 €** per ogni svuotamento tra 6 e 11 e aumento **0,457 €** per svuotamento da 13 fino al massimo indicato di 52.
+
+Formula per il profilo di una persona: `1,17070 × mq + 57,42675 + correttivoSvuotamenti`.
+Per **55 m²**: 12 svuotamenti **121,82 €/anno**; 6 svuotamenti **113,07 €/anno**; 52 svuotamenti **140,10 €/anno**. Questo e un **scenario tariffario base**, non il costo reale completo; IVA, componenti aggiuntive, agevolazioni e conguagli sono esclusi. Il numero di svuotamenti e modificabile nel comparatore. Per un altro tipo di bidone o regime di raccolta resta necessario un calcolo personalizzato.
+
 ## TARI domestica 2026: estensione a cinque capoluoghi (1 residente)
 
 Dati estratti da prospetti 2026 ufficiali per uso **residenziale con un solo occupante**. Formula comune ai comuni coperti:
@@ -130,7 +139,7 @@ Dati estratti da prospetti 2026 ufficiali per uso **residenziale con un solo occ
 
 **Fonti:** Siena [Sigerico, allegato 1 C.C. 112/2026](https://sigericospa.it/wp-content/uploads/2026/07/30913_ALL-_1_TARIFFE_TARI_2026.pdf); Arezzo [Comune, allegato 2026](https://www.comune.arezzo.it/sites/default/files/2026-08/Allegato%20A%20tariffe%20utenze%20domestiche.pdf); Livorno [delibera comunale 174/2026, tabella residenti, pag. 10](https://cloud-ita.municipiumapp.it/s3/3612/allegati/servizi/tributi/tari/delibere/unicopefdelibera2026_b4c67c0667cbc3b3_p7m_qrcode.pdf); Pisa [S.E.Pi. tariffa domestica 2026](https://www.sepi-pisa.it/en-us/download/utenze-domestiche-2026-5221-89-20046-d92cb77953270cfa58e91142933256d4); Pistoia [tabella TARI 2026](https://www.comune.pistoia.it/s3/5285/allegati/tributi/tariffe-tari/tariffe-tari-2026.pdf).
 
-**Importante:** è sempre e soltanto la componente comunale base; il totale dell'avviso può includere **TEFA e perequazione ARERA**, sconti, conguagli e riduzioni. Pistoia pubblica una riduzione del 12% per un solo occupante: non viene applicata senza verificarne condizioni e modalità, perché il benchmark vuole distinguere la tariffa base dall'importo finale. **Lucca applica TARIC corrispettiva**, con una quota correlata ai conferimenti: non applichiamo la formula TARI a due quote. Per **Firenze, Grosseto, Massa, Prato e Lucca** il valore rimane non disponibile finché la tariffa e i suoi requisiti non saranno confermati in un documento ufficiale appropriato.
+**Importante:** è sempre e soltanto la componente comunale base; il totale dell'avviso può includere **TEFA e perequazione ARERA**, sconti, conguagli e riduzioni. Pistoia pubblica una riduzione del 12% per un solo occupante: non viene applicata senza verificarne condizioni e modalità, perché il benchmark vuole distinguere la tariffa base dall'importo finale. **Lucca applica TARIC corrispettiva**: la simuliamo ora con la distinta quota standard e i correttivi per svuotamenti, non con la formula ordinaria TARI. Per **Firenze, Grosseto, Massa e Prato** il valore rimane non disponibile finché la tariffa e i suoi requisiti non saranno confermati in un documento ufficiale appropriato.
 
 Il calcolatore non presume che la TARI sia compresa nell'affitto o nelle altre spese. L'utente può attivare l'inclusione nel totale oppure inserire l'importo effettivo del proprio avviso. **Mai aggiungerla automaticamente una seconda volta.** Implementazione: `src/app/core/tuscany-tari-2026.ts`, test `tuscany-tari-2026.spec.ts`.
 
@@ -147,7 +156,8 @@ Il calcolatore non presume che la TARI sia compresa nell'affitto o nelle altre s
 | TARI 2026 | **Arezzo, Livorno, Pisa, Pistoia e Siena** con quote base documentate | Tariffa fissa €/m² + quota variabile per 1 occupante, per ogni comune da allegato ufficiale 2026 | **Quota base, NON avviso TARI completo**: esclusi TEFA, componenti perequative, bonus, riduzioni, conguagli |
 | Elettricità | Indicatore **nazionale**, non comunale | Riferimento ARERA per il **cliente vulnerabile** tipo in Maggior Tutela, 2.000 kWh/anno e 3 kW: **665,38 €/anno** nel periodo 01/01/2026–31/12/2026 | Non è un'offerta del mercato libero né una stima della tua bolletta reale |
 | Gas / riscaldamento | Nessun costo finale locale verificato | Spesa di scenario modificabile, inizialmente 50 €/mese; ARERA pubblica **solo materia prima** ottobre 2026 a 0,945436 €/Smc | La componente materia prima non si può utilizzare come bolletta completa; non è inserita automaticamente in luogo dell'ipotesi |
-| Altri 5 capoluoghi senza TARI/TARIC calcolabile; acqua disponibile per tutti e 10 | **Non disponibili** | Senza allegato ufficiale verificato, il costo rimane nullo e modificabile manualmente; **Lucca usa TARIC puntuale**, non la TARI standard | Mai stimare copiando valori da un altro comune |
+| Altri 4 capoluoghi senza TARI calcolabile; acqua disponibile per tutti e 10 | **Non disponibili** | Firenze, Grosseto, Massa, Prato senza tabella TARI 2026 per 1 residente completamente verificata | Mai stimare copiando valori da un altro comune |
+| TARIC Lucca 2026 | **Lucca (modello separato)** | Allegato C: 1,17070 €/m²/anno + 57,42675 €/anno per 12 svuotamenti da 25 L, con correzione 6–52 | Al netto di IVA e altri oneri; non rappresenta fattura finale |
 
 **Fonti ufficiali aggiunte per i sei capoluoghi prima scoperti:**
 - **Grosseto e Siena**: Acquedotto del Fiora, tariffario 2026 per 1 residente, con 3 fasce, quota fissa e servizi separati: https://www.fiora.it/wp-content/uploads/2026/01/AdF_tariffe_2026.pdf
