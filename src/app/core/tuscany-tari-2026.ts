@@ -35,6 +35,12 @@ export const VERIFIED_TARI_SINGLE_2026:readonly TuscanyTariSingle2026[]=[
     methodologyNote:'Tabella famiglie di 1 componente, quota fissa €/m² + quota variabile €/utenza. Il totale medio della tabella e riferito a 80,49 m² e NON va utilizzato come importo per 55 m².'
   },
   {
+    code:'I726',city:'Siena',fixedEURPerSqm:1.1524,variableEURPerYear:50.3323,
+    sourceUrl:'https://sigericospa.it/wp-content/uploads/2026/07/30913_ALL-_1_TARIFFE_TARI_2026.pdf',
+    sourceName:'Comune di Siena / Si.Ge.Ri.Co., delibera C.C. n. 112 del 23/07/2026, allegato 1',
+    methodologyNote:'2026, tabella utenze domestiche, componente 1, quota fissa QF 1,1524 €/m²/anno e variabile QV 50,3323 €/anno; si tratta delle quote base, senza riduzioni ed eventuali oneri aggiuntivi.'
+  },
+  {
     code:'G713',city:'Pistoia',fixedEURPerSqm:1.03,variableEURPerYear:114.40,
     sourceUrl:'https://www.comune.pistoia.it/s3/5285/allegati/tributi/tariffe-tari/tariffe-tari-2026.pdf',
     sourceName:'Comune di Pistoia · tariffe TARI 2026, 1 componente',
@@ -54,7 +60,7 @@ export function tariSingle2026BaseAnnual(code:string,areaSqm:number):number|null
 export function tariNotAvailableReason(code:string):string{
   if(code==='E715')
     return 'Lucca applica la TARIC, una tariffa corrispettiva puntuale basata anche sui conferimenti. Non e una TARI standard: serve un modello dedicato prima di ottenere un totale affidabile.';
-  if(['D612','E202','F023','G999','I726'].includes(code))
+  if(['D612','E202','F023','G999'].includes(code))
     return 'Delibera tariffaria 2026 individuata, ma la coppia di quote per un solo residente non e ancora verificata in un allegato ufficiale leggibile. Nessuna cifra viene inventata.';
   return 'Tariffa comunale 2026 per un residente non verificata: inserire l importo dell avviso se disponibile.';
 }

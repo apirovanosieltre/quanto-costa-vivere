@@ -1,6 +1,6 @@
 /**
  * Audit source material for costs which cannot be safely updated automatically:
- * Tuscany historical rent, municipal TARI for four Tuscan capitals, urban passes, ARERA
+ * Tuscany historical rent, municipal TARI for five Tuscan capitals, urban passes, ARERA
  * electricity/gas reference, national ISTAT consumer spending.
  *
  * The weekly job creates ONE REVIEW PR, never edits the numerical models.
@@ -46,6 +46,11 @@ export const OFFICIAL_COST_SOURCES=[
     url:'https://www.comune.pistoia.it/s3/5285/allegati/tributi/tariffe-tari/tariffe-tari-2026.pdf',
     indexUrl:'https://www.comune.pistoia.it/it/documenti_pubblici/tariffe-tari',
     requiredTokens:['1,03','114,40']},
+  {id:'siena-tari-2026',topic:'TARI Siena · 1 residente quota QF/QV, CC 112/2026',
+    kind:'pdf',year:'2026',sourceDate:'23 luglio 2026',
+    url:'https://sigericospa.it/wp-content/uploads/2026/07/30913_ALL-_1_TARIFFE_TARI_2026.pdf',
+    indexUrl:'https://sigericospa.it/tari-regolamenti-e-tariffe/',
+    requiredTokens:['1,1524','50,3323']},
   {id:'tuscany-bus-month',topic:'Autolinee Toscane · abbonamento mensile',
     kind:'html',year:'2026',sourceDate:'controllo novembre 2026',
     url:'https://www.at-bus.it/it/ticket/abbonamenti-urbani/abbonamento-urbano-capoluogo-mensile',
