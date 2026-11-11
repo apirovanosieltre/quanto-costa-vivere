@@ -5,7 +5,7 @@ on:
     - cron: '43 6 * * 2'
   workflow_dispatch:
   push:
-    branches: [feature/tari-2026-verified-capitals]
+    branches: [feature/siena-tari-2026-official]
     paths:
       - 'scripts/audit-official-cost-sources.mjs'
       - '.github/workflows/official-cost-source-audit.yml'
@@ -31,10 +31,10 @@ jobs:
       - name: Verify PDF extractor
         run: command -v pdftotext || (sudo apt-get -qq update && sudo apt-get -qq install -y poppler-utils)
       - name: Initialize baselines on development branch only
-        if: github.ref == 'refs/heads/feature/tari-2026-verified-capitals'
+        if: github.ref == 'refs/heads/feature/siena-tari-2026-official'
         run: node scripts/audit-official-cost-sources.mjs --seed
       - name: Persist reviewed source baseline on development branch
-        if: github.ref == 'refs/heads/feature/tari-2026-verified-capitals'
+        if: github.ref == 'refs/heads/feature/siena-tari-2026-official'
         run: |
           if [ ! -f data/official-cost-source-hashes.json ]; then
             echo "::warning::Baseline not fully initialized; unavailable or changed official sources require manual verification."
@@ -45,7 +45,7 @@ jobs:
           git add data/official-cost-source-hashes.json
           if git diff --cached --quiet; then exit 0; fi
           git commit -m 'data(sources): pin checked official source fingerprints'
-          git push origin HEAD:refs/heads/feature/tari-2026-verified-capitals
+          git push origin HEAD:refs/heads/feature/siena-tari-2026-official
       - name: Audit primary sources without updating published prices
         if: github.ref == 'refs/heads/main'
         run: node scripts/audit-official-cost-sources.mjs --check
