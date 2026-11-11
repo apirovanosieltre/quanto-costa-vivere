@@ -14,7 +14,7 @@ function profile(code='A390'):ReliabilityInput{
   cityCode:code,
   expenses:{housing:302.5,utilities:120.64,groceries:410.73,transport:42.2,other:225},
   tariIncluded:false,tariVerifiedOrPersonal:code==='A390',
-  suggestions:sources.map(s=>({...s,date:'',geography:'',sourceName:'',sourceUrl:null,explanation:''})) as CategorySuggestion[]
+  suggestions:sources.map(s=>({...s,date:s.key==='housing'?'Nuovi contratti 2024':'',geography:'',sourceName:'',sourceUrl:null,explanation:''})) as CategorySuggestion[]
  };
 }
 describe('Comparison quality warnings: never advertise an official city-wide accuracy score',()=>{
@@ -24,7 +24,7 @@ describe('Comparison quality warnings: never advertise an official city-wide acc
   expect(a.historicalRent).toBe(true);
   expect(a.nationalOrAssumedCount).toBe(3);
   expect(a.risks.join(' ')).toContain('TARI: esclusa');
-  expect(a.risks.join(' ')).toContain('vulnerabili');
+  expect(a.risks.join(' ')).toContain('bolletta reale');
  });
  it('flags missing rent and counts only finite nonnegative inputs',()=>{
   const p=profile('F839');
@@ -50,6 +50,14 @@ describe('Comparison quality warnings: never advertise an official city-wide acc
   expect(a.historicalRent).toBe(false);
   expect(a.risks.join(' ')).toContain('Affitto personalizzato');
   expect(assessComparisonReliability(p,q).comparableHistoricalRent).toBe(false);
+ });
+ it('does not call asking 2026 rents historical or equivalent to signed contracts',()=>{
+   const p=profile(),q=profile('D612');
+   for(const data of [p,q])
+     data.suggestions[0]={...data.suggestions[0],kind:'derived',date:'Prezzi richiesti negli annunci, ottobre 2026'};
+   expect(assessReliability(p).historicalRent).toBe(false);
+   expect(assessComparisonReliability(p,q).comparableHistoricalRent).toBe(false);
+   expect(assessReliability(p).risks.join(' ')).toContain('annunci ottobre 2026');
  });
  it('warns if TARI is included for only one city',()=>{
   const p=profile(),q=profile('D612');
