@@ -1,5 +1,37 @@
 # Verifica del comparatore: 11 novembre 2026
 
+## Proxy TARI quando manca la tariffa approvata
+
+Il comparatore può mostrare per i quattro capoluoghi ancora scoperti una
+**stima NON ufficiale** costruita sulla mediana di importi TARI base 2026
+dei capoluoghi selezionati come riferimenti vicini. Si utilizza la stessa
+superficie imponibile e il profilo **un residente**. Ogni riferimento è
+riproducibile attraverso i tariffari ufficiali già presenti in
+`tuscany-tari-2026.ts`. Il modello è in
+`tuscany-tari-proxy-2026.ts` ed è testato separatamente.
+
+| Città senza tariffa verificata | Comuni usati come confronto |
+| --- | --- |
+| Firenze | Pistoia, Siena, Pisa |
+| Grosseto | Siena, Livorno |
+| Massa | Pisa, Livorno |
+| Prato | Pistoia, Pisa |
+
+La scelta geografica **non garantisce similitudine** tra costi di raccolta,
+modello di gestione, sgravi e contribuzione. **Lucca è sempre esclusa come
+riferimento** perché usa TARIC puntuale, non TARI ordinaria.
+
+Gli importi pubblicati come proxy sono la **mediana dei riferimenti**
+non la tassa realmente applicabile; il minimo e il massimo sono
+il semplice intervallo dei campioni, **non un intervallo statistico di
+confidenza né un limite plausibile del costo vero**.
+Il proxy ha sempre `classification='assumption'` e
+`sourceUrl=null`, non può essere contato come tariffa comunale
+verificata, non è incluso automaticamente nel budget e può essere
+sostituito con la cifra dell'avviso reale. Non usarlo per pagamenti,
+dichiarazioni tributarie o calcoli di imposte dovute. Sono esclusi
+TEFA, perequazione, agevolazioni e conguagli.
+
 ## TARI 2026: non inventare gli importi
 
 **Da integrare dopo estrazione dei prospetti approvati:** Firenze (D612),

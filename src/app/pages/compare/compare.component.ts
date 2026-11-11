@@ -283,7 +283,11 @@ const emptyBudget=():CityBudget=>({
             @if(detail.tari.monthlyEUR!==null){
               <span>{{money(detail.tari.monthlyEUR!)}} €/mese ({{money(detail.tari.annualEUR!)}} €/anno)</span>
               <p>{{detail.tari.note}}</p>
-              <a [href]="detail.tari.sourceUrl" target="_blank" rel="noopener noreferrer">Documento ufficiale TARI/TARIC ↗</a>
+              @if(detail.tari.classification==='local-tariff'&&detail.tari.sourceUrl){
+                <a [href]="detail.tari.sourceUrl" target="_blank" rel="noopener noreferrer">Documento ufficiale TARI/TARIC ↗</a>
+              } @else {
+                <p class="compare-alert" role="note"><strong>Stima orientativa, non tariffa ufficiale.</strong> La cifra è ricavata da città di riferimento e potrebbe differire molto da quella reale. Non utilizzarla per pagamenti o dichiarazioni.</p>
+              }
             } @else {
               <span>Tariffa 2026 non verificata</span>
               <p>{{detail.tari.note}} Puoi inserire manualmente l'importo annuo di TARI/TARIC dell'avviso effettivo, se lo conosci.</p>
@@ -295,12 +299,12 @@ const emptyBudget=():CityBudget=>({
             <label class="compare-tari-choice">
               <input type="checkbox" [ngModel]="tariIncluded(side.key)" (ngModelChange)="setTariIncluded(side.key,!!$event)"
                 [disabled]="tariMonthly(side.key)===null">
-              <span>Aggiungi {{tariMonthly(side.key)===null?'TARI':money(tariMonthly(side.key)!)+' €/mese'}} alle «Altre spese» del budget</span>
+              <span>Aggiungi {{tariMonthly(side.key)===null?'TARI':(detail.tari.classification==='assumption'&&tariManual(side.key)===null?'la stima TARI (NON ufficiale) di ':'la TARI di ')+money(tariMonthly(side.key)!)+' €/mese'}} alle «Altre spese» del budget</span>
             </label>
             @if(tariIncluded(side.key)){
               <p class="compare-tiny">Inclusa una sola volta nel totale. La cifra nel campo «Altre spese» resta quella senza TARI.</p>
             } @else {
-              <p class="compare-tiny">TARI non inclusa nel totale automatico. Le quote base TARI verificate di Arezzo, Livorno, Pisa, Pistoia e Siena escludono TEFA, perequazione, riduzioni e bonus. Lucca usa un modello TARIC distinto con svuotamenti: il suo importo non include IVA e oneri ulteriori.</p>
+              <p class="compare-tiny">TARI esclusa dal totale iniziale. Arezzo, Livorno, Pisa, Pistoia e Siena dispongono di quote base TARI documentate, mentre Lucca ha una TARIC distinta. Firenze, Grosseto, Massa e Prato usano soltanto una stima illustrativa da comuni di riferimento, non tariffe ufficiali. Eventuali TEFA, perequazioni, riduzioni, bonus e oneri ulteriori non sono inclusi.</p>
             }
           </div>
         } @else {
@@ -1165,7 +1169,7 @@ export class CompareComponent implements OnInit {
       tariIncluded:this.tariIncluded(side),
       manualEdited:this.edited(side)(),
       tariVerifiedOrPersonal:this.tariManual(side)!==null||
-        (tari!==null&&tari!==undefined&&tari.monthlyEUR!==null)
+        (tari!==null&&tari!==undefined&&tari.classification==='local-tariff')
     };
   }
   reliability(side:Side){return side==='left'?this.reliabilityLeft():this.reliabilityRight();}

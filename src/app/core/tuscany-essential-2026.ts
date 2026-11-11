@@ -6,6 +6,7 @@
 import { tuscanCapitalRentRecord } from './tuscany-capital-rents-2024';
 import { tariSingle2026BaseAnnual,tariSingle2026Record,tariNotAvailableReason,luccaTaric2026Annual,LUCCA_TARIC_2026 } from './tuscany-tari-2026';
 import { type CityBudget } from './city-compare';
+import {tariNeighborProxy2026} from './tuscany-tari-proxy-2026';
 import {estimateHomeEnergy2026,type HomeEnergyInput,ENERGY_MARKET_REFERENCE_2026} from './energy-household-2026';
 
 export type TransitPass = 'monthly'|'annual'|'none';
@@ -193,8 +194,30 @@ export function tariBaseMonthly2026ForCity(cityCode:string,areaSqm:number,luccaE
   }
   const rate=tariSingle2026Record(cityCode);
   const annual=rate?tariSingle2026BaseAnnual(cityCode,areaSqm):null;
-  if(!rate||annual===null)return missing('TARI/TARIC, quota base','2026',
-    tariNotAvailableReason(cityCode));
+  if(!rate||annual===null){
+    const proxy=tariNeighborProxy2026(cityCode,areaSqm);
+    if(proxy){
+      const peers=proxy.peers.map(p=>p.city+' ('+p.annualEUR.toLocaleString('it-IT')+' €/anno)');
+      return {
+        monthlyEUR:Math.round(proxy.estimatedAnnualEUR*100/12)/100,
+        annualEUR:proxy.estimatedAnnualEUR,
+        classification:'assumption',
+        period:'Proxy editoriale da tariffe BASE TARI ufficiali 2026 di altri comuni',
+        title:'TARI stimata da comuni vicini: NON quota comunale verificata',
+        geography:'Città selezionata senza tariffario 2026 verificato',
+        sourceUrl:null,
+        note:'VALORE NON UFFICIALE, attendibilità bassa. Mediana dei costi base TARI 2026 '+
+          'per un residente e '+areaSqm+' m² negli altri capoluoghi '+peers.join(', ')+
+          '. Intervallo fra le sole tariffe campione: '+proxy.peerMinAnnualEUR.toLocaleString('it-IT')+
+          '–'+proxy.peerMaxAnnualEUR.toLocaleString('it-IT')+
+          ' €/anno (non è un intervallo di confidenza né limita il costo reale). '+
+          'Queste tariffe NON sono quelle del comune selezionato. '+
+          'Esclusi TEFA, componenti perequative, riduzioni e bonus. '+
+          'La TARI locale potrà essere significativamente diversa: sostituire con l’avviso reale.'
+      };
+    }
+    return missing('TARI/TARIC, quota base','2026',tariNotAvailableReason(cityCode));
+  }
   return {
     monthlyEUR:Math.round(annual*100/12)/100,annualEUR:annual,
     classification:'local-tariff',period:'Tariffe comunali 2026, utenza residente un componente',

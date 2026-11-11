@@ -39,11 +39,17 @@ describe('2026: costi essenziali 1 persona nei 10 capoluoghi toscani',()=>{
       expect(value.note).toContain('Esclusi TEFA');
       expect(value.sourceUrl).toContain(source);
     }
-    for(const {code} of TUSCANY_CAPITAL_RENTS_2024){
-      if(!['A390','E625','G702','G713','I726','E715'].includes(code)){
-        expect(tariBaseMonthly2026ForCity(code,55).monthlyEUR).toBeNull();
-      }
+    for(const code of ['D612','E202','F023','G999']){
+      const result=tariBaseMonthly2026ForCity(code,55);
+      expect(result.monthlyEUR).toBeGreaterThan(0);
+      expect(result.classification).toBe('assumption');
+      expect(result.sourceUrl).toBeNull();
+      expect(result.title).toContain('NON');
+      expect(result.note).toContain('NON UFFICIALE');
+      expect(result.note).toContain('non è un intervallo di confidenza');
+      expect(result.note).toContain('Esclusi TEFA');
     }
+    expect(tariBaseMonthly2026ForCity('F839',55).monthlyEUR).toBeNull();
     expect(tariBaseMonthly2026ForCity('E715',55).annualEUR).toBe(121.82);
     expect(tariBaseMonthly2026ForCity('E715',55).monthlyEUR).toBe(10.15);
     expect(tariBaseMonthly2026ForCity('E715',55).note).toContain('TARIC');
@@ -115,7 +121,10 @@ describe('2026: costi essenziali 1 persona nei 10 capoluoghi toscani',()=>{
     expect(a.utilitiesScenarioMonthly).toBe(120.64);
     expect(a.tariIncludedByDefault).toBe(false);
     expect(f.utilitiesScenarioMonthly).toBe(119.08);
-    expect(f.tari.monthlyEUR).toBeNull();
+    expect(f.tari.classification).toBe('assumption');
+    expect(f.tari.annualEUR).toBe(171.05);
+    expect(f.tari.monthlyEUR).toBe(14.25);
+    expect(f.tari.sourceUrl).toBeNull();
     expect(p.utilitiesScenarioMonthly).toBe(123.85);
     expect(p.utilitiesAssumptions).not.toContain('IPOTETICA');
     expect(p.water.monthlyEUR).toBe(18.40);
