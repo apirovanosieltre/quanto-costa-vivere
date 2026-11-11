@@ -18,6 +18,7 @@ export interface ReliabilityInput {
   expenses:Record<CostKey,number|null>;
   tariIncluded:boolean;
   tariVerifiedOrPersonal:boolean;
+  manualEdited?:Partial<Record<CostKey,boolean>>;
 }
 
 export function assessReliability(input:ReliabilityInput):ReliabilityAssessment{
@@ -30,9 +31,11 @@ export function assessReliability(input:ReliabilityInput):ReliabilityAssessment{
   const housing=input.suggestions.find(s=>s.key==='housing');
   const utilities=input.suggestions.find(s=>s.key==='utilities');
   const risks:string[]=[];
-  const historicalRent=!!housing && (housing.kind==='observed'||housing.kind==='derived');
-  if(housing?.kind==='observed')risks.push('Affitto: contratti storici 2024, non annunci o nuove offerte nel 2026.');
-  if(housing?.kind==='derived')risks.push('Affitto: indicatore OMI aggregato, non canone di una casa equivalente.');
+  const manuallyEditedHousing=input.manualEdited?.housing===true;
+  const historicalRent=!manuallyEditedHousing&&!!housing&&(housing.kind==='observed'||housing.kind==='derived');
+  if(manuallyEditedHousing)risks.push('Affitto personalizzato: cifra inserita dall’utente, non verificata dalle fonti del sito.');
+  if(!manuallyEditedHousing&&housing?.kind==='observed')risks.push('Affitto: contratti storici 2024, non annunci o nuove offerte nel 2026.');
+  if(!manuallyEditedHousing&&housing?.kind==='derived')risks.push('Affitto: indicatore OMI aggregato, non canone di una casa equivalente.');
   if(!housing||housing.amount===null)risks.push('Affitto: manca un riferimento locale verificato; inserire il costo effettivo.');
   if(!input.tariIncluded)risks.push('TARI: esclusa dal totale; il budget non include tutte le spese per abitare.');
   else if(!input.tariVerifiedOrPersonal)risks.push('TARI: valore non verificato per questo comune.');
@@ -59,7 +62,8 @@ export function assessComparisonReliability(
   left:ReliabilityInput,right:ReliabilityInput
 ):{canShowScenarioDelta:boolean;comparableHistoricalRent:boolean;warnings:string[]}{
   const a=assessReliability(left),b=assessReliability(right);
-  const comparableHistoricalRent=comparableTuscanRentPair(left.cityCode,right.cityCode);
+  const comparableHistoricalRent=comparableTuscanRentPair(left.cityCode,right.cityCode)&&
+    left.manualEdited?.housing!==true&&right.manualEdited?.housing!==true;
   const warnings:string[]=[];
   if(a.status==='parziale'||b.status==='parziale')
     warnings.push('Una o entrambe le città hanno spese mancanti: il delta delle spese non è completo.');
