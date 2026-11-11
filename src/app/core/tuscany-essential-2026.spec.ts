@@ -29,7 +29,8 @@ describe('2026: costi essenziali 1 persona nei 10 capoluoghi toscani',()=>{
       ['A390',200.44,16.70,'comune.arezzo.it'],
       ['E625',158.47,13.21,'municipiumapp.it'],
       ['G702',215.85,17.99,'sepi-pisa.it'],
-      ['G713',171.05,14.25,'comune.pistoia.it']
+      ['G713',171.05,14.25,'comune.pistoia.it'],
+      ['I726',113.71,9.48,'sigericospa.it']
     ] as const){
       const value=tariBaseMonthly2026ForCity(code,55);
       expect(value.annualEUR).toBe(annual);
@@ -39,7 +40,7 @@ describe('2026: costi essenziali 1 persona nei 10 capoluoghi toscani',()=>{
       expect(value.sourceUrl).toContain(source);
     }
     for(const {code} of TUSCANY_CAPITAL_RENTS_2024){
-      if(!['A390','E625','G702','G713'].includes(code)){
+      if(!['A390','E625','G702','G713','I726'].includes(code)){
         expect(tariBaseMonthly2026ForCity(code,55).monthlyEUR).toBeNull();
       }
     }
