@@ -1,4 +1,4 @@
-# QuantoCostaVivere · v1.5
+# QuantoCostaVivere · v1.6
 
 Portale Angular 22, mobile-first e accessibile, per **confronto del costo della vita tra città, budget domestico, IRPEF 2026, stima RAL e inflazione ufficiale italiana**. Integra una Cloudflare Pages Function per Eurostat e una pipeline **di acquisizione + validazione** degli elenchi MEF.
 
@@ -95,7 +95,7 @@ monitor non prova che il deploy Cloudflare sia già aggiornato.
 
 1. **TARI completa in tutti i 10 capoluoghi**, usando tariffa fissa/variabile per un
    occupante, superficie imponibile, TEFA, perequazione, riduzioni, eventuale bonus;
-   ora esiste solo la quota comunale base Arezzo e non è inclusa di default.
+   ora esistono quote base per Arezzo, Livorno, Pisa e Pistoia (non incluse di default); Lucca usa TARIC.
 2. **Affitti comparabili e attuali a parità di caratteristiche**: gli indicatori Toscana
    2024 e Milano OMI 2025/2 non usano la stessa metodologia, e manca il quartiere,
    lo stato dell'immobile, tipologia e la dimensione reale.
@@ -115,6 +115,24 @@ monitor non prova che il deploy Cloudflare sia già aggiornato.
 Non generiamo una percentuale di attendibilità inventata. I controlli mostrano
 categorie mancanti, provenienza, anni e limiti in forma verificabile.
 
+## TARI domestica 2026: estensione a quattro capoluoghi (1 residente)
+
+Dati estratti da prospetti 2026 ufficiali per uso **residenziale con un solo occupante**. Formula comune ai comuni coperti:
+`quota fissa €/m²/anno × superficie imponibile + quota variabile €/utenza/anno`.
+
+| Città | Fissa €/m² anno | Variabile €/anno | Base a 55 m² / anno |
+|---|---:|---:|---:|
+| Arezzo | 1,12107 | 138,77659 | 200,44 € |
+| Livorno | 1,12 | 96,87 | 158,47 € |
+| Pisa | 1,2302 | 148,1854 | 215,85 € |
+| Pistoia | 1,03 | 114,40 | 171,05 € |
+
+**Fonti:** Arezzo [Comune, allegato 2026](https://www.comune.arezzo.it/sites/default/files/2026-08/Allegato%20A%20tariffe%20utenze%20domestiche.pdf); Livorno [delibera comunale 174/2026, tabella residenti, pag. 10](https://cloud-ita.municipiumapp.it/s3/3612/allegati/servizi/tributi/tari/delibere/unicopefdelibera2026_b4c67c0667cbc3b3_p7m_qrcode.pdf); Pisa [S.E.Pi. tariffa domestica 2026](https://www.sepi-pisa.it/en-us/download/utenze-domestiche-2026-5221-89-20046-d92cb77953270cfa58e91142933256d4); Pistoia [tabella TARI 2026](https://www.comune.pistoia.it/s3/5285/allegati/tributi/tariffe-tari/tariffe-tari-2026.pdf).
+
+**Importante:** è sempre e soltanto la componente comunale base; il totale dell'avviso può includere **TEFA e perequazione ARERA**, sconti, conguagli e riduzioni. Pistoia pubblica una riduzione del 12% per un solo occupante: non viene applicata senza verificarne condizioni e modalità, perché il benchmark vuole distinguere la tariffa base dall'importo finale. **Lucca applica TARIC corrispettiva**, con una quota correlata ai conferimenti: non applichiamo la formula TARI a due quote. Per **Firenze, Grosseto, Massa, Prato, Siena e Lucca** il valore rimane non disponibile finché la tariffa e i suoi requisiti non saranno confermati in un documento ufficiale appropriato.
+
+Il calcolatore non presume che la TARI sia compresa nell'affitto o nelle altre spese. L'utente può attivare l'inclusione nel totale oppure inserire l'importo effettivo del proprio avviso. **Mai aggiungerla automaticamente una seconda volta.** Implementazione: `src/app/core/tuscany-tari-2026.ts`, test `tuscany-tari-2026.spec.ts`.
+
 ## Motore spese essenziali 2026: profilo una persona in affitto
 
 `src/app/core/tuscany-essential-2026.ts` integra la parte documentata di **TARI, servizio idrico, elettricità, gas e trasporto urbano** con le stime iniziali esistenti, utilizzando solo pagine e allegati istituzionali accessibili gratuitamente. Nessun database o API a pagamento.
@@ -125,10 +143,10 @@ categorie mancanti, provenienza, anni e limiti in forma verificabile.
 |---|---|---|---|
 | Trasporto pubblico urbano | Tutti e 10 i capoluoghi toscani | Abbonamento Autolinee Toscane mensile 42,20 €, annuale 342,80 € (pari a 28,57 €/mese) oppure nessun abbonamento | Prezzi per area urbana e titolo ordinario, non tutti gli spostamenti |
 | Acqua, fognatura e depurazione | Tutti e 10 i capoluoghi (Nuove Acque Arezzo; Publiacqua Firenze/Pistoia/Prato; Fiora Grosseto/Siena; ASA Livorno; GEAL Lucca; GAIA Massa; Acque Pisa) | Scaglioni 2026 + quota fissa per **1 residente** e consumo annuo scelto | Non include IVA, conguagli, eventuali componenti aggiuntive o fatture condominiali |
-| TARI 2026 | **Solo Arezzo** con tariffe complete verificate | Quota comunale fissa 1,12107 €/m²/anno × superficie imponibile + quota variabile 138,77659 €/anno per 1 occupante | **Quota base, NON avviso TARI completo**: esclusi TEFA, componenti perequative, bonus, riduzioni, conguagli |
+| TARI 2026 | **Arezzo, Livorno, Pisa e Pistoia** con quote base documentate | Tariffa fissa €/m² + quota variabile per 1 occupante, per ogni comune da allegato ufficiale 2026 | **Quota base, NON avviso TARI completo**: esclusi TEFA, componenti perequative, bonus, riduzioni, conguagli |
 | Elettricità | Indicatore **nazionale**, non comunale | Riferimento ARERA per il **cliente vulnerabile** tipo in Maggior Tutela, 2.000 kWh/anno e 3 kW: **665,38 €/anno** nel periodo 01/01/2026–31/12/2026 | Non è un'offerta del mercato libero né una stima della tua bolletta reale |
 | Gas / riscaldamento | Nessun costo finale locale verificato | Spesa di scenario modificabile, inizialmente 50 €/mese; ARERA pubblica **solo materia prima** ottobre 2026 a 0,945436 €/Smc | La componente materia prima non si può utilizzare come bolletta completa; non è inserita automaticamente in luogo dell'ipotesi |
-| Altri 9 capoluoghi senza TARI verificata; acqua ora verificata per tutti e dieci | **Non disponibili** | Valore mancante e fonti in revisione | Mai stimate copiando valori da un altro comune |
+| Altri 6 capoluoghi senza TARI/TARIC calcolabile; acqua disponibile per tutti e 10 | **Non disponibili** | Senza allegato ufficiale verificato, il costo rimane nullo e modificabile manualmente; **Lucca usa TARIC puntuale**, non la TARI standard | Mai stimare copiando valori da un altro comune |
 
 **Fonti ufficiali aggiunte per i sei capoluoghi prima scoperti:**
 - **Grosseto e Siena**: Acquedotto del Fiora, tariffario 2026 per 1 residente, con 3 fasce, quota fissa e servizi separati: https://www.fiora.it/wp-content/uploads/2026/01/AdF_tariffe_2026.pdf
@@ -155,7 +173,7 @@ categorie mancanti, provenienza, anni e limiti in forma verificabile.
 
 - Per **una persona residente**, imposta superficie dell'immobile, superficie imponibile TARI (può differire), consumo idrico, spesa gas ipotetica, tipo di abbonamento. Tutte le tariffe hanno fonte e periodo visualizzabili.
 - La voce **Utenze** propone inizialmente un **totale di scenario**: riferimento ARERA 2026 cliente vulnerabile + ipotesi gas + acqua calcolata dai tariffari per tutti i 10 capoluoghi verificati (altrove **15 € puramente ipotetici**). È sempre etichettata come `mixed` e con **attendibilità bassa**, anche quando la componente acqua è supportata.
-- La TARI base Arezzo è mostrata in €/anno e €/mese ma **non** viene inclusa inizialmente nel budget. L'utente può selezionare *Aggiungi TARI alle altre spese* oppure inserire un proprio importo annuo per altri comuni. Il modello somma la quota nella vista dei risultati **una volta sola**, lasciando invariato il campo «Altre spese» che rappresenta il budget senza TARI.
+- La TARI comunale base dei quattro capoluoghi verificati è mostrata in €/anno e €/mese ma **non** viene inclusa inizialmente nel budget. L'utente può selezionare *Aggiungi TARI alle altre spese* oppure inserire un proprio importo annuo per altri comuni. Il modello somma la quota nella vista dei risultati **una volta sola**, lasciando invariato il campo «Altre spese» che rappresenta il budget senza TARI.
 - Il totale automatico senza TARI **non è un costo completo**; la vista avvisa esplicitamente se TARI è inclusa per una sola città. Non sostituire un importo non disponibile con 0 (salvo scelta intenzionale dell'utente).
 - I dati individuali restano sul browser, senza backend e senza condivisione da URL.
 - Test: `src/app/core/tuscany-essential-2026.spec.ts`, `src/app/core/automatic-city-compare.spec.ts`.

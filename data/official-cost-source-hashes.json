@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "sourceCount": 7,
+  "sourceCount": 10,
   "sources": [
     {
       "id": "arera-electric-reference-2026",
@@ -47,6 +47,42 @@
       "published": "8 ottobre 2026",
       "sha256": "df03d35043a60765d34d772ece39e570261c5894a3d7902ccd89de73937b5f2f",
       "indexDigest": null,
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "id": "livorno-tari-2026",
+      "topic": "TARI Livorno · 1 residente, quota comunale base",
+      "url": "https://cloud-ita.municipiumapp.it/s3/3612/allegati/servizi/tributi/tari/delibere/unicopefdelibera2026_b4c67c0667cbc3b3_p7m_qrcode.pdf",
+      "year": "2026",
+      "kind": "pdf",
+      "published": "30 luglio 2026",
+      "sha256": "242a876791c74fbdde5f65e9d4beecbc140706a2630721745e0de91daff1c7af",
+      "indexDigest": "ea61275204f7cdc19be0499d936cd722f480dab2f3d19f4ae03b34094ac39f4e",
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "id": "pisa-tari-2026",
+      "topic": "TARI Pisa · 1 componente, quota fissa e variabile",
+      "url": "https://www.sepi-pisa.it/en-us/download/utenze-domestiche-2026-5221-89-20046-d92cb77953270cfa58e91142933256d4",
+      "year": "2026",
+      "kind": "pdf",
+      "published": "tariffe 2026",
+      "sha256": "fde033694ef15f046eff721d04e384cf7df07501d4a60a976da6d231711162b8",
+      "indexDigest": null,
+      "referenceTokensPresent": true,
+      "missingReferenceTokens": []
+    },
+    {
+      "id": "pistoia-tari-2026",
+      "topic": "TARI Pistoia · quota base 1 residente, senza riduzione 12%",
+      "url": "https://www.comune.pistoia.it/s3/5285/allegati/tributi/tariffe-tari/tariffe-tari-2026.pdf",
+      "year": "2026",
+      "kind": "pdf",
+      "published": "tariffe 2026",
+      "sha256": "b237e029ac38fa623eb8e726c2eead757abfcfb77463c475ae5e87cd2a849d4f",
+      "indexDigest": "79b329f43da05efad4bcacde6c9b6e54763fa8a8b8175dddbe091f1e853c59cf",
       "referenceTokensPresent": true,
       "missingReferenceTokens": []
     },

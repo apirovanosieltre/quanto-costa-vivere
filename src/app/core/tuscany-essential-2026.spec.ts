@@ -24,18 +24,26 @@ describe('2026: costi essenziali 1 persona nei 10 capoluoghi toscani',()=>{
     expect(tuscanyTransit2026('F205','monthly').monthlyEUR).toBeNull();
     expect(tuscanyTransit2026('F839','annual').monthlyEUR).toBeNull();
   });
-  it('calcola la TARI BASE Arezzo 2026 per 1 occupante e non la copia ad altri comuni',()=>{
-    const r=tariBaseMonthly2026ForCity('A390',55);
-    expect(r.annualEUR).toBe(200.44);
-    expect(r.monthlyEUR).toBe(16.70);
-    expect(r.classification).toBe('local-tariff');
-    expect(r.note).toMatch(/NON include TEFA/);
-    expect(r.sourceUrl).toBe(TUSCANY_ESSENTIAL_SOURCES.arezzoTari);
+  it('calcola la TARI COMUNALE BASE 2026 solo per i quattro comuni documentati',()=>{
+    for(const [code,annual,monthly,source] of [
+      ['A390',200.44,16.70,'comune.arezzo.it'],
+      ['E625',158.47,13.21,'municipiumapp.it'],
+      ['G702',215.85,17.99,'sepi-pisa.it'],
+      ['G713',171.05,14.25,'comune.pistoia.it']
+    ] as const){
+      const value=tariBaseMonthly2026ForCity(code,55);
+      expect(value.annualEUR).toBe(annual);
+      expect(value.monthlyEUR).toBe(monthly);
+      expect(value.classification).toBe('local-tariff');
+      expect(value.note).toContain('Esclusi TEFA');
+      expect(value.sourceUrl).toContain(source);
+    }
     for(const {code} of TUSCANY_CAPITAL_RENTS_2024){
-      if(code!=='A390'){
+      if(!['A390','E625','G702','G713'].includes(code)){
         expect(tariBaseMonthly2026ForCity(code,55).monthlyEUR).toBeNull();
       }
     }
+    expect(tariBaseMonthly2026ForCity('E715',55).note).toContain('TARIC');
     expect(()=>tariBaseMonthly2026ForCity('A390',0)).toThrow();
     expect(()=>tariBaseMonthly2026ForCity('A390',301)).toThrow();
   });
