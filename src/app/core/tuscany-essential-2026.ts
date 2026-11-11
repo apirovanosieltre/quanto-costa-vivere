@@ -185,7 +185,7 @@ export function tariBaseMonthly2026ForCity(cityCode:string,areaSqm:number,luccaE
       title:'TARIC Lucca, scenario 1 residente',
       geography:'Lucca · domestica un componente · bidone 25 litri',
       sourceUrl:t.sourceUrl,
-      note:`Tariffa corrispettiva e non TARI ordinaria: ${areaSqm} m² × ${t.fixedEURPerSqm.toLocaleString('it-IT')} €/m²/anno + ${t.variableStandardEURPerYear.toLocaleString('it-IT')} €/anno per ${t.standardEmptyings} svuotamenti standard, con correttivo per ${luccaEmptyingsYear} svuotamenti. Riduzione ${t.rebatePerReducedEmptyingEUR.toLocaleString('it-IT')} € per svuotamento sotto lo standard (minimo ${t.minEmptyings}) oppure aumento ${t.surchargePerExtraEmptyingEUR.toLocaleString('it-IT')} € sopra (fino a ${t.maxEmptyings}). Esclusi IVA e oneri ulteriori, bonus, agevolazioni e conguagli. Non è la fattura finale.`
+      note:`TARIC 2026: tariffa corrispettiva e non TARI ordinaria: ${areaSqm} m² × ${t.fixedEURPerSqm.toLocaleString('it-IT')} €/m²/anno + ${t.variableStandardEURPerYear.toLocaleString('it-IT')} €/anno per ${t.standardEmptyings} svuotamenti standard, con correttivo per ${luccaEmptyingsYear} svuotamenti. Riduzione ${t.rebatePerReducedEmptyingEUR.toLocaleString('it-IT')} € per svuotamento sotto lo standard (minimo ${t.minEmptyings}) oppure aumento ${t.surchargePerExtraEmptyingEUR.toLocaleString('it-IT')} € sopra (fino a ${t.maxEmptyings}). Esclusi IVA e oneri ulteriori, bonus, agevolazioni e conguagli. Non è la fattura finale.`
     };
   }
   const rate=tariSingle2026Record(cityCode);
