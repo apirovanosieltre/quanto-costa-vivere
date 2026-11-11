@@ -1,0 +1,91 @@
+name: Official non-water cost sources - weekly audit
+
+on:
+  schedule:
+    - cron: '43 6 * * 2'
+  workflow_dispatch:
+  push:
+    branches: [feature/official-source-monitor-and-comparison-quality]
+    paths:
+      - 'scripts/audit-official-cost-sources.mjs'
+      - '.github/workflows/official-cost-source-audit.yml'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: official-cost-source-audit-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify PDF extractor
+        run: command -v pdftotext || (sudo apt-get -qq update && sudo apt-get -qq install -y poppler-utils)
+      - name: Initialize baselines on development branch only
+        if: github.ref == 'refs/heads/feature/official-source-monitor-and-comparison-quality'
+        run: node scripts/audit-official-cost-sources.mjs --seed
+      - name: Persist reviewed source baseline on development branch
+        if: github.ref == 'refs/heads/feature/official-source-monitor-and-comparison-quality'
+        run: |
+          if [ ! -f data/official-cost-source-hashes.json ]; then
+            echo "::warning::Baseline not fully initialized; unavailable or changed official sources require manual verification."
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/official-cost-source-hashes.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'data(sources): pin checked official source fingerprints'
+          git push origin HEAD:refs/heads/feature/official-source-monitor-and-comparison-quality
+      - name: Audit primary sources without updating published prices
+        if: github.ref == 'refs/heads/main'
+        run: node scripts/audit-official-cost-sources.mjs --check
+      - name: Detect review proposal
+        if: github.ref == 'refs/heads/main'
+        id: proposal
+        run: |
+          if [ -f docs/official-cost-sources-review.md ] && ! git diff --quiet -- data/official-cost-source-hashes.json docs/official-cost-sources-review.md; then
+            echo 'found=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'found=false' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Open one source-review pull request
+        if: github.ref == 'refs/heads/main' && steps.proposal.outputs.found == 'true'
+        id: review
+        continue-on-error: true
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: automation/official-cost-source-review
+          delete-branch: true
+          title: 'Dati costo della vita: revisionare fonti istituzionali modificate'
+          commit-message: 'data(sources): propose reviewed official-source fingerprints'
+          body: |
+            Cambiamenti in affitti, TARI Arezzo, trasporti, ARERA o ISTAT.
+            **Non modificare automaticamente prezzi, anni o formule del comparatore.**
+            Prima di unire, verificare fonte, periodo, tipologia di utenza e
+            contenuti numerici e aggiornare le formule e i test se necessario.
+            Una sola PR viene aggiornata anche se più fonti cambiano.
+          add-paths: |
+            data/official-cost-source-hashes.json
+            docs/official-cost-sources-review.md
+      - name: Single fallback issue if PR creation blocked
+        if: github.ref == 'refs/heads/main' && steps.proposal.outputs.found == 'true' && steps.review.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "::warning::Source review PR creation was blocked by repository policy."
+          existing="$(gh issue list --state open --search 'Revisionare fonti costo della vita' --json number --jq '.[0].number' 2>/dev/null || true)"
+          if [ -z "$existing" ]; then
+            gh issue create --title 'Revisionare fonti costo della vita' \
+              --body 'La workflow di verifica ha rilevato modifiche a fonti istituzionali. Revisionare manualmente i dati prima di aggiornare il comparatore.' || true
+          fi
