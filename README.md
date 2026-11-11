@@ -1,4 +1,4 @@
-# QuantoCostaVivere · v1.4
+# QuantoCostaVivere · v1.5
 
 Portale Angular 22, mobile-first e accessibile, per **confronto del costo della vita tra città, budget domestico, IRPEF 2026, stima RAL e inflazione ufficiale italiana**. Integra una Cloudflare Pages Function per Eurostat e una pipeline **di acquisizione + validazione** degli elenchi MEF.
 
@@ -55,6 +55,65 @@ La pagina principale `/confronta-citta` ora suggerisce automaticamente cinque ma
 - Test automatici `src/app/core/automatic-city-compare.spec.ts` validano valori, fonte, copertura, affitti mancanti, scenario con metrature diverse e messaggi di comparabilità.
 
 **Principio UX:** l'utente comincia da importi suggeriti e decide se correggerli, anziché compilare tutte le categorie. Il sito non spaccia ipotesi nazionali per prezzi realmente osservati in città.
+
+## Aggiornamento fonti e qualità del confronto (v1.5)
+
+**Aggiornamenti automatici sicuri, senza API a pagamento:**
+
+| Fonte | Frequenza automatica | Risultato |
+|---|---|---|
+| Carburanti per provincia (optenergy su MIMIT, licenza CC BY 4.0) | Ogni giorno | Nuovo JSON pubblicato su GitHub solo dopo validazione tecnica e temporale (schema, prezzi, date, province) |
+| Acqua 2026, 7 gestori / 10 capoluoghi toscani | Ogni lunedì | Impronte PDF e pagine ufficiali e presenza delle cifre note; cambiamenti -> una PR di revisione, **non cambiano automaticamente le tariffe** |
+| Affitti storici Toscana, TARI Arezzo, abbonamenti urbani, riferimento luce/gas ARERA, spese famiglie ISTAT | Ogni martedì, 06:43 UTC | Controllo di 7 documenti ufficiali; impronta SHA-256/estratti circostanti i valori già verificati; una sola PR di revisione in caso di cambiamenti |
+| Pubblicazioni per un nuovo anno (2027+) | Ogni gennaio | GitHub issue di revisione annuale, per cercare **nuovi documenti** anche se quelli vecchi non cambiano |
+
+Workflow: `.github/workflows/official-cost-source-audit.yml`; script:
+`scripts/audit-official-cost-sources.mjs`; baseline:
+`data/official-cost-source-hashes.json`.
+
+L'obiettivo non è pubblicare automaticamente un prezzo preso da una pagina modificata: una
+nuova pubblicazione può cambiare **anno, tipologia di contratto, misure, base imponibile,
+unità, componenti incluse e tariffe**. Solo gli aggregati strutturati con controlli
+vincolanti (attualmente i carburanti) vengono pubblicati senza revisione umana.
+Se il bot non ha il permesso di creare una PR, prova a creare una issue unica: il
+funzionamento dipende dalle autorizzazioni GitHub del repository. L'esecuzione del
+monitor non prova che il deploy Cloudflare sia già aggiornato.
+
+**Nuovo pannello "Quanto è completo il confronto?" in `/confronta-citta`:**
+- Per ogni città separa **scenario compilato** (cinque macro-categorie con numeri)
+  da dati territoriali verificati: un importo compilato non equivale a un prezzo osservato.
+- Evidenzia affitti storici (Toscana **2024**, OMI Milano **2025/2**), TARI non
+  inclusa, utenze ARERA per soli vulnerabili, gas ipotetico e alimentari
+  derivati da proxy nazionale.
+- Se l'affitto viene modificato manualmente, non lo considera più osservazione
+  da fonte regionale e non sostiene più che i due importi siano confrontabili.
+- Un confronto dei canoni è descrivibile come **omogeneo solo per le dieci città toscane
+  con contratto e superficie comuni** (e senza override manuale). L'intero budget
+  **non è mai un indice statistico ufficiale** né un confronto fra case equivalenti.
+
+### Cosa manca per un confronto realmente affidabile
+
+1. **TARI completa in tutti i 10 capoluoghi**, usando tariffa fissa/variabile per un
+   occupante, superficie imponibile, TEFA, perequazione, riduzioni, eventuale bonus;
+   ora esiste solo la quota comunale base Arezzo e non è inclusa di default.
+2. **Affitti comparabili e attuali a parità di caratteristiche**: gli indicatori Toscana
+   2024 e Milano OMI 2025/2 non usano la stessa metodologia, e manca il quartiere,
+   lo stato dell'immobile, tipologia e la dimensione reale.
+3. **Bollette domestiche coerenti**: elettricità ARERA 2026 è un riferimento per
+   clienti vulnerabili (non mercato libero), gas è una simulazione; servono consumo kWh,
+   gas Smc, riscaldamento, classe energetica e contratto selezionato.
+4. **Spesa alimentare locale e per una sola persona**: oggi è un proxy ISTAT nazionale
+   calcolato da dati di nuclei familiari eterogenei, non una media della città.
+5. **Voci dimenticate**: condominio, manutenzioni, telefono/internet, sanità,
+   assicurazioni, spese una tantum e impreviste. Sono oggi comprese solo in
+   ipotesi aggregate, senza dettaglio.
+6. **Trasporti realisticamente individuali**: abbonamento urbano esatto non include
+   treni extraurbani, parcheggio, auto e commuting; serve scegliere il tragitto.
+7. **Comuni oltre i capoluoghi toscani**: mancano tariffe comunali e dati immobiliari
+   omogenei. Non usare una tariffa provinciale come se fosse la bolletta del comune.
+
+Non generiamo una percentuale di attendibilità inventata. I controlli mostrano
+categorie mancanti, provenienza, anni e limiti in forma verificabile.
 
 ## Motore spese essenziali 2026: profilo una persona in affitto
 
