@@ -40,13 +40,27 @@ describe('2026: costi essenziali 1 persona nei 10 capoluoghi toscani',()=>{
       expect(value.sourceUrl).toContain(source);
     }
     for(const {code} of TUSCANY_CAPITAL_RENTS_2024){
-      if(!['A390','E625','G702','G713','I726'].includes(code)){
+      if(!['A390','E625','G702','G713','I726','E715'].includes(code)){
         expect(tariBaseMonthly2026ForCity(code,55).monthlyEUR).toBeNull();
       }
     }
+    expect(tariBaseMonthly2026ForCity('E715',55).annualEUR).toBe(121.82);
+    expect(tariBaseMonthly2026ForCity('E715',55).monthlyEUR).toBe(10.15);
     expect(tariBaseMonthly2026ForCity('E715',55).note).toContain('TARIC');
+    expect(tariBaseMonthly2026ForCity('E715',55,6).annualEUR).toBe(113.07);
+    expect(tariBaseMonthly2026ForCity('E715',55,13).annualEUR).toBe(122.27);
+    expect(tariBaseMonthly2026ForCity('E715',55,52).annualEUR).toBe(140.10);
+    expect(tariBaseMonthly2026ForCity('E715',55).note).toContain('IVA');
     expect(()=>tariBaseMonthly2026ForCity('A390',0)).toThrow();
     expect(()=>tariBaseMonthly2026ForCity('A390',301)).toThrow();
+  });
+  it('Lucca TARIC responds to profile emptying changes, without adding tax twice',()=>{
+    const p=estimateEssentialCosts2026('E715',{...DEFAULT_ESSENTIAL_PROFILE,luccaEmptyingsYear:6});
+    const q=estimateEssentialCosts2026('E715',{...DEFAULT_ESSENTIAL_PROFILE,luccaEmptyingsYear:52});
+    expect(p.tari.annualEUR).toBe(113.07);
+    expect(q.tari.annualEUR).toBe(140.10);
+    expect(p.tariIncludedByDefault).toBe(false);
+    expect(p.tari.sourceUrl).toContain('comune.lucca.it');
   });
   it('calcola acqua residenziale 2026 per tutti i 10 capoluoghi con tariffario del gestore corretto',()=>{
     const expected=[
