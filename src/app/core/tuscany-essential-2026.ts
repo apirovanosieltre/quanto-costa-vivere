@@ -6,6 +6,7 @@
 import { tuscanCapitalRentRecord } from './tuscany-capital-rents-2024';
 import { tariSingle2026BaseAnnual,tariSingle2026Record,tariNotAvailableReason,luccaTaric2026Annual,LUCCA_TARIC_2026 } from './tuscany-tari-2026';
 import { type CityBudget } from './city-compare';
+import {estimateHomeEnergy2026,type HomeEnergyInput,ENERGY_MARKET_REFERENCE_2026} from './energy-household-2026';
 
 export type TransitPass = 'monthly'|'annual'|'none';
 export type CostClassification = 'local-tariff'|'national-reference'|'assumption'|'unavailable';
@@ -28,6 +29,8 @@ export interface EssentialProfile {
   /** L'utente puo' correggere la cifra: NON e' un prezzo del gas del comune. */
   gasMonthlyScenarioEUR:number;
   transitPass:TransitPass;
+  /** Opzionale: nuovo scenario consumi per superficie, occupanti e riscaldamento. */
+  energyProfile?:HomeEnergyInput;
 }
 export const DEFAULT_ESSENTIAL_PROFILE:EssentialProfile={
   tariAreaSqm:55,
@@ -265,9 +268,28 @@ export function estimateEssentialCosts2026(code:string,profile:EssentialProfile)
   assert(profile.gasMonthlyScenarioEUR,0,1000,'costo gas ipotizzato');
   if(!['monthly','annual','none'].includes(profile.transitPass))throw new Error('Abbonamento non previsto');
   const coveredCapital=tuscanCapitalRentRecord(code)!==null;
-  const water=waterMonthly2026ForCity(code,profile.waterM3Year);
-  const electricity=electricityReference2026();
-  const gas:EvidenceAmount={
+  const modeled=profile.energyProfile?estimateHomeEnergy2026(profile.energyProfile):null;
+  const residents=profile.energyProfile?.residents??1;
+  const water:EvidenceAmount=residents===1?waterMonthly2026ForCity(code,profile.waterM3Year):{
+    title:'Acqua: scenario per più occupanti',period:'Ipotesi 2026',
+    monthlyEUR:round(15*residents),annualEUR:round(180*residents),
+    classification:'assumption',geography:'Italia, non tariffa del gestore',sourceUrl:null,
+    note:'Tariffe idriche verificate soltanto per 1 residente. Scenario illustrativo di 15 €/mese per persona; non applicare gli scaglioni monocomponente a nuclei diversi.'
+  };
+  const electricity:EvidenceAmount=modeled?{
+    monthlyEUR:modeled.electricityMonthlyEUR,annualEUR:round(modeled.electricityMonthlyEUR*12),
+    classification:'assumption',title:'Elettricità: stima per consumi',
+    geography:'Scenario nazionale, non offerta locale',period:'Osservatorio ottobre 2026',
+    sourceUrl:ENERGY_MARKET_REFERENCE_2026.sourceUrl,
+    note:modeled.electricityKwhYear+' kWh/anno. '+modeled.note
+  }:electricityReference2026();
+  const gas:EvidenceAmount=modeled?{
+    monthlyEUR:modeled.gasMonthlyEUR,annualEUR:round(modeled.gasMonthlyEUR*12),
+    classification:'assumption',title:'Gas: stima per consumi',
+    geography:'Scenario nazionale, non offerta locale',period:'Osservatorio ottobre 2026',
+    sourceUrl:ENERGY_MARKET_REFERENCE_2026.sourceUrl,
+    note:modeled.gasSmcYear+' Smc/anno. '+modeled.note
+  }:{
     title:'Gas e riscaldamento (ipotesi)',
     monthlyEUR:round(profile.gasMonthlyScenarioEUR),annualEUR:round(profile.gasMonthlyScenarioEUR*12),
     classification:'assumption',geography:'Ipotesi editoriale, non prezzo del comune',
@@ -277,13 +299,16 @@ export function estimateEssentialCosts2026(code:string,profile:EssentialProfile)
   const waterPart=water.monthlyEUR??15;
   return {
     cityCode:code,coveredCapital,
-    tari:tariBaseMonthly2026ForCity(code,profile.tariAreaSqm,profile.luccaEmptyingsYear??12),
+    tari:residents===1?tariBaseMonthly2026ForCity(code,profile.tariAreaSqm,profile.luccaEmptyingsYear??12):
+      missing('TARI per più occupanti','2026','Le quote TARI verificate riguardano un solo residente: inserire il dato reale per '+residents+' occupanti. Non moltiplicare la tariffa di una persona.'),
     water,electricity,gas,
     transit:tuscanyTransit2026(code,profile.transitPass),
     utilitiesScenarioMonthly:round(electricity.monthlyEUR!+waterPart+gas.monthlyEUR!),
-    utilitiesAssumptions:water.monthlyEUR===null
-      ?'Riferimento elettrico nazionale per soli vulnerabili + gas ipotetico + acqua IPOTETICA 15 €/mese: nessuna tariffa idrica locale verificata.'
-      :'Riferimento elettrico nazionale per soli vulnerabili + gas ipotetico + costo acqua da scaglioni e consumi ipotizzati del gestore locale. NON è una bolletta reale.',
+    utilitiesAssumptions:modeled
+      ?'Luce e gas da consumi ipotizzati per '+residents+' occupanti, superficie e riscaldamento; prezzi unitari impliciti da campione nazionale di preventivi 2026. Acqua '+(residents===1?'da tariffario per 1 residente':'solo scenario non locale')+'. Non sono offerte o bollette reali.'
+      :water.monthlyEUR===null
+        ?'Riferimento elettrico nazionale per soli vulnerabili + gas ipotetico + acqua IPOTETICA 15 €/mese: nessuna tariffa idrica locale verificata.'
+        :'Riferimento elettrico nazionale per soli vulnerabili + gas ipotetico + costo acqua da scaglioni e consumi ipotizzati del gestore locale. NON è una bolletta reale.',
     tariIncludedByDefault:false
   };
 }
