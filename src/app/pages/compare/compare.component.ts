@@ -252,16 +252,16 @@ const emptyBudget=():CityBudget=>({
             <a [href]="essentialSourceUrls.gasArera" target="_blank" rel="noopener noreferrer">Fonte ARERA, sola componente gas ↗</a>
           </div>
           <div class="compare-essential-line">
-            <strong>TARI 2026: quota comunale base, una persona</strong>
+            <strong>TARI/TARIC 2026: un occupante, quota base</strong>
             @if(detail.tari.monthlyEUR!==null){
               <span>{{money(detail.tari.monthlyEUR!)}} €/mese ({{money(detail.tari.annualEUR!)}} €/anno)</span>
               <p>{{detail.tari.note}}</p>
               <a [href]="detail.tari.sourceUrl" target="_blank" rel="noopener noreferrer">Documento ufficiale TARI ↗</a>
             } @else {
               <span>Tariffa 2026 non verificata</span>
-              <p>Puoi inserire l'importo annuo dell'avviso TARI per questo comune, se lo conosci. Non ereditiamo le tariffe di Arezzo.</p>
+              <p>{{detail.tari.note}} Puoi inserire manualmente l'importo annuo di TARI/TARIC dell'avviso effettivo, se lo conosci.</p>
             }
-            <label class="field-label" [for]="'tari-manual-'+side.key">TARI annua personalizzata (facoltativa, €)</label>
+            <label class="field-label" [for]="'tari-manual-'+side.key">Avviso TARI/TARIC annuo effettivo (facoltativo, €)</label>
             <input class="standalone-input" type="number" inputmode="decimal" min="0" max="10000" step="1"
               [id]="'tari-manual-'+side.key" [ngModel]="tariManual(side.key)"
               (ngModelChange)="setTariManual(side.key,$event)" placeholder="Usa la quota ufficiale o inserisci la tua">
@@ -273,7 +273,7 @@ const emptyBudget=():CityBudget=>({
             @if(tariIncluded(side.key)){
               <p class="compare-tiny">Inclusa una sola volta nel totale. La cifra nel campo «Altre spese» resta quella senza TARI.</p>
             } @else {
-              <p class="compare-tiny">TARI non inclusa nel totale automatico. La quota ufficiale di Arezzo esclude TEFA, componenti perequative, sconti e bonus.</p>
+              <p class="compare-tiny">TARI non inclusa nel totale automatico. Le quote base verificate di Arezzo, Livorno, Pisa e Pistoia escludono TEFA, perequazione, riduzioni e bonus; per Lucca è necessaria una simulazione TARIC distinta.</p>
             }
           </div>
         } @else {
