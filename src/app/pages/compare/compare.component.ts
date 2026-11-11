@@ -273,7 +273,7 @@ const emptyBudget=():CityBudget=>({
             @if(tariIncluded(side.key)){
               <p class="compare-tiny">Inclusa una sola volta nel totale. La cifra nel campo «Altre spese» resta quella senza TARI.</p>
             } @else {
-              <p class="compare-tiny">TARI non inclusa nel totale automatico. Le quote base verificate di Arezzo, Livorno, Pisa e Pistoia escludono TEFA, perequazione, riduzioni e bonus; per Lucca è necessaria una simulazione TARIC distinta.</p>
+              <p class="compare-tiny">TARI non inclusa nel totale automatico. Le quote base verificate di Arezzo, Livorno, Pisa, Pistoia e Siena escludono TEFA, perequazione, riduzioni e bonus; per Lucca è necessaria una simulazione TARIC distinta.</p>
             }
           </div>
         } @else {
