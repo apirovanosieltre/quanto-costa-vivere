@@ -32,16 +32,16 @@ export function assessReliability(input:ReliabilityInput):ReliabilityAssessment{
   const utilities=input.suggestions.find(s=>s.key==='utilities');
   const risks:string[]=[];
   const manuallyEditedHousing=input.manualEdited?.housing===true;
-  const historicalRent=!manuallyEditedHousing&&!!housing&&(housing.kind==='observed'||housing.kind==='derived');
+  const historicalRent=!manuallyEditedHousing&&housing?.kind==='observed'&&housing.date.includes('2024');
   if(manuallyEditedHousing)risks.push('Affitto personalizzato: cifra inserita dall’utente, non verificata dalle fonti del sito.');
   if(!manuallyEditedHousing&&housing?.kind==='observed')risks.push('Affitto: contratti storici 2024, non annunci o nuove offerte nel 2026.');
-  if(!manuallyEditedHousing&&housing?.kind==='derived')risks.push('Affitto: indicatore OMI aggregato, non canone di una casa equivalente.');
+  if(!manuallyEditedHousing&&housing?.kind==='derived')risks.push(housing.date.includes('2026')?'Affitto: prezzo richiesto in annunci ottobre 2026, non canone stipulato o immobile equivalente.':'Affitto: indicatore OMI aggregato, non canone di una casa equivalente.');
   if(!housing||housing.amount===null)risks.push('Affitto: manca un riferimento locale verificato; inserire il costo effettivo.');
   if(!input.tariIncluded)risks.push('TARI: esclusa dal totale; il budget non include tutte le spese per abitare.');
   else if(!input.tariVerifiedOrPersonal)risks.push('TARI: valore non verificato per questo comune.');
   const hasUntestedLocalUtilityAssumptions=utilities?.kind==='mixed'||utilities?.kind==='scenario'||!utilities;
   if(hasUntestedLocalUtilityAssumptions)
-    risks.push('Utenze: la stima combina il riferimento ARERA per vulnerabili con ipotesi sul gas; non equivale a una bolletta reale.');
+    risks.push('Utenze: la stima combina un riferimento nazionale con ipotesi su consumi, gas e talvolta acqua; non equivale a una bolletta reale.');
   const nationalOrAssumedCount=input.suggestions.filter(s=>
     ['scenario','proxy','mixed'].includes(s.kind)).length;
   if(nationalOrAssumedCount>0)
@@ -63,6 +63,7 @@ export function assessComparisonReliability(
 ):{canShowScenarioDelta:boolean;comparableHistoricalRent:boolean;warnings:string[]}{
   const a=assessReliability(left),b=assessReliability(right);
   const comparableHistoricalRent=comparableTuscanRentPair(left.cityCode,right.cityCode)&&
+    a.historicalRent&&b.historicalRent&&
     left.manualEdited?.housing!==true&&right.manualEdited?.housing!==true;
   const warnings:string[]=[];
   if(a.status==='parziale'||b.status==='parziale')
