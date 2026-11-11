@@ -10,7 +10,7 @@ on:
       - 'public/data/province-fuel-latest.json'
   push:
     branches:
-      - feature/open-territorial-prices
+      - main
     paths:
       - 'scripts/fuel-province.mjs'
       - 'scripts/fuel-province.test.mjs'

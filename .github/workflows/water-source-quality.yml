@@ -5,7 +5,7 @@ on:
     - cron: '17 5 * * 1'
   workflow_dispatch:
   push:
-    branches: [feature/water-all-tuscany-auto-review]
+    branches: [main]
     paths:
       - 'scripts/audit-tuscany-water-sources.mjs'
       - '.github/workflows/water-source-quality.yml'
@@ -30,22 +30,6 @@ jobs:
           node-version: '24'
       - name: Verify PDF text extraction is available
         run: command -v pdftotext || (sudo apt-get -qq update && sudo apt-get -qq install -y poppler-utils)
-      - name: Seed reviewed official-document fingerprints on staging branch
-        if: github.ref == 'refs/heads/feature/water-all-tuscany-auto-review'
-        run: node scripts/audit-tuscany-water-sources.mjs --seed
-      - name: Commit verified source fingerprints on staging branch only
-        if: github.ref == 'refs/heads/feature/water-all-tuscany-auto-review'
-        run: |
-          if [ ! -f data/tuscany-water-source-hashes.json ]; then
-            echo "::warning::Baseline was not initialized; one or more official sources unavailable"
-            exit 0
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/tuscany-water-source-hashes.json
-          if git diff --cached --quiet; then echo 'Source hashes already staged'; exit 0; fi
-          git commit -m 'data(water): pin 2026 source fingerprints from official providers'
-          git push origin HEAD:refs/heads/feature/water-all-tuscany-auto-review
       - name: Re-check all official water price documents (weekly/manual)
         if: github.ref == 'refs/heads/main'
         run: node scripts/audit-tuscany-water-sources.mjs --check
