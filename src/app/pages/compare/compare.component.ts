@@ -18,9 +18,10 @@ import { type MunicipalDataset } from '../../core/municipal-data';
 import {
   suggestSinglePersonCosts, cityDataCoverage, compareMethodWarning,
   DEFAULT_SINGLE_PERSON_OPTIONS,
-  type CategorySuggestion
+  type CategorySuggestion,type RentBaseline
 } from '../../core/automatic-city-compare';
 import {type RentContract} from '../../core/automatic-cost-florence';
+import {type HeatingChoice} from '../../core/energy-household-2026';
 import {
   assessReliability,assessComparisonReliability,
   type ReliabilityInput
@@ -80,6 +81,29 @@ const emptyBudget=():CityBudget=>({
           [ngModel]="rentAreaSqm()" (ngModelChange)="setRentArea($event)">
       </div>
       <div>
+        <label class="field-label" for="auto-residents">Persone che vivono in casa</label>
+        <select class="standalone-input" id="auto-residents" [ngModel]="energyResidents()" (ngModelChange)="setEnergyResidents($event)">
+          <option [ngValue]="1">1</option><option [ngValue]="2">2</option><option [ngValue]="3">3</option>
+          <option [ngValue]="4">4</option><option [ngValue]="5">5</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="auto-heating">Riscaldamento principale</label>
+        <select class="standalone-input" id="auto-heating" [ngModel]="heatingChoice()" (ngModelChange)="setHeatingChoice($event)">
+          <option value="gas">Autonomo a gas</option>
+          <option value="electric">Elettrico / pompa di calore</option>
+          <option value="none">Altro / centralizzato (riscaldamento escluso dalle utenze)</option>
+        </select>
+      </div>
+      <div>
+        <label class="field-label" for="auto-rent-baseline">Riferimento per l'affitto</label>
+        <select class="standalone-input" id="auto-rent-baseline" [ngModel]="rentBaseline()" (ngModelChange)="setRentBaseline($event)">
+          <option value="contracts2024">Contratti effettivi 2024 · Regione Toscana</option>
+          <option value="asking2026">Annunci ottobre 2026 · prezzi richiesti idealista</option>
+        </select>
+        <p class="compare-tiny">Prezzi richiesti negli annunci e canoni effettivamente stipulati misurano cose diverse. Il dato 2026 è uno snapshot editoriale, non un monitor in tempo reale.</p>
+      </div>
+      <div>
         <label class="field-label" for="auto-florence-contract">Contratto (capoluoghi toscani)</label>
         <select class="standalone-input" id="auto-florence-contract"
           [ngModel]="florenceContract()" (ngModelChange)="setFlorenceContract($event)">
@@ -114,12 +138,7 @@ const emptyBudget=():CityBudget=>({
           <option value="none">Non acquisto un abbonamento</option>
         </select>
       </div>
-      <div>
-        <label class="field-label" for="auto-gas">Gas e riscaldamento (ipotesi €/mese)</label>
-        <input class="standalone-input" id="auto-gas" type="number" inputmode="decimal"
-          min="0" max="1000" step="5" [ngModel]="gasMonthlyScenario()"
-          (ngModelChange)="setGasScenario($event)">
-      </div>
+      <p class="compare-tiny">Luce e gas: la spesa iniziale si aggiorna con numero di persone, metratura e tipo di riscaldamento. I consumi sono ipotesi editoriali, i rapporti di prezzo derivano da un campione italiano 2026. Puoi sovrascrivere il costo reale modificando «Utenze» nel budget.</p>
       <div>
         <label class="field-label" for="auto-common-income">Stesso netto mensile nelle due città (facoltativo)</label>
         <div class="compare-auto-inline">
@@ -155,11 +174,11 @@ const emptyBudget=():CityBudget=>({
       </article>
     }
   </div>
-  <p class="compare-tiny"><strong>Comparabilità:</strong> {{comparisonReliability().comparableHistoricalRent?'gli affitti storici suggeriti utilizzano la stessa fonte regionale e tipologia.':'le cifre dell’affitto non sono garantite comparabili per fonte, periodo o modifiche manuali.'}} Il totale è sempre una simulazione, non un indice ufficiale dei prezzi urbani.</p>
+  <p class="compare-tiny"><strong>Comparabilità:</strong> {{rentBaseline()==='asking2026'?'gli affitti richiesti nel 2026 non sono i contratti stipulati e variano secondo gli immobili presenti negli annunci.':comparisonReliability().comparableHistoricalRent?'gli affitti storici suggeriti utilizzano la stessa fonte regionale e tipologia.':'le cifre dell’affitto non sono garantite comparabili per fonte, periodo o modifiche manuali.'}} Il totale è sempre una simulazione, non un indice ufficiale dei prezzi urbani.</p>
   @if(tariIncluded('left')!==tariIncluded('right')){
     <p class="compare-alert" role="note">TARI inclusa soltanto in una delle due città: il totale confronta voci diverse.</p>
   }
-  <p class="compare-tiny">Ultimi periodi noti: contratti affitto Toscana 2024, benchmark OMI Milano 2025/2, utenze e trasporti 2026, ISTAT spese 2025. Il monitoraggio delle fonti non equivale a un aggiornamento automatico dei valori.</p>
+  <p class="compare-tiny">Dati: contratti Toscana 2024 oppure annunci richiesti ottobre 2026, OMI Milano 2025/2, energia e trasporti 2026, ISTAT spese 2025. I dati non si aggiornano automaticamente solo perché le fonti sono monitorate.</p>
 </section>
 
 <section class="container compare-glance" aria-labelledby="glance-title">
@@ -196,7 +215,7 @@ const emptyBudget=():CityBudget=>({
   @if(tariIncluded('left')!==tariIncluded('right')){
     <p class="compare-alert" role="note">Attenzione: la TARI è inclusa nel budget di una sola città. La differenza delle spese non comprende le stesse voci.</p>
   }
-  @if(comparableRents()){
+  @if(rentBaseline()==='contracts2024'&&comparableRents()){
     <p class="compare-glance-delta" role="note">
       <strong>Affitti confrontabili come dati storici (2024):</strong>
       @if(rentDelta()!==null) {
@@ -222,7 +241,7 @@ const emptyBudget=():CityBudget=>({
       <h2 id="essentials-title">Cosa è calcolato, cosa è soltanto ipotizzato</h2>
     </div>
   </div>
-  <p class="compare-tiny">Profilo domestico residente di una persona. L'affitto è separato dalla superficie imponibile TARI; le tariffe idriche dipendono dal gestore, e la luce di riferimento ARERA riguarda soltanto il cliente tipo vulnerabile.</p>
+  <p class="compare-tiny">Luce e gas: consumi stimati per persone, superficie e riscaldamento, con valori nazionali non contrattuali. Le tariffe di acqua e TARI pubblicate nel sito valgono per UN residente: con più persone acqua diventa una semplice ipotesi e TARI va inserita dall’avviso reale.</p>
   <div class="compare-layout">
     @for(side of sides;track side.key){
       <article class="compare-essentials-card">
@@ -244,20 +263,20 @@ const emptyBudget=():CityBudget=>({
               <a [href]="detail.water.sourceUrl" target="_blank" rel="noopener noreferrer">Consulta tariffe del gestore ↗</a>
             } @else {
               <span>Dato locale non disponibile</span>
-              <p>La voce utenze contiene 15 € come mera ipotesi d'acqua, da correggere.</p>
+              <p>La voce utenze contiene una mera ipotesi d'acqua, da correggere.</p>
             }
           </div>
           <div class="compare-essential-line">
-            <strong>Elettricità: riferimento nazionale ARERA</strong>
+            <strong>Elettricità: stima di consumo nazionale</strong>
             <span>{{money(detail.electricity.monthlyEUR!)}} €/mese</span>
             <p>{{detail.electricity.note}}</p>
-            <a [href]="detail.electricity.sourceUrl" target="_blank" rel="noopener noreferrer">Fonte ARERA, riferimento 2026 ↗</a>
+            <a [href]="detail.electricity.sourceUrl" target="_blank" rel="noopener noreferrer">Fonte per la spesa indicativa ↗</a>
           </div>
           <div class="compare-essential-line">
-            <strong>Gas e riscaldamento: ipotesi</strong>
+            <strong>Gas e riscaldamento: scenario nazionale</strong>
             <span>{{money(detail.gas.monthlyEUR!)}} €/mese</span>
-            <p>Non è un prezzo locale verificato. ARERA pubblica per ottobre 2026 la sola materia prima a {{gasRawReference}} €/Smc, che NON rappresenta l'intera bolletta.</p>
-            <a [href]="essentialSourceUrls.gasArera" target="_blank" rel="noopener noreferrer">Fonte ARERA, sola componente gas ↗</a>
+            <p>{{detail.gas.note}}</p>
+            @if(detail.gas.sourceUrl){<a [href]="detail.gas.sourceUrl" target="_blank" rel="noopener noreferrer">Fonte di riferimento ↗</a>}
           </div>
           <div class="compare-essential-line">
             <strong>TARI/TARIC 2026: un occupante, quota base</strong>
@@ -821,6 +840,9 @@ export class CompareComponent implements OnInit {
   readonly tariAreaSqm=signal(DEFAULT_ESSENTIAL_PROFILE.tariAreaSqm);
   readonly luccaEmptyingsYear=signal(DEFAULT_ESSENTIAL_PROFILE.luccaEmptyingsYear??12);
   readonly gasMonthlyScenario=signal(DEFAULT_ESSENTIAL_PROFILE.gasMonthlyScenarioEUR);
+  readonly energyResidents=signal(1);
+  readonly heatingChoice=signal<HeatingChoice>('gas');
+  readonly rentBaseline=signal<RentBaseline>('contracts2024');
   readonly transitPass=signal<TransitPass>(DEFAULT_ESSENTIAL_PROFILE.transitPass);
   readonly tariManualLeft=signal<number|null>(null);
   readonly tariManualRight=signal<number|null>(null);
@@ -877,7 +899,7 @@ export class CompareComponent implements OnInit {
   readonly rightEssentials=computed(()=>this.makeEssentials('right'));
   readonly leftSuggestions=computed(()=>this.makeSuggestions('left'));
   readonly rightSuggestions=computed(()=>this.makeSuggestions('right'));
-  readonly comparisonWarning=computed(()=>compareMethodWarning(this.leftCode(),this.rightCode()));
+  readonly comparisonWarning=computed(()=>compareMethodWarning(this.leftCode(),this.rightCode(),this.rentBaseline()));
   readonly reliabilityLeft=computed(()=>assessReliability(this.reliabilityInput('left')));
   readonly reliabilityRight=computed(()=>assessReliability(this.reliabilityInput('right')));
   readonly comparisonReliability=computed(()=>assessComparisonReliability(
@@ -1034,8 +1056,9 @@ export class CompareComponent implements OnInit {
     if(!tuscanCapitalRentRecord(code))return null;
     return estimateEssentialCosts2026(code,{
       tariAreaSqm:this.tariAreaSqm(),luccaEmptyingsYear:this.luccaEmptyingsYear(),
-      waterM3Year:this.autoWaterM3(),
-      gasMonthlyScenarioEUR:this.gasMonthlyScenario(),transitPass:this.transitPass()
+      waterM3Year:this.autoWaterM3()*this.energyResidents(),
+      gasMonthlyScenarioEUR:this.gasMonthlyScenario(),transitPass:this.transitPass(),
+      energyProfile:{areaSqm:this.rentAreaSqm()??55,residents:this.energyResidents(),heating:this.heatingChoice()}
     });
   }
   essentialsFor(side:Side){return side==='left'?this.leftEssentials():this.rightEssentials();}
@@ -1096,6 +1119,21 @@ export class CompareComponent implements OnInit {
     this.gasMonthlyScenario.set(n);this.autoFeedback.set('');
     this.refreshBothSuggestions();
   }
+  setEnergyResidents(value:unknown):void{
+    const n=Number(value);
+    if(!Number.isInteger(n)||n<1||n>5)return;
+    this.energyResidents.set(n);
+    if(n!==1){this.tariIncludedLeft.set(false);this.tariIncludedRight.set(false);}
+    this.refreshBothSuggestions();
+  }
+  setHeatingChoice(value:unknown):void{
+    if(value!=='gas'&&value!=='electric'&&value!=='none')return;
+    this.heatingChoice.set(value);this.refreshBothSuggestions();
+  }
+  setRentBaseline(value:unknown):void{
+    if(value!=='contracts2024'&&value!=='asking2026')return;
+    this.rentBaseline.set(value);this.refreshBothSuggestions();
+  }
   setTransitPass(value:unknown):void{
     if(value==='monthly'||value==='annual'||value==='none'){
       this.transitPass.set(value);this.autoFeedback.set('');
@@ -1107,8 +1145,10 @@ export class CompareComponent implements OnInit {
     if(!this.cityByCode().has(code))return [];
     return suggestSinglePersonCosts(code,this.rentalData(),{
       areaSqm:this.rentAreaSqm()??DEFAULT_SINGLE_PERSON_OPTIONS.areaSqm,
-      waterM3PerYear:this.autoWaterM3(),florenceContract:this.florenceContract(),
-      gasMonthlyScenarioEUR:this.gasMonthlyScenario(),transitPass:this.transitPass()
+      waterM3PerYear:this.autoWaterM3()*this.energyResidents(),florenceContract:this.florenceContract(),
+      gasMonthlyScenarioEUR:this.gasMonthlyScenario(),transitPass:this.transitPass(),
+      energyProfile:{areaSqm:this.rentAreaSqm()??55,residents:this.energyResidents(),heating:this.heatingChoice()},
+      rentBaseline:this.rentBaseline()
     });
   }
   suggestionsFor(side:Side):CategorySuggestion[]{
