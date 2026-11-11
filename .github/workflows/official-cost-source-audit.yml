@@ -78,6 +78,24 @@ jobs:
           add-paths: |
             data/official-cost-source-hashes.json
             docs/official-cost-sources-review.md
+      - name: Create one annual source-coverage rollover review
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          current_year="$(date -u +%Y)"
+          current_month="$(date -u +%m)"
+          if [ "$current_year" -le 2026 ] || [ "$current_month" != "01" ]; then
+            exit 0
+          fi
+          title="Revisionare dati costo della vita $current_year"
+          existing="$(gh issue list --state all --limit 100 --search "$title in:title" --json title --jq '.[] | select(.title == "'$title'") | .title' 2>/dev/null | head -1 || true)"
+          if [ -n "$existing" ]; then
+            echo "Annual review task already exists."
+            exit 0
+          fi
+          gh issue create --title "$title" \
+            --body "Controllare i nuovi tariffari TARI, acqua, trasporti, luce e gas, le statistiche ISTAT e i nuovi rapporti regionali. I report storici 2024/2025 e i riferimenti 2026 non si aggiornano da soli: prima di presentare prezzi nuovi, verificare nuove pubblicazioni, decorrenza, popolazione osservata, licenze e test. Aggiornare la UI con l'anno corretto e marcare i dati vecchi come storici." || true
       - name: Single fallback issue if PR creation blocked
         if: github.ref == 'refs/heads/main' && steps.proposal.outputs.found == 'true' && steps.review.outcome == 'failure'
         env:
