@@ -17,3 +17,4 @@ jobs:
       - run: npm test
       - run: npm run test:mef
       - run: node --test scripts/audits-config.test.mjs
+      - run: node --test scripts/icons-integrity.test.mjs
