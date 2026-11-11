@@ -81,7 +81,7 @@ const emptyBudget=():CityBudget=>({
           [ngModel]="rentAreaSqm()" (ngModelChange)="setRentArea($event)">
       </div>
       <div>
-        <label class="field-label" for="auto-residents">Persone che vivono in casa</label>
+        <label class="field-label" for="auto-residents">Occupanti (solo per le utenze)</label>
         <select class="standalone-input" id="auto-residents" [ngModel]="energyResidents()" (ngModelChange)="setEnergyResidents($event)">
           <option [ngValue]="1">1</option><option [ngValue]="2">2</option><option [ngValue]="3">3</option>
           <option [ngValue]="4">4</option><option [ngValue]="5">5</option>
@@ -113,7 +113,7 @@ const emptyBudget=():CityBudget=>({
         </select>
       </div>
       <div>
-        <label class="field-label" for="auto-water">Consumo acqua stimato (m³/anno, 1 persona)</label>
+        <label class="field-label" for="auto-water">Consumo acqua (m³/anno, tariffario solo 1 residente)</label>
         <input class="standalone-input" id="auto-water" type="number" min="0" max="500" step="5"
           [ngModel]="autoWaterM3()" (ngModelChange)="setAutoWater($event)">
       </div>
@@ -138,7 +138,7 @@ const emptyBudget=():CityBudget=>({
           <option value="none">Non acquisto un abbonamento</option>
         </select>
       </div>
-      <p class="compare-tiny">Luce e gas: la spesa iniziale si aggiorna con numero di persone, metratura e tipo di riscaldamento. I consumi sono ipotesi editoriali, i rapporti di prezzo derivano da un campione italiano 2026. Puoi sovrascrivere il costo reale modificando «Utenze» nel budget.</p>
+      <p class="compare-tiny">Luce e gas: la spesa iniziale si aggiorna con numero di persone, metratura e tipo di riscaldamento. I consumi sono ipotesi editoriali, i rapporti di prezzo derivano da un campione italiano 2026. Puoi sovrascrivere il costo reale modificando «Utenze» nel budget. <strong>Solo l'energia e le utenze variano con gli occupanti: affitto e alimentari mantengono il profilo persona sola.</strong></p>
       <div>
         <label class="field-label" for="auto-common-income">Stesso netto mensile nelle due città (facoltativo)</label>
         <div class="compare-auto-inline">
@@ -1056,7 +1056,7 @@ export class CompareComponent implements OnInit {
     if(!tuscanCapitalRentRecord(code))return null;
     return estimateEssentialCosts2026(code,{
       tariAreaSqm:this.tariAreaSqm(),luccaEmptyingsYear:this.luccaEmptyingsYear(),
-      waterM3Year:this.autoWaterM3()*this.energyResidents(),
+      waterM3Year:this.autoWaterM3(),
       gasMonthlyScenarioEUR:this.gasMonthlyScenario(),transitPass:this.transitPass(),
       energyProfile:{areaSqm:this.rentAreaSqm()??55,residents:this.energyResidents(),heating:this.heatingChoice()}
     });
@@ -1145,7 +1145,7 @@ export class CompareComponent implements OnInit {
     if(!this.cityByCode().has(code))return [];
     return suggestSinglePersonCosts(code,this.rentalData(),{
       areaSqm:this.rentAreaSqm()??DEFAULT_SINGLE_PERSON_OPTIONS.areaSqm,
-      waterM3PerYear:this.autoWaterM3()*this.energyResidents(),florenceContract:this.florenceContract(),
+      waterM3PerYear:this.autoWaterM3(),florenceContract:this.florenceContract(),
       gasMonthlyScenarioEUR:this.gasMonthlyScenario(),transitPass:this.transitPass(),
       energyProfile:{areaSqm:this.rentAreaSqm()??55,residents:this.energyResidents(),heating:this.heatingChoice()},
       rentBaseline:this.rentBaseline()
