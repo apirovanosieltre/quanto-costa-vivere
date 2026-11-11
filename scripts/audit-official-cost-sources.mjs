@@ -1,6 +1,6 @@
 /**
  * Audit source material for costs which cannot be safely updated automatically:
- * Tuscany historical rent, Arezzo municipal TARI, Tuscany urban passes, ARERA
+ * Tuscany historical rent, municipal TARI for four Tuscan capitals, urban passes, ARERA
  * electricity/gas reference, national ISTAT consumer spending.
  *
  * The weekly job creates ONE REVIEW PR, never edits the numerical models.
@@ -32,6 +32,20 @@ export const OFFICIAL_COST_SOURCES=[
     url:'https://www.comune.arezzo.it/sites/default/files/2026-08/Allegato%20A%20tariffe%20utenze%20domestiche.pdf',
     indexUrl:'https://www.comune.arezzo.it/tari-tassa-sui-rifiuti-2026',
     requiredTokens:['1,12107','138,77659']},
+  {id:'livorno-tari-2026',topic:'TARI Livorno · 1 residente, quota comunale base',
+    kind:'pdf',year:'2026',sourceDate:'30 luglio 2026',
+    url:'https://cloud-ita.municipiumapp.it/s3/3612/allegati/servizi/tributi/tari/delibere/unicopefdelibera2026_b4c67c0667cbc3b3_p7m_qrcode.pdf',
+    indexUrl:'https://comune.livorno.it/it/documenti_pubblici/delibere-tari',
+    requiredTokens:['1,12','96,87']},
+  {id:'pisa-tari-2026',topic:'TARI Pisa · 1 componente, quota fissa e variabile',
+    kind:'pdf',year:'2026',sourceDate:'tariffe 2026',
+    url:'https://www.sepi-pisa.it/en-us/download/utenze-domestiche-2026-5221-89-20046-d92cb77953270cfa58e91142933256d4',
+    requiredTokens:['1,2302','148,1854']},
+  {id:'pistoia-tari-2026',topic:'TARI Pistoia · quota base 1 residente, senza riduzione 12%',
+    kind:'pdf',year:'2026',sourceDate:'tariffe 2026',
+    url:'https://www.comune.pistoia.it/s3/5285/allegati/tributi/tariffe-tari/tariffe-tari-2026.pdf',
+    indexUrl:'https://www.comune.pistoia.it/it/documenti_pubblici/tariffe-tari',
+    requiredTokens:['1,03','114,40']},
   {id:'tuscany-bus-month',topic:'Autolinee Toscane · abbonamento mensile',
     kind:'html',year:'2026',sourceDate:'controllo novembre 2026',
     url:'https://www.at-bus.it/it/ticket/abbonamenti-urbani/abbonamento-urbano-capoluogo-mensile',
