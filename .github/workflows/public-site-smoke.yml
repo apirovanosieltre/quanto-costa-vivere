@@ -19,3 +19,42 @@ jobs:
           node-version: '24'
       - name: Probe public domain, endpoints and icon binaries
         run: node scripts/public-site-smoke.mjs
+      - name: Check Angular rendering in a headless browser
+        shell: bash
+        run: |
+          set -euo pipefail
+          if command -v google-chrome >/dev/null; then
+            BROWSER=google-chrome
+          elif command -v chromium >/dev/null; then
+            BROWSER=chromium
+          else
+            echo '::notice::Chrome/Chromium not installed on runner; browser test skipped.'
+            exit 0
+          fi
+          echo "Using $BROWSER $($BROWSER --version)"
+          for path in / /confronta-citta; do
+            html="$(mktemp)"
+            timeout 55 "$BROWSER" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage \
+              --disable-background-networking --virtual-time-budget=6500 \
+              --dump-dom "https://costovita.cicioweb.app$path" \
+              > "$html" 2>/dev/null || true
+            if grep -Fq 'Cosa puoi fare su questo sito?' "$html"; then
+              echo "PASS $path Angular guide rendered in Chrome"
+            else
+              echo "::warning::$path: Angular guide not confirmed in Chrome"
+            fi
+            if [ "$path" = /confronta-citta ]; then
+              if grep -Fq 'un budget già pronto.' "$html"; then
+                echo 'PASS /confronta-citta component rendered'
+              else
+                echo '::warning::Comparator Angular page not confirmed'
+              fi
+            else
+              if grep -Fq 'Quanto ti resta' "$html"; then
+                echo 'PASS / budget component rendered'
+              else
+                echo '::warning::Home budget component not confirmed'
+              fi
+            fi
+            rm -f "$html"
+          done
