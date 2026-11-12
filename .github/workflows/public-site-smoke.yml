@@ -1,0 +1,21 @@
+name: Public site HTTP smoke audit
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/public-site-smoke.mjs'
+      - '.github/workflows/public-site-smoke.yml'
+permissions:
+  contents: read
+jobs:
+  public-http:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Probe public domain, endpoints and icon binaries
+        run: node scripts/public-site-smoke.mjs
