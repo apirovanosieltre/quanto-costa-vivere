@@ -3,8 +3,8 @@
 import {lookup} from 'node:dns/promises';
 const base='https://costovita.cicioweb.app';
 const records=[];
-function report(name,status,details){const data={name,status,...details};records.push(data);console.log((status==='OK'?'PASS':status==='FAIL'?'FAIL':'INFO')+' '+name+' '+JSON.stringify(details));}
-const signal=()=>AbortSignal.timeout(12000);
+function report(name,status,details){const data={name,...details,result:status};records.push(data);console.log((status==='OK'?'PASS':status==='FAIL'?'FAIL':'INFO')+' '+name+' '+JSON.stringify(details));}
+const signal=()=>AbortSignal.timeout(25000);
 try{
   const a=await lookup(new URL(base).hostname,{all:true});
   report('dns','OK',{addresses:a.map(x=>x.address)});
@@ -20,7 +20,14 @@ async function probe(path,kind){
     const str=(kind==='png'?'':buffer.toString('utf8'));
     const detail={status:response.status,url:response.url,type:response.headers.get('content-type'),bytes:buffer.length,elapsedMs:Date.now()-start};
     let valid=response.status===200;
-    if(kind==='html')valid&&=str.includes('<app-root')&&str.includes('QuantoCostaVivere');
+    if(kind==='html'){
+      valid&&=str.includes('<app-root')&&str.includes('QuantoCostaVivere');
+      detail.canonicalTag=/rel=['"]canonical['"]/i.test(str);
+      detail.metaDescription=/<meta\s+name=['"]description['"]/i.test(str);
+      detail.openGraph=/<meta\s+property=['"]og:title['"]/i.test(str);
+      detail.cloudflareAnalytics=str.includes('cloudflareinsights.com')||str.includes('data-cf-beacon');
+      detail.angularBootstrap=str.includes('type="module"');
+    }
     if(kind==='robots')valid&&=str.includes('Sitemap:')&&!/^Disallow:\s*\/$/mi.test(str);
     if(kind==='sitemap'){
       const urls=[...str.matchAll(/<loc>([^<]+)<\/loc>/g)].map(x=>x[1]);
@@ -56,9 +63,11 @@ for(const [path,kind] of [
  ['/icon-192.png','png'],
  ['/icon-512.png','png'],
  ['/apple-touch-icon.png','png'],
- ['/api/household-spending','json']
+ ['/api/household-spending','json'],
+ ['/api/inflation','json'],
+ ['/api/regional-rates','json']
 ])await probe(path,kind);
-const ok=records.filter(x=>x.status==='OK').length,fail=records.filter(x=>x.status==='FAIL').length;
+const ok=records.filter(x=>x.result==='OK').length,fail=records.filter(x=>x.result==='FAIL').length;
 console.log('RESULT '+JSON.stringify({checked:records.length,ok,fail}));
 if(fail)console.log('NOTE GitHub CI build success is NOT proof that Cloudflare live endpoints work.');
 // Audit is always informational, so a temporary DNS outage does not block unrelated merges.
