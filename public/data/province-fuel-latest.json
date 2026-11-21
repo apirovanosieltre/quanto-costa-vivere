@@ -4,8 +4,8 @@
   "sourceUrl": "https://optenergy.it/dati/",
   "originalSourceUrl": "https://www.mimit.gov.it/it/open-data/elenco-dataset/carburanti-prezzi-praticati-e-anagrafica-degli-impianti",
   "license": "CC BY 4.0",
-  "period": "2026-11-19",
-  "generatedAt": "2026-11-20T19:08:08.056Z",
+  "period": "2026-11-20",
+  "generatedAt": "2026-11-21T18:01:09.466Z",
   "geography": "province",
   "fuelTypes": [
     "benzina_self",
@@ -19,7 +19,7 @@
       "benzina_self": {
         "median": 1.939,
         "q1": 1.939,
-        "q3": 1.954,
+        "q3": 1.943,
         "stations": 119
       },
       "gasolio_self": {
@@ -33,16 +33,16 @@
       "code": "AL",
       "name": "Alessandria",
       "benzina_self": {
-        "median": 1.939,
-        "q1": 1.929,
+        "median": 1.938,
+        "q1": 1.921,
         "q3": 1.94,
-        "stations": 203
+        "stations": 202
       },
       "gasolio_self": {
-        "median": 2.199,
-        "q1": 2.184,
+        "median": 2.189,
+        "q1": 2.179,
         "q3": 2.2,
-        "stations": 206
+        "stations": 205
       }
     },
     {
@@ -51,13 +51,13 @@
       "benzina_self": {
         "median": 1.939,
         "q1": 1.939,
-        "q3": 1.949,
+        "q3": 1.94,
         "stations": 211
       },
       "gasolio_self": {
         "median": 2.199,
         "q1": 2.179,
-        "q3": 2.2,
+        "q3": 2.199,
         "stations": 210
       }
     },
@@ -65,15 +65,15 @@
       "code": "AO",
       "name": "Valle d'Aosta/Vallée d'Aoste",
       "benzina_self": {
-        "median": 1.94,
-        "q1": 1.939,
-        "q3": 1.959,
+        "median": 1.939,
+        "q1": 1.929,
+        "q3": 1.947,
         "stations": 69
       },
       "gasolio_self": {
         "median": 2.199,
         "q1": 2.189,
-        "q3": 2.205,
+        "q3": 2.204,
         "stations": 66
       }
     },
@@ -83,7 +83,7 @@
       "benzina_self": {
         "median": 1.94,
         "q1": 1.939,
-        "q3": 1.959,
+        "q3": 1.963,
         "stations": 87
       },
       "gasolio_self": {
@@ -97,15 +97,15 @@
       "code": "AQ",
       "name": "L'Aquila",
       "benzina_self": {
-        "median": 1.945,
-        "q1": 1.939,
+        "median": 1.94,
+        "q1": 1.93,
         "q3": 1.959,
         "stations": 133
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.198,
-        "q3": 2.209,
+        "q1": 2.195,
+        "q3": 2.205,
         "stations": 136
       }
     },
@@ -113,9 +113,9 @@
       "code": "AR",
       "name": "Arezzo",
       "benzina_self": {
-        "median": 1.94,
+        "median": 1.939,
         "q1": 1.939,
-        "q3": 1.949,
+        "q3": 1.945,
         "stations": 144
       },
       "gasolio_self": {
@@ -130,12 +130,12 @@
       "name": "Asti",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.929,
-        "q3": 1.941,
+        "q1": 1.919,
+        "q3": 1.94,
         "stations": 112
       },
       "gasolio_self": {
-        "median": 2.199,
+        "median": 2.197,
         "q1": 2.179,
         "q3": 2.199,
         "stations": 112
@@ -147,13 +147,13 @@
       "benzina_self": {
         "median": 1.969,
         "q1": 1.939,
-        "q3": 1.994,
+        "q3": 1.992,
         "stations": 186
       },
       "gasolio_self": {
         "median": 2.199,
         "q1": 2.189,
-        "q3": 2.205,
+        "q3": 2.2,
         "stations": 188
       }
     },
@@ -162,7 +162,7 @@
       "name": "Bari",
       "benzina_self": {
         "median": 1.94,
-        "q1": 1.939,
+        "q1": 1.937,
         "q3": 1.949,
         "stations": 365
       },
@@ -178,28 +178,28 @@
       "name": "Bergamo",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.919,
+        "q1": 1.914,
         "q3": 1.945,
         "stations": 316
       },
       "gasolio_self": {
-        "median": 2.199,
-        "q1": 2.185,
+        "median": 2.198,
+        "q1": 2.179,
         "q3": 2.2,
-        "stations": 316
+        "stations": 311
       }
     },
     {
       "code": "BI",
       "name": "Biella",
       "benzina_self": {
-        "median": 1.939,
-        "q1": 1.929,
-        "q3": 1.948,
+        "median": 1.934,
+        "q1": 1.926,
+        "q3": 1.939,
         "stations": 70
       },
       "gasolio_self": {
-        "median": 2.19,
+        "median": 2.193,
         "q1": 2.179,
         "q3": 2.199,
         "stations": 70
@@ -218,22 +218,22 @@
         "median": 2.199,
         "q1": 2.189,
         "q3": 2.2,
-        "stations": 92
+        "stations": 91
       }
     },
     {
       "code": "BN",
       "name": "Benevento",
       "benzina_self": {
-        "median": 1.949,
+        "median": 1.943,
         "q1": 1.939,
-        "q3": 1.995,
+        "q3": 1.994,
         "stations": 134
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.189,
-        "q3": 2.238,
+        "q1": 2.179,
+        "q3": 2.229,
         "stations": 133
       }
     },
@@ -242,14 +242,14 @@
       "name": "Bologna",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.929,
-        "q3": 1.949,
+        "q1": 1.919,
+        "q3": 1.945,
         "stations": 320
       },
       "gasolio_self": {
         "median": 2.199,
         "q1": 2.189,
-        "q3": 2.205,
+        "q3": 2.2,
         "stations": 321
       }
     },
@@ -257,14 +257,14 @@
       "code": "BR",
       "name": "Brindisi",
       "benzina_self": {
-        "median": 1.943,
-        "q1": 1.934,
+        "median": 1.94,
+        "q1": 1.929,
         "q3": 1.959,
         "stations": 160
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.189,
+        "q1": 2.179,
         "q3": 2.205,
         "stations": 160
       }
@@ -274,13 +274,13 @@
       "name": "Brescia",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.934,
-        "q3": 1.949,
+        "q1": 1.929,
+        "q3": 1.945,
         "stations": 475
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.189,
+        "q1": 2.179,
         "q3": 2.2,
         "stations": 471
       }
@@ -290,13 +290,13 @@
       "name": "Barletta-Andria-Trani",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.934,
+        "q1": 1.929,
         "q3": 1.949,
         "stations": 93
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.189,
+        "q1": 2.188,
         "q3": 2.2,
         "stations": 95
       }
@@ -307,11 +307,11 @@
       "benzina_self": {
         "median": 1.94,
         "q1": 1.939,
-        "q3": 1.975,
+        "q3": 1.955,
         "stations": 153
       },
       "gasolio_self": {
-        "median": 2.2,
+        "median": 2.199,
         "q1": 2.199,
         "q3": 2.215,
         "stations": 155
@@ -329,7 +329,7 @@
       "gasolio_self": {
         "median": 2.199,
         "q1": 2.189,
-        "q3": 2.2,
+        "q3": 2.201,
         "stations": 176
       }
     },
@@ -337,16 +337,16 @@
       "code": "CB",
       "name": "Campobasso",
       "benzina_self": {
-        "median": 1.943,
+        "median": 1.94,
         "q1": 1.939,
-        "q3": 1.989,
-        "stations": 102
+        "q3": 1.949,
+        "stations": 101
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.198,
-        "q3": 2.231,
-        "stations": 104
+        "q1": 2.189,
+        "q3": 2.205,
+        "stations": 103
       }
     },
     {
@@ -354,14 +354,14 @@
       "name": "Caserta",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.922,
-        "q3": 1.959,
+        "q1": 1.919,
+        "q3": 1.954,
         "stations": 308
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.179,
-        "q3": 2.205,
+        "q1": 2.175,
+        "q3": 2.2,
         "stations": 310
       }
     },
@@ -370,15 +370,15 @@
       "name": "Chieti",
       "benzina_self": {
         "median": 1.94,
-        "q1": 1.939,
-        "q3": 1.978,
-        "stations": 178
+        "q1": 1.938,
+        "q3": 1.974,
+        "stations": 179
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.195,
-        "q3": 2.205,
-        "stations": 182
+        "q1": 2.189,
+        "q3": 2.206,
+        "stations": 183
       }
     },
     {
@@ -386,12 +386,12 @@
       "name": "Sulcis Iglesiente",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.932,
-        "q3": 1.947,
+        "q1": 1.929,
+        "q3": 1.943,
         "stations": 47
       },
       "gasolio_self": {
-        "median": 2.189,
+        "median": 2.199,
         "q1": 2.189,
         "q3": 2.2,
         "stations": 47
@@ -402,14 +402,14 @@
       "name": "Caltanissetta",
       "benzina_self": {
         "median": 1.94,
-        "q1": 1.939,
-        "q3": 1.984,
+        "q1": 1.937,
+        "q3": 1.953,
         "stations": 83
       },
       "gasolio_self": {
         "median": 2.199,
         "q1": 2.199,
-        "q3": 2.205,
+        "q3": 2.203,
         "stations": 83
       }
     },
@@ -418,13 +418,13 @@
       "name": "Cuneo",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.928,
-        "q3": 1.949,
+        "q1": 1.927,
+        "q3": 1.94,
         "stations": 293
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.189,
+        "q1": 2.185,
         "q3": 2.2,
         "stations": 297
       }
@@ -434,7 +434,7 @@
       "name": "Como",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.909,
+        "q1": 1.899,
         "q3": 1.945,
         "stations": 105
       },
@@ -449,16 +449,16 @@
       "code": "CR",
       "name": "Cremona",
       "benzina_self": {
-        "median": 1.94,
+        "median": 1.939,
         "q1": 1.929,
         "q3": 1.949,
-        "stations": 138
+        "stations": 137
       },
       "gasolio_self": {
         "median": 2.199,
         "q1": 2.179,
-        "q3": 2.2,
-        "stations": 137
+        "q3": 2.199,
+        "stations": 136
       }
     },
     {
@@ -472,7 +472,7 @@
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.196,
+        "q1": 2.19,
         "q3": 2.205,
         "stations": 257
       }
@@ -482,7 +482,7 @@
       "name": "Catania",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.938,
+        "q1": 1.934,
         "q3": 1.945,
         "stations": 359
       },
@@ -497,9 +497,9 @@
       "code": "CZ",
       "name": "Catanzaro",
       "benzina_self": {
-        "median": 1.945,
+        "median": 1.94,
         "q1": 1.939,
-        "q3": 1.969,
+        "q3": 1.966,
         "stations": 156
       },
       "gasolio_self": {
@@ -513,16 +513,16 @@
       "code": "EN",
       "name": "Enna",
       "benzina_self": {
-        "median": 1.949,
+        "median": 1.94,
         "q1": 1.939,
-        "q3": 1.994,
-        "stations": 55
+        "q3": 1.979,
+        "stations": 56
       },
       "gasolio_self": {
         "median": 2.199,
         "q1": 2.189,
-        "q3": 2.224,
-        "stations": 55
+        "q3": 2.2,
+        "stations": 56
       }
     },
     {
@@ -530,28 +530,28 @@
       "name": "Forlì-Cesena",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.889,
+        "q1": 1.888,
         "q3": 1.94,
-        "stations": 152
+        "stations": 151
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.188,
+        "q1": 2.178,
         "q3": 2.2,
-        "stations": 153
+        "stations": 152
       }
     },
     {
       "code": "FE",
       "name": "Ferrara",
       "benzina_self": {
-        "median": 1.94,
-        "q1": 1.929,
-        "q3": 1.958,
+        "median": 1.939,
+        "q1": 1.928,
+        "q3": 1.949,
         "stations": 146
       },
       "gasolio_self": {
-        "median": 2.199,
+        "median": 2.196,
         "q1": 2.179,
         "q3": 2.2,
         "stations": 145
@@ -561,14 +561,14 @@
       "code": "FG",
       "name": "Foggia",
       "benzina_self": {
-        "median": 1.949,
+        "median": 1.945,
         "q1": 1.934,
-        "q3": 1.994,
+        "q3": 1.99,
         "stations": 198
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.19,
+        "q1": 2.189,
         "q3": 2.239,
         "stations": 209
       }
@@ -578,8 +578,8 @@
       "name": "Firenze",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.939,
-        "q3": 1.945,
+        "q1": 1.934,
+        "q3": 1.94,
         "stations": 286
       },
       "gasolio_self": {
@@ -595,11 +595,11 @@
       "benzina_self": {
         "median": 1.939,
         "q1": 1.939,
-        "q3": 1.959,
+        "q3": 1.954,
         "stations": 82
       },
       "gasolio_self": {
-        "median": 2.199,
+        "median": 2.19,
         "q1": 2.179,
         "q3": 2.199,
         "stations": 83
@@ -611,7 +611,7 @@
       "benzina_self": {
         "median": 1.94,
         "q1": 1.939,
-        "q3": 1.959,
+        "q3": 1.949,
         "stations": 243
       },
       "gasolio_self": {
@@ -625,9 +625,9 @@
       "code": "GE",
       "name": "Genova",
       "benzina_self": {
-        "median": 1.94,
-        "q1": 1.934,
-        "q3": 1.949,
+        "median": 1.939,
+        "q1": 1.933,
+        "q3": 1.945,
         "stations": 212
       },
       "gasolio_self": {
@@ -649,7 +649,7 @@
       "gasolio_self": {
         "median": 2.2,
         "q1": 2.199,
-        "q3": 2.215,
+        "q3": 2.209,
         "stations": 41
       }
     },
@@ -658,7 +658,7 @@
       "name": "Grosseto",
       "benzina_self": {
         "median": 1.94,
-        "q1": 1.939,
+        "q1": 1.934,
         "q3": 1.949,
         "stations": 130
       },
@@ -674,8 +674,8 @@
       "name": "Imperia",
       "benzina_self": {
         "median": 1.94,
-        "q1": 1.939,
-        "q3": 1.955,
+        "q1": 1.938,
+        "q3": 1.949,
         "stations": 70
       },
       "gasolio_self": {
@@ -691,12 +691,12 @@
       "benzina_self": {
         "median": 1.945,
         "q1": 1.939,
-        "q3": 1.98,
+        "q3": 1.978,
         "stations": 41
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.194,
+        "q1": 2.189,
         "q3": 2.205,
         "stations": 41
       }
@@ -705,13 +705,13 @@
       "code": "KR",
       "name": "Crotone",
       "benzina_self": {
-        "median": 1.94,
+        "median": 1.939,
         "q1": 1.939,
         "q3": 1.949,
         "stations": 45
       },
       "gasolio_self": {
-        "median": 2.2,
+        "median": 2.205,
         "q1": 2.199,
         "q3": 2.229,
         "stations": 45
@@ -722,8 +722,8 @@
       "name": "Lecco",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.919,
-        "q3": 1.949,
+        "q1": 1.909,
+        "q3": 1.946,
         "stations": 85
       },
       "gasolio_self": {
@@ -739,7 +739,7 @@
       "benzina_self": {
         "median": 1.949,
         "q1": 1.939,
-        "q3": 1.989,
+        "q3": 1.979,
         "stations": 382
       },
       "gasolio_self": {
@@ -753,15 +753,15 @@
       "code": "LI",
       "name": "Livorno",
       "benzina_self": {
-        "median": 1.94,
-        "q1": 1.934,
-        "q3": 1.949,
+        "median": 1.939,
+        "q1": 1.929,
+        "q3": 1.948,
         "stations": 138
       },
       "gasolio_self": {
         "median": 2.199,
         "q1": 2.189,
-        "q3": 2.205,
+        "q3": 2.2,
         "stations": 138
       }
     },
@@ -770,13 +770,13 @@
       "name": "Lodi",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.925,
-        "q3": 1.945,
+        "q1": 1.919,
+        "q3": 1.94,
         "stations": 71
       },
       "gasolio_self": {
         "median": 2.189,
-        "q1": 2.183,
+        "q1": 2.179,
         "q3": 2.199,
         "stations": 71
       }
@@ -786,8 +786,8 @@
       "name": "Latina",
       "benzina_self": {
         "median": 1.94,
-        "q1": 1.939,
-        "q3": 1.954,
+        "q1": 1.938,
+        "q3": 1.949,
         "stations": 251
       },
       "gasolio_self": {
@@ -802,8 +802,8 @@
       "name": "Lucca",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.934,
-        "q3": 1.949,
+        "q1": 1.929,
+        "q3": 1.945,
         "stations": 178
       },
       "gasolio_self": {
@@ -818,7 +818,7 @@
       "name": "Monza e della Brianza",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.934,
+        "q1": 1.929,
         "q3": 1.945,
         "stations": 195
       },
@@ -839,7 +839,7 @@
         "stations": 153
       },
       "gasolio_self": {
-        "median": 2.19,
+        "median": 2.189,
         "q1": 2.179,
         "q3": 2.2,
         "stations": 152
@@ -849,13 +849,13 @@
       "code": "ME",
       "name": "Messina",
       "benzina_self": {
-        "median": 1.943,
+        "median": 1.94,
         "q1": 1.939,
-        "q3": 1.959,
+        "q3": 1.949,
         "stations": 192
       },
       "gasolio_self": {
-        "median": 2.2,
+        "median": 2.199,
         "q1": 2.199,
         "q3": 2.209,
         "stations": 192
@@ -866,7 +866,7 @@
       "name": "Milano",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.934,
+        "q1": 1.929,
         "q3": 1.945,
         "stations": 656
       },
@@ -882,13 +882,13 @@
       "name": "Mantova",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.929,
-        "q3": 1.949,
+        "q1": 1.919,
+        "q3": 1.94,
         "stations": 173
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.189,
+        "q1": 2.18,
         "q3": 2.2,
         "stations": 171
       }
@@ -898,7 +898,7 @@
       "name": "Modena",
       "benzina_self": {
         "median": 1.94,
-        "q1": 1.934,
+        "q1": 1.929,
         "q3": 1.949,
         "stations": 262
       },
@@ -914,7 +914,7 @@
       "name": "Massa-Carrara",
       "benzina_self": {
         "median": 1.94,
-        "q1": 1.939,
+        "q1": 1.938,
         "q3": 1.949,
         "stations": 70
       },
@@ -937,7 +937,7 @@
       "gasolio_self": {
         "median": 2.2,
         "q1": 2.199,
-        "q3": 2.261,
+        "q3": 2.254,
         "stations": 75
       }
     },
@@ -946,14 +946,14 @@
       "name": "Napoli",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.919,
+        "q1": 1.899,
         "q3": 1.949,
         "stations": 671
       },
       "gasolio_self": {
-        "median": 2.199,
-        "q1": 2.179,
-        "q3": 2.2,
+        "median": 2.196,
+        "q1": 2.169,
+        "q3": 2.199,
         "stations": 674
       }
     },
@@ -962,8 +962,8 @@
       "name": "Novara",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.93,
-        "q3": 1.945,
+        "q1": 1.929,
+        "q3": 1.942,
         "stations": 138
       },
       "gasolio_self": {
@@ -977,15 +977,15 @@
       "code": "NU",
       "name": "Nuoro",
       "benzina_self": {
-        "median": 1.946,
+        "median": 1.945,
         "q1": 1.939,
-        "q3": 1.999,
+        "q3": 1.997,
         "stations": 62
       },
       "gasolio_self": {
-        "median": 2.202,
+        "median": 2.199,
         "q1": 2.199,
-        "q3": 2.244,
+        "q3": 2.219,
         "stations": 62
       }
     },
@@ -993,13 +993,13 @@
       "code": "OG",
       "name": "Ogliastra",
       "benzina_self": {
-        "median": 1.954,
+        "median": 1.947,
         "q1": 1.939,
-        "q3": 1.999,
+        "q3": 1.998,
         "stations": 24
       },
       "gasolio_self": {
-        "median": 2.228,
+        "median": 2.219,
         "q1": 2.199,
         "q3": 2.292,
         "stations": 24
@@ -1009,13 +1009,13 @@
       "code": "OR",
       "name": "Oristano",
       "benzina_self": {
-        "median": 1.94,
-        "q1": 1.938,
-        "q3": 1.949,
+        "median": 1.939,
+        "q1": 1.934,
+        "q3": 1.944,
         "stations": 66
       },
       "gasolio_self": {
-        "median": 2.199,
+        "median": 2.197,
         "q1": 2.189,
         "q3": 2.2,
         "stations": 65
@@ -1027,12 +1027,12 @@
       "benzina_self": {
         "median": 1.94,
         "q1": 1.939,
-        "q3": 1.95,
+        "q3": 1.949,
         "stations": 73
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.195,
+        "q1": 2.194,
         "q3": 2.2,
         "stations": 73
       }
@@ -1042,13 +1042,13 @@
       "name": "Palermo",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.937,
-        "q3": 1.959,
+        "q1": 1.936,
+        "q3": 1.949,
         "stations": 318
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.187,
+        "q1": 2.185,
         "q3": 2.2,
         "stations": 320
       }
@@ -1073,14 +1073,14 @@
       "code": "PD",
       "name": "Padova",
       "benzina_self": {
-        "median": 1.939,
-        "q1": 1.929,
+        "median": 1.934,
+        "q1": 1.927,
         "q3": 1.94,
         "stations": 328
       },
       "gasolio_self": {
         "median": 2.189,
-        "q1": 2.185,
+        "q1": 2.179,
         "q3": 2.2,
         "stations": 325
       }
@@ -1096,7 +1096,7 @@
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.187,
+        "q1": 2.18,
         "q3": 2.2,
         "stations": 122
       }
@@ -1105,14 +1105,14 @@
       "code": "PG",
       "name": "Perugia",
       "benzina_self": {
-        "median": 1.945,
-        "q1": 1.939,
+        "median": 1.94,
+        "q1": 1.936,
         "q3": 1.959,
         "stations": 307
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.189,
+        "q1": 2.179,
         "q3": 2.2,
         "stations": 305
       }
@@ -1122,8 +1122,8 @@
       "name": "Pisa",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.934,
-        "q3": 1.949,
+        "q1": 1.929,
+        "q3": 1.945,
         "stations": 189
       },
       "gasolio_self": {
@@ -1137,14 +1137,14 @@
       "code": "PN",
       "name": "Pordenone",
       "benzina_self": {
-        "median": 1.94,
-        "q1": 1.935,
-        "q3": 1.945,
+        "median": 1.939,
+        "q1": 1.934,
+        "q3": 1.94,
         "stations": 118
       },
       "gasolio_self": {
-        "median": 2.2,
-        "q1": 2.199,
+        "median": 2.199,
+        "q1": 2.189,
         "q3": 2.2,
         "stations": 117
       }
@@ -1154,7 +1154,7 @@
       "name": "Prato",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.939,
+        "q1": 1.935,
         "q3": 1.94,
         "stations": 68
       },
@@ -1170,7 +1170,7 @@
       "name": "Parma",
       "benzina_self": {
         "median": 1.94,
-        "q1": 1.939,
+        "q1": 1.934,
         "q3": 1.949,
         "stations": 182
       },
@@ -1186,12 +1186,12 @@
       "name": "Pistoia",
       "benzina_self": {
         "median": 1.94,
-        "q1": 1.93,
+        "q1": 1.929,
         "q3": 1.949,
         "stations": 102
       },
       "gasolio_self": {
-        "median": 2.197,
+        "median": 2.189,
         "q1": 2.179,
         "q3": 2.2,
         "stations": 102
@@ -1201,15 +1201,15 @@
       "code": "PU",
       "name": "Pesaro e Urbino",
       "benzina_self": {
-        "median": 1.94,
-        "q1": 1.939,
-        "q3": 1.949,
+        "median": 1.939,
+        "q1": 1.932,
+        "q3": 1.945,
         "stations": 145
       },
       "gasolio_self": {
-        "median": 2.199,
-        "q1": 2.189,
-        "q3": 2.203,
+        "median": 2.19,
+        "q1": 2.186,
+        "q3": 2.2,
         "stations": 147
       }
     },
@@ -1218,8 +1218,8 @@
       "name": "Pavia",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.934,
-        "q3": 1.949,
+        "q1": 1.929,
+        "q3": 1.947,
         "stations": 182
       },
       "gasolio_self": {
@@ -1240,8 +1240,8 @@
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.198,
-        "q3": 2.229,
+        "q1": 2.19,
+        "q3": 2.227,
         "stations": 148
       }
     },
@@ -1250,13 +1250,13 @@
       "name": "Ravenna",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.929,
-        "q3": 1.949,
+        "q1": 1.927,
+        "q3": 1.94,
         "stations": 146
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.189,
+        "q1": 2.179,
         "q3": 2.2,
         "stations": 147
       }
@@ -1272,8 +1272,8 @@
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.196,
-        "q3": 2.204,
+        "q1": 2.191,
+        "q3": 2.209,
         "stations": 182
       }
     },
@@ -1282,13 +1282,13 @@
       "name": "Reggio nell'Emilia",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.939,
-        "q3": 1.945,
+        "q1": 1.929,
+        "q3": 1.94,
         "stations": 190
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.189,
+        "q1": 2.179,
         "q3": 2.2,
         "stations": 188
       }
@@ -1299,7 +1299,7 @@
       "benzina_self": {
         "median": 1.939,
         "q1": 1.939,
-        "q3": 1.949,
+        "q3": 1.941,
         "stations": 152
       },
       "gasolio_self": {
@@ -1321,7 +1321,7 @@
       "gasolio_self": {
         "median": 2.199,
         "q1": 2.19,
-        "q3": 2.213,
+        "q3": 2.208,
         "stations": 82
       }
     },
@@ -1330,15 +1330,15 @@
       "name": "Roma",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.934,
-        "q3": 1.949,
-        "stations": 1216
+        "q1": 1.929,
+        "q3": 1.945,
+        "stations": 1217
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.188,
+        "q1": 2.179,
         "q3": 2.2,
-        "stations": 1212
+        "stations": 1213
       }
     },
     {
@@ -1346,13 +1346,13 @@
       "name": "Rimini",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.919,
-        "q3": 1.945,
+        "q1": 1.917,
+        "q3": 1.94,
         "stations": 124
       },
       "gasolio_self": {
-        "median": 2.199,
-        "q1": 2.187,
+        "median": 2.196,
+        "q1": 2.179,
         "q3": 2.2,
         "stations": 123
       }
@@ -1362,13 +1362,13 @@
       "name": "Rovigo",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.929,
-        "q3": 1.945,
+        "q1": 1.924,
+        "q3": 1.94,
         "stations": 124
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.185,
+        "q1": 2.182,
         "q3": 2.2,
         "stations": 123
       }
@@ -1378,14 +1378,14 @@
       "name": "Salerno",
       "benzina_self": {
         "median": 1.94,
-        "q1": 1.929,
+        "q1": 1.919,
         "q3": 1.979,
         "stations": 349
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.188,
-        "q3": 2.216,
+        "q1": 2.179,
+        "q3": 2.209,
         "stations": 349
       }
     },
@@ -1394,14 +1394,14 @@
       "name": "Siena",
       "benzina_self": {
         "median": 1.94,
-        "q1": 1.939,
+        "q1": 1.938,
         "q3": 1.949,
         "stations": 120
       },
       "gasolio_self": {
         "median": 2.199,
         "q1": 2.189,
-        "q3": 2.205,
+        "q3": 2.201,
         "stations": 120
       }
     },
@@ -1409,13 +1409,13 @@
       "code": "SO",
       "name": "Sondrio",
       "benzina_self": {
-        "median": 1.904,
+        "median": 1.899,
         "q1": 1.799,
-        "q3": 1.945,
+        "q3": 1.944,
         "stations": 62
       },
       "gasolio_self": {
-        "median": 2.189,
+        "median": 2.179,
         "q1": 2.109,
         "q3": 2.205,
         "stations": 59
@@ -1426,14 +1426,14 @@
       "name": "La Spezia",
       "benzina_self": {
         "median": 1.94,
-        "q1": 1.938,
-        "q3": 1.959,
+        "q1": 1.935,
+        "q3": 1.953,
         "stations": 74
       },
       "gasolio_self": {
         "median": 2.199,
         "q1": 2.189,
-        "q3": 2.2,
+        "q3": 2.203,
         "stations": 74
       }
     },
@@ -1443,7 +1443,7 @@
       "benzina_self": {
         "median": 1.939,
         "q1": 1.939,
-        "q3": 1.948,
+        "q3": 1.945,
         "stations": 146
       },
       "gasolio_self": {
@@ -1457,15 +1457,15 @@
       "code": "SS",
       "name": "Sassari",
       "benzina_self": {
-        "median": 1.94,
+        "median": 1.939,
         "q1": 1.939,
-        "q3": 1.957,
+        "q3": 1.946,
         "stations": 109
       },
       "gasolio_self": {
         "median": 2.199,
         "q1": 2.189,
-        "q3": 2.205,
+        "q3": 2.2,
         "stations": 109
       }
     },
@@ -1475,14 +1475,14 @@
       "benzina_self": {
         "median": 1.94,
         "q1": 1.939,
-        "q3": 1.959,
-        "stations": 112
+        "q3": 1.954,
+        "stations": 113
       },
       "gasolio_self": {
         "median": 2.199,
         "q1": 2.189,
         "q3": 2.2,
-        "stations": 112
+        "stations": 113
       }
     },
     {
@@ -1506,13 +1506,13 @@
       "name": "Teramo",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.938,
+        "q1": 1.934,
         "q3": 1.949,
         "stations": 137
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.185,
+        "q1": 2.179,
         "q3": 2.2,
         "stations": 137
       }
@@ -1539,12 +1539,12 @@
       "benzina_self": {
         "median": 1.939,
         "q1": 1.929,
-        "q3": 1.945,
+        "q3": 1.94,
         "stations": 658
       },
       "gasolio_self": {
         "median": 2.199,
-        "q1": 2.189,
+        "q1": 2.188,
         "q3": 2.2,
         "stations": 656
       }
@@ -1554,7 +1554,7 @@
       "name": "Trapani",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.934,
+        "q1": 1.929,
         "q3": 1.955,
         "stations": 177
       },
@@ -1569,15 +1569,15 @@
       "code": "TR",
       "name": "Terni",
       "benzina_self": {
-        "median": 1.94,
-        "q1": 1.939,
-        "q3": 1.959,
+        "median": 1.939,
+        "q1": 1.936,
+        "q3": 1.956,
         "stations": 106
       },
       "gasolio_self": {
-        "median": 2.194,
+        "median": 2.19,
         "q1": 2.179,
-        "q3": 2.2,
+        "q3": 2.199,
         "stations": 106
       }
     },
@@ -1587,13 +1587,13 @@
       "benzina_self": {
         "median": 1.94,
         "q1": 1.939,
-        "q3": 1.99,
+        "q3": 1.959,
         "stations": 33
       },
       "gasolio_self": {
         "median": 2.2,
         "q1": 2.199,
-        "q3": 2.279,
+        "q3": 2.269,
         "stations": 33
       }
     },
@@ -1601,14 +1601,14 @@
       "code": "TV",
       "name": "Treviso",
       "benzina_self": {
-        "median": 1.939,
-        "q1": 1.929,
-        "q3": 1.945,
+        "median": 1.937,
+        "q1": 1.919,
+        "q3": 1.94,
         "stations": 297
       },
       "gasolio_self": {
-        "median": 2.199,
-        "q1": 2.185,
+        "median": 2.189,
+        "q1": 2.179,
         "q3": 2.2,
         "stations": 295
       }
@@ -1617,9 +1617,9 @@
       "code": "UD",
       "name": "Udine",
       "benzina_self": {
-        "median": 1.94,
-        "q1": 1.936,
-        "q3": 1.949,
+        "median": 1.939,
+        "q1": 1.929,
+        "q3": 1.945,
         "stations": 218
       },
       "gasolio_self": {
@@ -1634,8 +1634,8 @@
       "name": "Varese",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.937,
-        "q3": 1.946,
+        "q1": 1.931,
+        "q3": 1.945,
         "stations": 230
       },
       "gasolio_self": {
@@ -1667,12 +1667,12 @@
       "benzina_self": {
         "median": 1.939,
         "q1": 1.929,
-        "q3": 1.945,
+        "q3": 1.94,
         "stations": 81
       },
       "gasolio_self": {
-        "median": 2.198,
-        "q1": 2.187,
+        "median": 2.19,
+        "q1": 2.179,
         "q3": 2.2,
         "stations": 85
       }
@@ -1682,15 +1682,15 @@
       "name": "Venezia",
       "benzina_self": {
         "median": 1.939,
-        "q1": 1.929,
-        "q3": 1.945,
-        "stations": 259
+        "q1": 1.928,
+        "q3": 1.94,
+        "stations": 258
       },
       "gasolio_self": {
-        "median": 2.199,
-        "q1": 2.185,
+        "median": 2.189,
+        "q1": 2.179,
         "q3": 2.2,
-        "stations": 256
+        "stations": 255
       }
     },
     {
@@ -1699,14 +1699,14 @@
       "benzina_self": {
         "median": 1.939,
         "q1": 1.929,
-        "q3": 1.945,
-        "stations": 302
+        "q3": 1.94,
+        "stations": 303
       },
       "gasolio_self": {
         "median": 2.199,
         "q1": 2.189,
         "q3": 2.2,
-        "stations": 301
+        "stations": 302
       }
     },
     {
@@ -1715,7 +1715,7 @@
       "benzina_self": {
         "median": 1.939,
         "q1": 1.929,
-        "q3": 1.945,
+        "q3": 1.94,
         "stations": 331
       },
       "gasolio_self": {
@@ -1729,9 +1729,9 @@
       "code": "VS",
       "name": "Medio Campidano",
       "benzina_self": {
-        "median": 1.939,
-        "q1": 1.937,
-        "q3": 1.949,
+        "median": 1.94,
+        "q1": 1.939,
+        "q3": 1.952,
         "stations": 39
       },
       "gasolio_self": {
@@ -1747,7 +1747,7 @@
       "benzina_self": {
         "median": 1.94,
         "q1": 1.939,
-        "q3": 1.969,
+        "q3": 1.959,
         "stations": 153
       },
       "gasolio_self": {
@@ -1763,7 +1763,7 @@
       "benzina_self": {
         "median": 1.94,
         "q1": 1.939,
-        "q3": 1.959,
+        "q3": 1.949,
         "stations": 53
       },
       "gasolio_self": {
@@ -1774,6 +1774,6 @@
       }
     }
   ],
-  "sourceSha256": "3845f994ccdbf2d6cad7111ba0ccdad6e1588c512adcc3c9e1a5d5d006f37a94",
-  "sourceBytes": 4090813
+  "sourceSha256": "4c553734f7242a0af981634b2ca0139ba6033ac5d14aba98060b611bf23a08ad",
+  "sourceBytes": 4090616
 }
